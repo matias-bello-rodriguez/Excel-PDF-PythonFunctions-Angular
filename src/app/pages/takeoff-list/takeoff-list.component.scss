@@ -744,7 +744,6 @@ body {
 .btn-icon.active {
   color: var(--carbon-primary);
   background-color: rgba(15, 98, 254, 0.1);
-  border-color: var(--carbon-primary);
 }
 
 /* Estilos mejorados para tablas basados en Carbon Design System para contenido denso */
@@ -865,15 +864,25 @@ body {
   justify-content: center;
   transition: all 0.15s ease;
   position: relative;
-}
 
-.action-btn:hover {
-  background-color: var(--carbon-gray-10);
-  color: var(--carbon-primary);
-}
+  &:hover {
+    background-color: var(--carbon-gray-10);
+  }
 
-.action-btn.delete:hover {
-  color: var(--carbon-danger);
+  &.delete:hover {
+    color: var(--carbon-danger);
+  }
+
+  &.pin {
+    &.pinned {
+      color: #F0AD4E;
+      background-color: rgba(240, 173, 78, 0.1);
+    }
+
+    &:hover {
+      color: #FFC107;
+    }
+  }
 }
 
 /* Paginación mejorada con Carbon Design System */
@@ -994,268 +1003,120 @@ body {
 /* Contenedor base para menús desplegables */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   right: 0;
-  background-color: white;
-  min-width: 260px;
+  background: white;
+  border: 1px solid var(--carbon-gray-20);
   border-radius: 4px;
   box-shadow: var(--shadow-md);
-  z-index: 1100;
-  overflow: hidden;
-  animation: dropdown-fade-in 0.2s ease-out;
-  border: 1px solid var(--carbon-gray-20);
+  min-width: 220px;
+  z-index: 1000;
+  margin-top: 8px;
+
+  .dropdown-header {
+    padding: var(--spacing-04);
+    border-bottom: 1px solid var(--carbon-gray-20);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-body);
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+
+  .dropdown-content {
+    padding: var(--spacing-04);
+  }
 }
 
-@keyframes dropdown-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+.filter-group {
+  margin-bottom: var(--spacing-04);
+
+  label {
+    display: block;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-02);
   }
 }
 
-/* Encabezado del menú desplegable */
-.dropdown-header {
-  padding: var(--spacing-04) var(--spacing-05);
+.checkbox-group {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--carbon-gray-10);
-  border-bottom: 1px solid var(--carbon-gray-20);
+  flex-direction: column;
+  gap: var(--spacing-03);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-02);
+    font-weight: var(--font-weight-regular);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      margin: 0;
+    }
+
+    &:hover {
+      color: var(--carbon-primary);
+    }
+  }
 }
 
-.dropdown-header h3 {
-  margin: 0;
-  font-size: var(--font-body);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+.btn-icon {
+  &.active, &:hover {
+    color: var(--carbon-primary);
+    background-color: rgba(15, 98, 254, 0.1);
+  }
+
+  i.active {
+    color: var(--carbon-primary);
+  }
 }
 
-/* Línea divisora dentro del menú */
-.dropdown-divider {
-  height: 1px;
-  background-color: var(--carbon-gray-20);
-  margin: 0;
-}
-
-/* Botón de enlace estilizado */
 .btn-link {
   background: none;
   border: none;
   color: var(--carbon-primary);
+  padding: 0;
   font-size: var(--font-label);
-  padding: var(--spacing-02) var(--spacing-03);
   cursor: pointer;
-  text-decoration: none;
-  font-weight: var(--font-weight-medium);
-}
 
-.btn-link:hover {
-  text-decoration: underline;
-  color: var(--carbon-primary-hover);
-}
-
-.btn-link:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--carbon-primary);
-  border-radius: 2px;
-}
-
-/* Pie del menú desplegable */
-.dropdown-footer {
-  display: block;
-  padding: var(--spacing-04) var(--spacing-05);
-  text-align: center;
-  color: var(--carbon-primary);
-  font-size: var(--font-label);
-  text-decoration: none;
-  background-color: var(--carbon-gray-10);
-  transition: background-color 0.2s;
-}
-
-.dropdown-footer:hover {
-  background-color: var(--carbon-gray-20);
-  text-decoration: underline;
-}
-
-/* Lista de elementos dentro del dropdown */
-.dropdown-items {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Elemento individual del menú desplegable */
-.dropdown-item {
-  padding: var(--spacing-04) var(--spacing-05);
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: var(--text-primary);
-  transition: background-color 0.15s;
-  gap: var(--spacing-04);
-}
-
-.dropdown-item:hover {
-  background-color: var(--carbon-gray-10);
-}
-
-.dropdown-item:focus {
-  outline: none;
-  background-color: var(--carbon-gray-10);
-}
-
-.dropdown-item i {
-  color: var(--text-secondary);
-  width: 16px;
-  text-align: center;
-}
-
-/* Estilos específicos para el menú de notificaciones */
-.notification-menu {
-  width: 320px;
-}
-
-.notification-list {
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.notification-item {
-  padding: var(--spacing-04) var(--spacing-05);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-04);
-  border-bottom: 1px solid var(--carbon-gray-10);
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.notification-item.unread {
-  background-color: rgba(15, 98, 254, 0.05); /* Sutil fondo azul para no leídos */
-}
-
-.notification-item:hover {
-  background-color: var(--carbon-gray-10);
-}
-
-.notification-item .notification-icon { /* Anidado para especificidad */
-  background-color: var(--carbon-gray-10);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  flex-shrink: 0;
-  /* Hereda color del .notification-icon global si no se sobreescribe aquí */
-}
-
-.notification-item.unread .notification-icon {
-  color: var(--carbon-primary);
-  background-color: rgba(15, 98, 254, 0.1);
-}
-
-.notification-content {
-  flex-grow: 1;
-}
-
-.notification-title {
-  font-weight: var(--font-weight-medium);
-  margin-bottom: var(--spacing-01);
-  font-size: var(--font-label);
-}
-
-.notification-message {
-  font-size: var(--font-label);
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-02);
-}
-
-.notification-time {
-  font-size: var(--font-caption);
-  color: var(--text-helper);
-}
-
-/* Mejoras de accesibilidad para el foco del teclado */
-button:focus,
-a:focus,
-[role="button"]:focus {
-  outline: 2px solid var(--carbon-primary);
-  outline-offset: 2px;
-}
-
-/* Mejoras para el sidebar colapsable */
-.sidebar.collapsed .nav-title span,
-.sidebar.collapsed .nav-item span {
-  opacity: 0;
-  width: 0;
-  display: none;
-}
-
-.sidebar.collapsed .nav-item {
-  justify-content: center;
-  padding: var(--spacing-03);
-}
-
-.sidebar.collapsed .nav-title {
-  justify-content: center;
-  padding: var(--spacing-03);
-}
-
-/* Tooltips para el sidebar colapsado */
-.sidebar.collapsed .nav-item:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--carbon-gray-100);
-  color: white;
-  padding: var(--spacing-02) var(--spacing-03);
-  border-radius: 4px;
-  font-size: var(--font-caption);
-  white-space: nowrap;
-  z-index: 100;
-  box-shadow: var(--shadow-sm);
-}
-
-/* Animaciones para suavizar transiciones */
-.sidebar,
-.main-content-wrapper,
-.nav-item span,
-.sidebar-toggle i {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Mejoras para dispositivos móviles */
-@media (max-width: 768px) {
-  .sidebar {
-    left: -260px;
-  }
-
-  .sidebar.collapsed {
-    left: -60px;
-  }
-
-  .sidebar.mobile-visible {
-    left: 0;
-  }
-
-  .main-content-wrapper {
-    margin-left: 0;
-    width: 100%;
+  &:hover {
+    text-decoration: underline;
   }
 }
 
-.nav-item.active {
-  background-color: rgba(15, 98, 254, 0.1);
+.tooltip-container {
+  position: relative;
+
+  .tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-bottom: 5px;
+    z-index: 1;
+    transition: visibility 0s linear 0.2s, opacity 0.2s;
+    opacity: 0;
+  }
+
+  &:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0.5s;
+  }
 }
 
-/* Estilos para el botón verde (success) */
-.btn-success {
+.btn-add {
   display: flex;
   align-items: center;
   gap: var(--spacing-03);
@@ -1264,23 +1125,24 @@ a:focus,
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: var(--font-body);
+  font-size: 1.1rem;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all 0.2s ease;
+  height: 48px;
+
+  i {
+    font-size: 1rem;
+  }
 
   &:hover {
-    background-color: darken(#198038, 8%);
+    background-color: darken(#198038, 5%);
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
   }
 
   &:active {
     transform: translateY(0);
-  }
-
-  i {
-    font-size: var(--font-body);
   }
 }
 

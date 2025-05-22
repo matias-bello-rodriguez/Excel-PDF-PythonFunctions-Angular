@@ -1,6 +1,6 @@
-<div class="page-header">
-  <h1 class="page-title">Gestión de Cubicaciones</h1>  <div class="tooltip-container">
-    <button class="btn-success" aria-label="Agregar nueva cubicación" (click)="nuevaCubicacion()">
+<div class="page-header">  <h1 class="page-title">Gestión de Cubicaciones</h1>  
+  <div class="tooltip-container">
+    <button class="btn-add" aria-label="Agregar nueva cubicación" (click)="nuevaCubicacion()">
       <i class="fas fa-plus" aria-hidden="true"></i>
       Agregar cubicación
     </button>
@@ -15,11 +15,11 @@
         <i class="fas fa-search search-icon" aria-hidden="true"></i>
       </div>
       <div class="table-view-options">
-        <button class="btn-icon" title="Vista compacta" aria-label="Cambiar a vista compacta">
-          <i class="fas fa-list" aria-hidden="true"></i>
+        <button class="btn-icon" (click)="toggleFilterMenu()" title="Filtros" aria-label="Abrir menú de filtros">
+          <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
         </button>
-        <button class="btn-icon active" title="Vista normal" aria-label="Cambiar a vista normal">
-          <i class="fas fa-th-list" aria-hidden="true"></i>
+        <button class="btn-icon" (click)="toggleColumnMenu()" title="Columnas" aria-label="Seleccionar columnas visibles">
+          <i class="fas fa-columns" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -70,14 +70,24 @@
               </ng-container>
               <ng-container *ngSwitchCase="'monto'">{{ item.monto }}</ng-container>
               <ng-container *ngSwitchCase="'actions'">
-                <div class="actions-container">
-              <div class="tooltip-container">                <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
+                <div class="actions-container">              <div class="tooltip-container">
+                <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
                   <i class="fas fa-edit" aria-hidden="true"></i>
+                  <span class="tooltip">Editar</span>
                 </button>
               </div>
               <div class="tooltip-container">
                 <button class="action-btn delete" [attr.aria-label]="'Eliminar cubicación ' + item.id" (click)="eliminar(item.id)">
                   <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  <span class="tooltip">Eliminar</span>
+                </button>
+              </div>
+              <div class="tooltip-container">
+                <button class="action-btn pin" [attr.aria-label]="'Fijar cubicación ' + item.id" 
+                        (click)="togglePin(item.id)"
+                        [class.pinned]="isPinned(item.id)">
+                  <i class="fas fa-thumbtack" aria-hidden="true"></i>
+                  <span class="tooltip">{{ isPinned(item.id) ? 'Desfijar' : 'Fijar' }}</span>
                 </button>
               </div>
             </div>
@@ -118,6 +128,48 @@
       <button class="pagination-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage === getTotalPages()" aria-label="Página siguiente">
         <i class="fas fa-chevron-right" aria-hidden="true"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- Menú de Filtros -->
+  <div *ngIf="showFilterMenu" class="dropdown-menu filter-menu">
+    <div class="dropdown-header">
+      <h3>Filtros</h3>
+      <button class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+    <div class="dropdown-content">
+      <div class="filter-group">
+        <label>Estado</label>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" [checked]="filters.estado.activo" (change)="updateFilter('estado', 'activo')">
+            Activo
+          </label>
+          <label>
+            <input type="checkbox" [checked]="filters.estado.inactivo" (change)="updateFilter('estado', 'inactivo')">
+            Inactivo
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menú de Columnas -->
+  <div *ngIf="showColumnMenu" class="dropdown-menu column-menu">
+    <div class="dropdown-header">
+      <h3>Columnas visibles</h3>
+      <button class="btn-link" (click)="resetColumns()">Restaurar</button>
+    </div>
+    <div class="dropdown-content">
+      <div class="checkbox-group">
+        <label *ngFor="let col of availableColumns">
+          <input type="checkbox" 
+                 [checked]="isColumnVisible(col.id)"
+                 (change)="toggleColumn(col.id)"
+                 [disabled]="col.id === 'id'">
+          {{ col.label }}
+        </label>
+      </div>
     </div>
   </div>
 </div>

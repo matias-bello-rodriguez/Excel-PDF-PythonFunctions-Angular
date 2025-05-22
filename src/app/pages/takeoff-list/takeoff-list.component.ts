@@ -61,6 +61,32 @@ export class TakeoffListComponent {  columnOrder: string[] = ['id', 'nombre', 'd
     }
     // ... más datos si es necesario
   ];
+  originalCubicaciones = [...this.cubicaciones]; // Guardar copia original para el filtrado
+  showFilterMenu = false;
+  showColumnMenu = false;
+  hasActiveFilters = false;
+
+  filters = {
+    estado: {
+      activo: false,
+      inactivo: false
+    }
+  };
+
+  availableColumns = [
+    { id: 'id', label: 'ID' },
+    { id: 'nombre', label: 'Nombre' },
+    { id: 'descripcion', label: 'Descripción' },
+    { id: 'fecha', label: 'Fecha' },
+    { id: 'estado', label: 'Estado' },
+    { id: 'monto', label: 'Monto' },
+    { id: 'actions', label: 'Acciones' }
+  ];
+
+  defaultColumnOrder = [...this.columnOrder];
+
+  pinnedItems: Set<string> = new Set();
+
   constructor() {
     this.totalItems = this.cubicaciones.length; // Asignar el total de items
   }
@@ -190,5 +216,85 @@ export class TakeoffListComponent {  columnOrder: string[] = ['id', 'nombre', 'd
     document.querySelectorAll('th.drag-over').forEach(th => {
       th.classList.remove('drag-over');
     });
+  }
+
+  toggleFilterMenu() {
+    this.showFilterMenu = !this.showFilterMenu;
+    this.showColumnMenu = false;
+  }
+
+  toggleColumnMenu() {
+    this.showColumnMenu = !this.showColumnMenu;
+    this.showFilterMenu = false;
+  }
+
+  clearFilters() {
+    this.filters = {
+      estado: {
+        activo: false,
+        inactivo: false
+      }
+    };
+    this.hasActiveFilters = false;
+    this.applyFilters();
+  }
+
+  updateFilter(field: string, value: string) {
+    if (field === 'estado') {
+      this.filters.estado[value as 'activo' | 'inactivo'] = !this.filters.estado[value as 'activo' | 'inactivo'];
+      this.hasActiveFilters = this.filters.estado.activo || this.filters.estado.inactivo;
+      this.applyFilters();
+    }
+  }
+
+  togglePin(id: string) {
+    if (this.pinnedItems.has(id)) {
+      this.pinnedItems.delete(id);
+    } else {
+      this.pinnedItems.add(id);
+    }
+    this.applyFilters(); // Reaplicar filtros considerando los elementos fijados
+  }
+
+  isPinned(id: string): boolean {
+    return this.pinnedItems.has(id);
+  }
+
+  applyFilters() {
+    if (!this.hasActiveFilters) {
+      this.cubicaciones = [...this.originalCubicaciones];
+      return;
+    }
+
+    this.cubicaciones = this.originalCubicaciones.filter(item => {
+      // Los elementos fijados siempre se muestran
+      if (this.pinnedItems.has(item.id)) return true;
+
+      // Aplicar filtros normalmente para elementos no fijados
+      if (this.filters.estado.activo && item.estado === 'activo') return true;
+      if (this.filters.estado.inactivo && item.estado === 'inactivo') return true;
+      return !this.filters.estado.activo && !this.filters.estado.inactivo;
+    });
+  }
+
+  isColumnVisible(columnId: string): boolean {
+    return this.columnOrder.includes(columnId);
+  }
+
+  toggleColumn(columnId: string) {
+    if (columnId === 'id') return; // No permitir ocultar la columna ID
+    
+    const index = this.columnOrder.indexOf(columnId);
+    if (index === -1) {
+      // Agregar columna en su posición original
+      const originalIndex = this.defaultColumnOrder.indexOf(columnId);
+      this.columnOrder.splice(originalIndex, 0, columnId);
+    } else {
+      this.columnOrder = this.columnOrder.filter(col => col !== columnId);
+    }
+  }
+
+  resetColumns() {
+    this.columnOrder = [...this.defaultColumnOrder];
   }
 }
