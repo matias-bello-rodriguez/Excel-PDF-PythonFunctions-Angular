@@ -14,13 +14,18 @@
         <input type="text" class="search-input" placeholder="Buscar cubicaciones..." aria-label="Buscar cubicaciones">
         <i class="fas fa-search search-icon" aria-hidden="true"></i>
       </div>
-      <div class="table-view-options">
-        <button class="btn-icon" (click)="toggleFilterMenu()" title="Filtros" aria-label="Abrir menú de filtros">
-          <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
-        </button>
-        <button class="btn-icon" (click)="toggleColumnMenu()" title="Columnas" aria-label="Seleccionar columnas visibles">
-          <i class="fas fa-columns" aria-hidden="true"></i>
-        </button>
+      <div class="table-view-options">        <div class="tooltip-container">
+          <button class="btn-icon" (click)="toggleFilterMenu()" aria-label="Abrir menú de filtros">
+            <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
+            <span class="tooltip">Filtrar datos</span>
+          </button>
+        </div>
+        <div class="tooltip-container">
+          <button class="btn-icon" (click)="toggleColumnMenu()" aria-label="Seleccionar columnas visibles">
+            <i class="fas fa-columns" aria-hidden="true"></i>
+            <span class="tooltip">Personalizar columnas</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

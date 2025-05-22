@@ -114,8 +114,13 @@ export class TakeoffListComponent {  columnOrder: string[] = ['id', 'nombre', 'd
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
-    // Lógica para ordenar los datos de this.cubicaciones
-    this.cubicaciones.sort((a, b) => {
+    
+    // Separar elementos fijados y no fijados
+    const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
+    const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
+    
+    // Ordenar solo los elementos no fijados
+    unpinnedItems.sort((a, b) => {
       const valA = a[column];
       const valB = b[column];
       let comparison = 0;
@@ -126,6 +131,9 @@ export class TakeoffListComponent {  columnOrder: string[] = ['id', 'nombre', 'd
       }
       return this.sortDirection === 'asc' ? comparison : comparison * -1;
     });
+
+    // Combinar manteniendo el orden de los fijados
+    this.cubicaciones = [...pinnedItems, ...unpinnedItems];
   }
 
   getMaxDisplayed(): number {

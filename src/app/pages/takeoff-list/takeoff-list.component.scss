@@ -792,6 +792,22 @@ body {
       }
     }
   }
+
+  tbody {
+    tr {
+      &:nth-child(odd) {
+        background-color: var(--carbon-gray-10); // Gris claro para filas impares
+      }
+      
+      &:nth-child(even) {
+        background-color: white; // Blanco para filas pares
+      }
+
+      &:hover {
+        background-color: rgba(15, 98, 254, 0.05); // Un azul muy suave al hacer hover
+      }
+    }
+  }
 }
 
 .data-table th,
@@ -873,14 +889,18 @@ body {
     color: var(--carbon-danger);
   }
 
+  &:not(.delete, .pin):hover {
+    color: var(--carbon-primary); // Color azul de Carbon Design System
+  }
+
   &.pin {
     &.pinned {
-      color: #F0AD4E;
+      color: #F0AD4E; // Color naranja cuando está fijado
       background-color: rgba(240, 173, 78, 0.1);
     }
 
     &:hover {
-      color: #FFC107;
+      color: #FFC107; // Color amarillo en hover
     }
   }
 }
@@ -1097,9 +1117,9 @@ body {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.8); // Fondo negro con opacidad
     color: white;
-    font-size: 12px;
+    font-size: 12px; // Tamaño de fuente consistente
     padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
