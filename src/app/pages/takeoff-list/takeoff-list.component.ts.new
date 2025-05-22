@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './takeoff-list.component.html',
   styleUrl: './takeoff-list.component.scss'
 })
-export class TakeoffListComponent implements OnInit {
+export class TakeoffListComponent {
   // Propiedades de columnas y orden
   columnOrder: string[] = ['id', 'nombre', 'descripcion', 'fecha', 'estado', 'monto', 'actions'];
   defaultColumnOrder: string[] = [...this.columnOrder];
@@ -100,11 +100,9 @@ export class TakeoffListComponent implements OnInit {
     }
   ];
 
-  originalData: any[] = [];
-  data: any[] = [];
+  originalCubicaciones = [...this.cubicaciones];
   showFilterMenu = false;
   showColumnMenu = false;
-  originalCubicaciones = [...this.cubicaciones];
   hasActiveFilters = false;
   pinnedItems: Set<string> = new Set();
 
@@ -112,11 +110,6 @@ export class TakeoffListComponent implements OnInit {
     this.totalItems = this.cubicaciones.length;
     this.initializeFilters();
     this.updateUniqueValues();
-  }
-
-  ngOnInit() {
-    // Guardar una copia de los datos originales
-    this.originalData = [...this.data];
   }
 
   getColumnLabel(colId: string): string {
@@ -154,50 +147,17 @@ export class TakeoffListComponent implements OnInit {
     this.showFilterMenu = false;
   }
 
-  closeFilterMenu(): void {
-    this.showFilterMenu = false;
-  }
-
-  clearFilters(): void {
-    // Limpiar valores manteniendo la estructura
-    Object.keys(this.filters).forEach(column => {
-      if (this.filters[column]) {
-        this.filters[column].value = '';
-        if (this.columnTypes[column] === 'date' || this.columnTypes[column] === 'number') {
-          this.filters[column].from = null;
-          this.filters[column].to = null;
-        }
-      }
-    });
-
-    this.hasActiveFilters = false;
-    this.cubicaciones = [...this.originalCubicaciones];
-    
-    // Mantener los elementos fijados al principio después de limpiar
-    const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
-    this.cubicaciones = [...pinnedItems, ...unpinnedItems];
-  }
-
   applyFilters() {
-    // Separar elementos fijados y no fijados
-    const pinnedItems = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinnedItems = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
-
-    // Aplicar filtros solo a los elementos no fijados
-    const filteredUnpinnedItems = unpinnedItems.filter(item => {
+    this.cubicaciones = this.originalCubicaciones.filter(item => {
       return Object.entries(this.filters).every(([column, filter]) => {
         if (column === 'actions') return true;
         
-        // Filtros de texto
         if (filter.type === 'text' && filter.value) {
           return item[column].toLowerCase().includes(filter.value.toLowerCase());
         }
         
-        // Filtros de fecha
         if (filter.type === 'date') {
-          const [day, month, year] = item[column].split('/');
-          const itemDate = new Date(`${year}-${month}-${day}`);
+          const itemDate = new Date(item[column].split('/').reverse().join('-'));
           const fromDate = filter.from ? new Date(filter.from as string) : null;
           const toDate = filter.to ? new Date(filter.to as string) : null;
           
@@ -210,7 +170,6 @@ export class TakeoffListComponent implements OnInit {
           }
         }
         
-        // Filtros numéricos
         if (filter.type === 'number') {
           const value = parseFloat(item[column].replace(/[^0-9.-]+/g, ''));
           const fromValue = filter.from ? parseFloat(filter.from as string) : null;
@@ -229,15 +188,10 @@ export class TakeoffListComponent implements OnInit {
       });
     });
 
-    // Combinar elementos fijados con los filtrados
-    this.cubicaciones = [...pinnedItems, ...filteredUnpinnedItems];
-
-    // Actualizar estado de los filtros
     this.hasActiveFilters = Object.values(this.filters).some(filter => 
       filter.value || filter.from || filter.to
     );
     
-    // Cerrar el menú de filtros
     this.showFilterMenu = false;
   }
 

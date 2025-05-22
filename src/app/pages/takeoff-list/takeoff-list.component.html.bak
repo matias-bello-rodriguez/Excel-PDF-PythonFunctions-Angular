@@ -2,7 +2,7 @@
   <div class="tooltip-container">
     <button class="btn-add" aria-label="Agregar nueva cubicación" (click)="nuevaCubicacion()">
       <i class="fas fa-plus" aria-hidden="true"></i>
-      AGREGAR CUBICACIÓN
+      Agregar cubicación
     </button>
   </div>
 </div>
@@ -14,8 +14,7 @@
         <input type="text" class="search-input" placeholder="Buscar cubicaciones..." aria-label="Buscar cubicaciones">
         <i class="fas fa-search search-icon" aria-hidden="true"></i>
       </div>
-      <div class="table-view-options">        
-        <div class="tooltip-container">
+      <div class="table-view-options">        <div class="tooltip-container">
           <button class="btn-icon" (click)="toggleFilterMenu()" aria-label="Abrir menú de filtros">
             <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
             <span class="tooltip">Filtrar datos</span>
@@ -31,8 +30,7 @@
     </div>
   </div>
 
-  <div class="table-container">    
-    <table class="data-table" summary="Listado de cubicaciones con detalles" aria-label="Cubicaciones">
+  <div class="table-container">    <table class="data-table" summary="Listado de cubicaciones con detalles" aria-label="Cubicaciones">
       <thead>
         <tr>
           <th *ngFor="let colId of columnOrder" 
@@ -49,15 +47,20 @@
               [class.sorted]="sortColumn === colId" 
               [attr.aria-sort]="sortColumn === colId ? sortDirection : null">
             <div class="th-content">
-              <span>{{ getColumnLabel(colId) }}</span>
+              <span>{{ colId === 'actions' ? 'Acciones' : 
+                      colId === 'id' ? 'ID' :
+                      colId === 'nombre' ? 'Nombre' :
+                      colId === 'descripcion' ? 'Descripción' :
+                      colId === 'fecha' ? 'Fecha' :
+                      colId === 'estado' ? 'Estado' :
+                      colId === 'monto' ? 'Monto' : colId }}</span>
               <i *ngIf="colId !== 'actions'" class="fas" [class]="sortColumn === colId ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
               <i *ngIf="colId !== 'id' && colId !== 'actions'" class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
             </div>
           </th>
         </tr>
       </thead>
-      <tbody>
-        <tr *ngFor="let item of cubicaciones; let i = index" [attr.data-index]="i" tabindex="0">
+      <tbody>        <tr *ngFor="let item of cubicaciones; let i = index" [attr.data-index]="i" tabindex="0">
           <td *ngFor="let colId of columnOrder" [ngClass]="{'actions-cell': colId === 'actions'}">
             <ng-container [ngSwitch]="colId">
               <ng-container *ngSwitchCase="'id'">{{ item.id }}</ng-container>
@@ -72,34 +75,33 @@
               </ng-container>
               <ng-container *ngSwitchCase="'monto'">{{ item.monto }}</ng-container>
               <ng-container *ngSwitchCase="'actions'">
-                <div class="actions-container">
-                  <div class="tooltip-container">
-                    <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
-                      <i class="fas fa-edit" aria-hidden="true"></i>
-                      <span class="tooltip">Editar</span>
-                    </button>
-                  </div>
-                  <div class="tooltip-container">
-                    <button class="action-btn delete" [attr.aria-label]="'Eliminar cubicación ' + item.id" (click)="eliminar(item.id)">
-                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                      <span class="tooltip">Eliminar</span>
-                    </button>
-                  </div>
-                  <div class="tooltip-container">
-                    <button class="action-btn pin" [attr.aria-label]="'Fijar cubicación ' + item.id" 
-                            (click)="togglePin(item.id)"
-                            [class.pinned]="isPinned(item.id)">
-                      <i class="fas fa-thumbtack" aria-hidden="true"></i>
-                      <span class="tooltip">{{ isPinned(item.id) ? 'Desfijar' : 'Fijar' }}</span>
-                    </button>
-                  </div>
-                </div>
-              </ng-container>
-            </ng-container>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+                <div class="actions-container">              <div class="tooltip-container">
+                <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
+                  <i class="fas fa-edit" aria-hidden="true"></i>
+                  <span class="tooltip">Editar</span>
+                </button>
+              </div>
+              <div class="tooltip-container">
+                <button class="action-btn delete" [attr.aria-label]="'Eliminar cubicación ' + item.id" (click)="eliminar(item.id)">
+                  <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  <span class="tooltip">Eliminar</span>
+                </button>
+              </div>
+              <div class="tooltip-container">
+                <button class="action-btn pin" [attr.aria-label]="'Fijar cubicación ' + item.id" 
+                        (click)="togglePin(item.id)"
+                        [class.pinned]="isPinned(item.id)">
+                  <i class="fas fa-thumbtack" aria-hidden="true"></i>
+                  <span class="tooltip">{{ isPinned(item.id) ? 'Desfijar' : 'Fijar' }}</span>
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+      </td>
+    </tr>
+  </tbody>
+</table>
   </div>
 
   <div class="pagination">
@@ -133,24 +135,18 @@
       </button>
     </div>
   </div>
-
   <!-- Dialog de Filtros -->
-  <div *ngIf="showFilterMenu" class="dialog-overlay" [ngClass]="showFilterMenu ? 'dialog-overlay show' : 'dialog-overlay'">
-    <div class="dialog filter-dialog">      <div class="dialog-header">
-        <div class="header-title">
-          <i class="fas fa-filter" aria-hidden="true"></i>
-          <h2>Filtros</h2>
-        </div>
-        <button class="close-btn" (click)="closeFilterMenu()" aria-label="Cerrar diálogo de filtros">
+  <div *ngIf="showFilterMenu" class="dialog-overlay" (click)="toggleFilterMenu()">
+    <div class="dialog filter-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h2>Filtros</h2>
+        <button class="btn-icon close-btn" (click)="toggleFilterMenu()" aria-label="Cerrar diálogo">
           <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cerrar</span>
         </button>
-      </div>
-      
-      <div class="dialog-content">
+      </div>      <div class="dialog-content">
         <div class="filter-group" *ngFor="let col of columnOrder">
           <ng-container *ngIf="col !== 'actions'">
-            <label [for]="col + '-filter'">{{ getColumnLabel(col) }}</label>
+            <label [for]="col + '-filter'">{{ availableColumns.find(c => c.id === col)?.label }}</label>
             
             <!-- Filtros de texto -->
             <ng-container *ngIf="columnTypes[col] === 'text'">
@@ -160,53 +156,41 @@
                   {{ value }}
                 </option>
               </select>
-            </ng-container>            <!-- Filtros de fecha -->
+            </ng-container>
+
+            <!-- Filtros de fecha -->
             <ng-container *ngIf="columnTypes[col] === 'date'">
               <div class="date-range">
-                <div class="range-input">
-                  <label>Desde</label>
-                  <input type="date" 
-                         [(ngModel)]="filters[col].from"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col)">
-                </div>
-                <div class="range-input">
-                  <label>Hasta</label>
-                  <input type="date" 
-                         [(ngModel)]="filters[col].to"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col)">
-                </div>
+                <input type="date" 
+                       [(ngModel)]="filters[col].from"
+                       [placeholder]="'Desde'"
+                       [attr.aria-label]="'Desde ' + availableColumns.find(c => c.id === col)?.label">
+                <input type="date" 
+                       [(ngModel)]="filters[col].to"
+                       [placeholder]="'Hasta'"
+                       [attr.aria-label]="'Hasta ' + availableColumns.find(c => c.id === col)?.label">
               </div>
             </ng-container>
 
             <!-- Filtros numéricos -->
             <ng-container *ngIf="columnTypes[col] === 'number'">
               <div class="amount-range">
-                <div class="range-input">
-                  <label>Desde</label>
-                  <input type="number" 
-                         [(ngModel)]="filters[col].from"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col)">
-                </div>
-                <div class="range-input">
-                  <label>Hasta</label>
-                  <input type="number" 
-                         [(ngModel)]="filters[col].to"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col)">
-                </div>
+                <input type="number" 
+                       [(ngModel)]="filters[col].from"
+                       [placeholder]="'Desde'"
+                       [attr.aria-label]="'Desde ' + availableColumns.find(c => c.id === col)?.label">
+                <input type="number" 
+                       [(ngModel)]="filters[col].to"
+                       [placeholder]="'Hasta'"
+                       [attr.aria-label]="'Hasta ' + availableColumns.find(c => c.id === col)?.label">
               </div>
             </ng-container>
           </ng-container>
         </div>
       </div>
-
-      <div class="dialog-footer">      <button class="bx--btn bx--btn--secondary" (click)="clearFilters()">
-        <i class="fas fa-eraser"></i>
-        Limpiar filtros
-      </button>
-      <button class="bx--btn bx--btn--primary" (click)="applyFilters()">
-        <i class="fas fa-filter"></i>
-        Aplicar filtros
-      </button>
+      <div class="dialog-footer">
+        <button class="btn-secondary" (click)="resetFilters()">Cancelar</button>
+        <button class="btn-primary" (click)="applyFilters()">Aplicar Filtros</button>
       </div>
     </div>
   </div>
@@ -219,12 +203,12 @@
     </div>
     <div class="dropdown-content">
       <div class="checkbox-group">
-        <label *ngFor="let col of columnOrder">
+        <label *ngFor="let col of availableColumns">
           <input type="checkbox" 
-                 [checked]="isColumnVisible(col)"
-                 (change)="toggleColumn(col)"
-                 [disabled]="col === 'id'">
-          {{ getColumnLabel(col) }}
+                 [checked]="isColumnVisible(col.id)"
+                 (change)="toggleColumn(col.id)"
+                 [disabled]="col.id === 'id'">
+          {{ col.label }}
         </label>
       </div>
     </div>
