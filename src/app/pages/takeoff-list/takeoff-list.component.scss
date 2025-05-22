@@ -601,8 +601,12 @@ body {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: var(--spacing-07);
+  
+  .tooltip-container {
+    margin-top: var(--spacing-06);
+  }
 }
 
 .page-title {
@@ -623,7 +627,7 @@ body {
   left: 0;
   width: 48px; /* Línea más visible */
   height: 3px; /* Mayor grosor para mejor visibilidad */
-  background-color: var(--kinetta-primary);
+  background-color: var(--carbon-primary);
 }
 
 /* Tarjeta contenedora */
@@ -751,6 +755,44 @@ body {
   background-color: var(--background-ui);
   font-size: var(--font-label); /* Tamaño pequeño para contenido denso */
   line-height: 1.4;
+
+  th {
+    background-color: var(--carbon-gray-10);
+    font-weight: var(--font-weight-bold); /* Más negrita para los encabezados */
+    color: var(--text-primary);
+    user-select: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 17px;
+    cursor: move; /* Indicador de que se puede arrastrar */
+  }
+
+  th:first-child {
+    cursor: default; /* Primera columna no arrastrable */
+  }
+
+  td {
+    font-size: 16px;
+  }
+
+  thead tr {
+    th.dragging {
+      opacity: 0.5;
+      background-color: var(--carbon-gray-20);
+    }
+
+    th.drag-over {
+      position: relative;
+      &:before {
+        content: '';
+        position: absolute;
+        left: -2px;
+        top: 25%;
+        height: 50%;
+        border-left: 2px solid var(--carbon-primary);
+      }
+    }
+  }
 }
 
 .data-table th,
@@ -763,43 +805,13 @@ body {
 
 .data-table th {
   background-color: var(--carbon-gray-10);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   user-select: none;
   white-space: nowrap;
-}
-
-.data-table tbody tr {
-  transition: background-color 0.15s ease;
-}
-
-.data-table tbody tr:hover {
-  background-color: rgba(15, 98, 254, 0.05);
-}
-
-.data-table tbody tr:focus {
-  outline: none;
-  background-color: rgba(15, 98, 254, 0.05);
-}
-
-/* Columnas y cabeceras ordenables */
-.sortable {
-  cursor: pointer;
-}
-
-.th-content {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-03);
-}
-
-.sortable:hover {
-  background-color: var(--carbon-gray-20);
-}
-
-.sortable.sorted {
-  background-color: rgba(15, 98, 254, 0.1);
-  color: var(--carbon-primary);
+  text-transform: uppercase;
+  font-size: 17px;
+  cursor: move;
 }
 
 /* Estilos para celdas de estado */
@@ -815,13 +827,13 @@ body {
 }
 
 .status-activo {
-  background-color: rgba(25, 128, 56, 0.1); /* Color verde sutilmente */
+  background-color: rgba(25, 128, 56, 0.1);
   color: var(--carbon-success);
 }
 
 .status-inactivo {
-  background-color: rgba(218, 30, 40, 0.1); /* Color rojo sutilmente */
-  color: var(--carbon-danger);
+  background-color: var(--carbon-gray-10);
+  color: var(--carbon-gray-60);
 }
 
 /* Celdas de acciones */
@@ -1240,5 +1252,35 @@ a:focus,
 
 .nav-item.active {
   background-color: rgba(15, 98, 254, 0.1);
+}
+
+/* Estilos para el botón verde (success) */
+.btn-success {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  padding: var(--spacing-03) var(--spacing-05);
+  background-color: var(--carbon-success);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: darken(#198038, 8%);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  i {
+    font-size: var(--font-body);
+  }
 }
 

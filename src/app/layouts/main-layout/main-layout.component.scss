@@ -21,10 +21,8 @@
   .content-row {
     display: flex;
     min-height: calc(100vh - 4rem);
-    margin-top: 4rem;
-
-    .sidebar-col {
-      width: 280px; // Aumentado el ancho del sidebar
+    margin-top: 4rem;    .sidebar-col {
+      width: 240px;
       position: fixed;
       top: 4rem;
       left: 0;
@@ -35,7 +33,7 @@
 
     .main-content {
       flex: 1;
-      margin-left: 280px;
+      margin-left: 240px;
       padding: 1.5rem;
       background-color: var(--gray-10);
       min-height: calc(100vh - 4rem);
@@ -43,10 +41,10 @@
 
       .content-container {
         max-width: 1200px;
-        margin: 0 auto;
-
-        .page-header {
+        margin: 0 auto;        .page-header {
           margin-bottom: 1.5rem;
+          border-bottom: 1px solid var(--gray-20);
+          padding-bottom: 1rem;
 
           h1 {
             font-size: 1.5rem;

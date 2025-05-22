@@ -6,26 +6,21 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-takeoff-list',
-  standalone: true, // Asegúrate de que sea standalone si no está declarado en un módulo
+  standalone: true,
   imports: [
     CommonModule,
     RouterModule,
     FontAwesomeModule
-  ], // Importa CommonModule para directivas como *ngFor
+  ],
   templateUrl: './takeoff-list.component.html',
   styleUrl: './takeoff-list.component.scss'
 })
-export class TakeoffListComponent {
-  // Propiedades para controlar estados de UI (si son específicas de esta vista)
-  // isSidebarCollapsed = false; // Ejemplo, ajustar según necesidad
-  // isProfileMenuOpen = false;
-  // isNotificationMenuOpen = false;
-
-  // Referencia para ordenamiento de tablas
+export class TakeoffListComponent {  columnOrder: string[] = ['id', 'nombre', 'descripcion', 'fecha', 'estado', 'monto', 'actions'];
+  draggedColumn: string | null = null;
+  
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
-
-  // Propiedades para paginación
+  
   currentPage = 1;
   itemsPerPage = 10;
   totalItems = 0; // Inicializar con 0 o cargar desde un servicio
@@ -66,7 +61,6 @@ export class TakeoffListComponent {
     }
     // ... más datos si es necesario
   ];
-
   constructor() {
     this.totalItems = this.cubicaciones.length; // Asignar el total de items
   }
@@ -145,5 +139,56 @@ export class TakeoffListComponent {
       pages.push(i);
     }
     return pages;
+  }
+  onDragStart(event: DragEvent, columnId: string) {
+    if (columnId === 'id') return;
+    this.draggedColumn = columnId;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', columnId);
+    }
+  }
+
+  onDragOver(event: DragEvent, columnId: string) {
+    if (columnId === 'id' || !this.draggedColumn) return;
+    event.preventDefault();
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.add('drag-over');
+    }
+  }
+
+  onDragLeave(event: DragEvent) {
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.remove('drag-over');
+    }
+  }
+
+  onDrop(event: DragEvent, targetColumnId: string) {
+    event.preventDefault();
+    if (targetColumnId === 'id' || !this.draggedColumn) return;
+
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.remove('drag-over');
+    }
+
+    const fromIndex = this.columnOrder.indexOf(this.draggedColumn);
+    const toIndex = this.columnOrder.indexOf(targetColumnId);
+
+    if (fromIndex !== -1 && toIndex !== -1) {
+      this.columnOrder = Array.from(this.columnOrder);
+      this.columnOrder.splice(fromIndex, 1);
+      this.columnOrder.splice(toIndex, 0, this.draggedColumn);
+    }
+
+    this.draggedColumn = null;
+  }
+
+  onDragEnd() {
+    this.draggedColumn = null;
+    document.querySelectorAll('th.drag-over').forEach(th => {
+      th.classList.remove('drag-over');
+    });
   }
 }
