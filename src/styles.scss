@@ -1,1 +1,73 @@
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+  /* Colores principales */
+  --primary-color: #0F62FE;
+  --primary-hover: #0353E9;
+  --success-color: #198038;
+  --danger-color: #DA1E28;
+  
+  /* Escala de grises */
+  --gray-10: #F4F4F4;
+  --gray-20: #E0E0E0;
+  --gray-30: #C6C6C6;
+  --gray-40: #A8A8A8;
+  --gray-50: #8D8D8D;
+  --gray-60: #6F6F6F;
+  --gray-70: #525252;
+  --gray-80: #393939;
+  --gray-90: #262626;
+  --gray-100: #161616;
+
+  /* Espaciado */
+  --spacing-01: 0.125rem;
+  --spacing-02: 0.25rem;
+  --spacing-03: 0.5rem;
+  --spacing-04: 0.75rem;
+  --spacing-05: 1rem;
+  --spacing-06: 1.5rem;
+  --spacing-07: 2rem;
+  --spacing-08: 2.5rem;
+  --spacing-09: 3rem;
+}
+
+/* Estilos base */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  background-color: var(--gray-10);
+  color: var(--gray-100);
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+/* Layout principal */
+.app-container {
+  display: flex;
+  min-height: calc(100vh - 62px); /* Ajustar según la altura del header */
+}
+
+/* Importar Font Awesome */
+@import '@fortawesome/fontawesome-free/scss/fontawesome';
+@import '@fortawesome/fontawesome-free/scss/regular';
+@import '@fortawesome/fontawesome-free/scss/solid';
+@import '@fortawesome/fontawesome-free/scss/brands';
+
+/* Responsive */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 72px;
+  }
+  
+  .nav-item {
+    span, .nav-title {
+      display: none;
+    }
+    justify-content: center;
+    padding: 0.75rem;
+  }
+}

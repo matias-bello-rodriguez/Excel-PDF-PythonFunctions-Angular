@@ -1,0 +1,138 @@
+<div class="page-header">
+  <h1 class="page-title">Gestión de Cubicaciones</h1>
+  <div class="tooltip-container">
+    <button class="btn-primary" aria-label="Crear nueva cubicación" (click)="nuevaCubicacion()">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+      Nueva Cubicación
+    </button>
+    <span class="tooltip">Crear nuevo registro</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-toolbar">
+    <div class="table-actions">
+      <div class="search-container">
+        <input type="text" class="search-input" placeholder="Buscar cubicaciones..." aria-label="Buscar cubicaciones">
+        <i class="fas fa-search search-icon" aria-hidden="true"></i>
+      </div>
+      <div class="table-view-options">
+        <button class="btn-icon" title="Vista compacta" aria-label="Cambiar a vista compacta">
+          <i class="fas fa-list" aria-hidden="true"></i>
+        </button>
+        <button class="btn-icon active" title="Vista normal" aria-label="Cambiar a vista normal">
+          <i class="fas fa-th-list" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="data-table" summary="Listado de cubicaciones con detalles" aria-label="Cubicaciones">
+      <thead>
+        <tr>
+          <th scope="col" class="sortable" (click)="sortTable('id')" [class.sorted]="sortColumn === 'id'" [attr.aria-sort]="sortColumn === 'id' ? sortDirection : null">
+            <div class="th-content">
+              <span>ID</span>
+              <i class="fas" [class]="sortColumn === 'id' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="sortable" (click)="sortTable('nombre')" [class.sorted]="sortColumn === 'nombre'" [attr.aria-sort]="sortColumn === 'nombre' ? sortDirection : null">
+            <div class="th-content">
+              <span>Nombre</span>
+              <i class="fas" [class]="sortColumn === 'nombre' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="sortable" (click)="sortTable('descripcion')" [class.sorted]="sortColumn === 'descripcion'" [attr.aria-sort]="sortColumn === 'descripcion' ? sortDirection : null">
+            <div class="th-content">
+              <span>Descripción</span>
+              <i class="fas" [class]="sortColumn === 'descripcion' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="sortable" (click)="sortTable('fecha')" [class.sorted]="sortColumn === 'fecha'" [attr.aria-sort]="sortColumn === 'fecha' ? sortDirection : null">
+            <div class="th-content">
+              <span>Fecha</span>
+              <i class="fas" [class]="sortColumn === 'fecha' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="sortable" (click)="sortTable('estado')" [class.sorted]="sortColumn === 'estado'" [attr.aria-sort]="sortColumn === 'estado' ? sortDirection : null">
+            <div class="th-content">
+              <span>Estado</span>
+              <i class="fas" [class]="sortColumn === 'estado' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="sortable" (click)="sortTable('monto')" [class.sorted]="sortColumn === 'monto'" [attr.aria-sort]="sortColumn === 'monto' ? sortDirection : null">
+            <div class="th-content">
+              <span>Monto</span>
+              <i class="fas" [class]="sortColumn === 'monto' ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            </div>
+          </th>
+          <th scope="col" class="actions-col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of cubicaciones; let i = index" [attr.data-index]="i" tabindex="0">
+          <td>{{ item.id }}</td>
+          <td>{{ item.nombre }}</td>
+          <td>{{ item.descripcion }}</td>
+          <td>{{ item.fecha }}</td>
+          <td>
+            <span [class]="'status status-' + item.estado" [attr.aria-label]="item.estado === 'activo' ? 'Estado: Activo' : 'Estado: Inactivo'">
+              <i [class]="item.estado === 'activo' ? 'fas fa-check-circle' : 'fas fa-times-circle'" aria-hidden="true"></i>
+              {{ item.estado === 'activo' ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>{{ item.monto }}</td>
+          <td class="actions-cell">
+            <div class="actions-container">
+              <div class="tooltip-container">
+                <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
+                  <i class="fas fa-edit" aria-hidden="true"></i>
+                  <span class="tooltip">Editar</span>
+                </button>
+              </div>
+              <div class="tooltip-container">
+                <button class="action-btn delete" [attr.aria-label]="'Eliminar cubicación ' + item.id" (click)="eliminar(item.id)">
+                  <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                  <span class="tooltip">Eliminar</span>
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info">
+      <div class="page-size-control">
+        <span>Mostrar</span>
+        <div class="select-container">
+          <select (change)="onPageSizeChange($event)" [value]="itemsPerPage" aria-label="Items por página">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <i class="fas fa-chevron-down select-icon" aria-hidden="true"></i>
+        </div>
+        <span>elementos</span>
+      </div>
+      <span>{{ (currentPage - 1) * itemsPerPage + 1 }} - {{ getMaxDisplayed() }} de {{ totalItems }}</span>
+    </div>
+    <div class="page-controls">
+      <button class="pagination-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1" aria-label="Página anterior">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+      </button>
+      <ng-container *ngFor="let pageNum of getPageNumbers()">
+        <button (click)="changePage(pageNum)" [class.active]="currentPage === pageNum" [attr.aria-current]="currentPage === pageNum ? 'page' : null">
+          {{ pageNum }}
+        </button>
+      </ng-container>
+      <button class="pagination-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage === getTotalPages()" aria-label="Página siguiente">
+        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
