@@ -600,17 +600,35 @@ body {
 
 .page-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-06);
-  gap: var(--spacing-04);
+  align-items: flex-start; // Alineamos desde arriba
+  margin-bottom: var(--spacing-04);
 
   app-page-title {
     margin: 0;
+    
+    ::ng-deep {
+      .page-title-container {
+        padding: 0;
+        margin: 0;
+        
+        .page-title {
+          margin: 0;
+          padding: 0;
+          line-height: 40px; // Altura exacta del botón
+          display: flex;
+          align-items: center;
+        }
+
+        .title-underline {
+          margin-top: var(--spacing-02);
+        }
+      }
+    }
   }
 
   app-add-button {
-    margin: 0;
+    margin-top: 0; // Elimina el margen superior
   }
 }
 

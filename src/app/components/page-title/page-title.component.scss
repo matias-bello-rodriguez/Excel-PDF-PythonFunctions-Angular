@@ -1,5 +1,27 @@
 .page-title-container {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
   margin-bottom: var(--spacing-06);
+  padding: var(--spacing-03) 0; // Reducido de spacing-04 o spacing-05
+
+  .page-title {
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-heading-03);
+    font-weight: var(--font-weight-semibold);
+    line-height: 40px; // Altura del botón
+    height: 40px; // Altura fija igual al botón
+    color: var(--text-primary);
+  }
+
+  .title-underline {
+    margin-top: var(--spacing-02);
+    height: 2px;
+    width: 48px;
+    background-color: var(--carbon-primary);
+  }
 }
 
 .page-title {
