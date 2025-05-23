@@ -1,5 +1,5 @@
 .btn-add {
-  background-color: var(--carbon-primary);
+  background-color: var(--carbon-success);
   color: white;
   border: none;
   padding: var(--spacing-04) var(--spacing-06);
@@ -14,14 +14,14 @@
   letter-spacing: 0.5px;
 
   &:hover:not(:disabled) {
-    background-color: var(--carbon-primary-hover);
+    background-color: var(--carbon-success-hover, #146c31);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--carbon-primary), 0 0 0 4px rgba(15, 98, 254, 0.2);
+    box-shadow: 0 0 0 2px var(--carbon-success), 0 0 0 4px rgba(25, 128, 56, 0.2);
   }
 
   &:active:not(:disabled) {
@@ -44,11 +44,11 @@
 
 .btn-add-secondary {
   background-color: transparent;
-  color: var(--carbon-primary);
-  border: 1px solid var(--carbon-primary);
+  color: var(--carbon-success);
+  border: 1px solid var(--carbon-success);
 
   &:hover:not(:disabled) {
-    background-color: var(--carbon-primary);
+    background-color: var(--carbon-success);
     color: white;
   }
 

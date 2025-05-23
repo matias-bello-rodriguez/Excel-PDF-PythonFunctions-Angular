@@ -96,13 +96,15 @@ tr {
   }
   
   &.pinned {
-    background-color: var(--kinetta-primary-light);
+    background-color: rgba(255, 214, 0, 0.05); // Fondo amarillo muy suave para la fila fijada
+    border-left: 3px solid #FFD600; // Borde izquierdo amarillo para destacar la fila fijada
     
     &:hover {
-      background-color: rgba(139, 28, 28, 0.1);
+      background-color: rgba(255, 214, 0, 0.1); // Un poco más intenso al hacer hover
     }
   }
 }
+
 
 // Estilos para celdas de estado
 .status {
@@ -158,13 +160,12 @@ tr {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); // transición más lenta y suave
   color: var(--text-primary);
   position: relative;
   
   &:hover {
     background-color: var(--carbon-gray-10);
-    color: var(--carbon-primary);
   }
   
   &:focus {
@@ -176,14 +177,35 @@ tr {
     color: var(--carbon-danger);
   }
   
+  &.pin:hover {
+    color: var(--text-primary); // Mantiene el color original
+  }
+  
   &.pinned {
     color: var(--kinetta-primary);
-    
-    &:hover {
-      color: var(--kinetta-primary);
-      background-color: rgba(139, 28, 28, 0.1);
-    }
+    background-color: rgba(255, 214, 0, 0.2); // Fondo gris-amarillo cuando está fijado
   }
+}
+
+// Cambia el color del icono del pin a amarillo cuando está fijado
+.action-btn.pin.pinned i {
+  color: #FFD600 !important; // Amarillo fuerte
+}
+
+// Cambia el color del icono del pin a amarillo suave al hacer hover aunque no esté fijado
+.action-btn.pin:hover i {
+  color: #FFEB3B !important; // Amarillo suave
+  transition: color 0.5s cubic-bezier(0.4, 0, 0.2, 1); // transición lenta para el color del pin
+}
+
+// Asegura que el icono de pin también se vea amarillo si la fila está fijada aunque el botón no tenga la clase pinned
+tr.pinned .action-btn.pin i {
+  color: #FFD600 !important;
+}
+
+// Editar botón
+.action-btn.edit:hover {
+  color: var(--text-primary); // Mantiene el color original al hacer hover
 }
 
 .tooltip-container {

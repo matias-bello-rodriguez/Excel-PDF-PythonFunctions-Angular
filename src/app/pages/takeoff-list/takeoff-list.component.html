@@ -35,10 +35,9 @@
     <app-data-table
       [columns]="columns"
       [data]="cubicaciones"
-      [sortConfig]="sortConfig"
-      [pinnedItems]="pinnedItems"
-      [loading]="false"
       [activeFilters]="hasActiveFilters"
+      [pinnedItems]="pinnedItems"
+      [idField]="'id'"
       (rowClick)="onRowClick($event)"
       (sortChange)="onSortChange($event)"
       (editItem)="editar($event)"
@@ -62,7 +61,7 @@
     [filters]="filters"
     [uniqueValues]="uniqueValues"
     (close)="closeFilterMenu()"
-    (apply)="applyFilters()"
+    (apply)="applyFilters($event)"
     (clear)="clearFilters()">
   </app-filter-dialog>  <!-- Dialog de Columnas -->
   <app-column-dialog
@@ -70,7 +69,7 @@
     [columns]="columns"
     [defaultColumns]="defaultColumns"
     (close)="closeColumnMenu()"
-    (apply)="applyColumnChanges()"
+    (apply)="applyColumnChanges($event)"
     (reset)="cancelColumnChanges()">
   </app-column-dialog>
 </div>

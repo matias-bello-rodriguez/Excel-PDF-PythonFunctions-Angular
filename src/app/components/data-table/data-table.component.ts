@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FormsModule } from '@angular/forms';
 import { TableColumn, TableData, SortConfig } from '../../types/table.types';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import matchekbox from '@fortawesome/free-solid-svg-icons/faCheckSquare';
 
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule, FormsModule],
-  templateUrl: './data-table.component.html',
-  styleUrl: './data-table.component.scss'
+  imports: [CommonModule, FontAwesomeModule, FormsModule, MatIconModule, MatCheckboxModule],
+  styleUrl: './data-table.component.scss',
+  templateUrl: './data-table.component.html'
 })
 export class DataTableComponent {
   @Input() columns: TableColumn[] = [];
@@ -27,10 +30,14 @@ export class DataTableComponent {
   @Output() deleteItem = new EventEmitter<string>();
   @Output() pinItem = new EventEmitter<string>();
   @Output() columnReorder = new EventEmitter<TableColumn[]>();
+  @Output() columnVisibilityChange = new EventEmitter<TableColumn[]>();
 
   // Drag and drop variables
   draggedColumn: string | null = null;
   
+  showColumnMenu: boolean = false;
+  columnMenuAnchor: HTMLElement | null = null;
+
   getVisibleColumns(): TableColumn[] {
     return this.columns.filter(col => col.visible !== false);
   }
@@ -73,6 +80,40 @@ export class DataTableComponent {
   
   onRowClick(item: TableData): void {
     this.rowClick.emit(item);
+  }
+  
+  // --- Column visibility menu logic ---
+  toggleColumnMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showColumnMenu = !this.showColumnMenu;
+    this.columnMenuAnchor = event.target as HTMLElement;
+  }
+
+  closeColumnMenu(): void {
+    this.showColumnMenu = false;
+    this.columnMenuAnchor = null;
+  }
+
+  onColumnVisibilityChange(column: TableColumn): void {
+    if (column.key === 'id' || column.key === 'actions') return;
+    const idx = this.columns.findIndex(col => col.key === column.key);
+    if (idx !== -1) {
+      this.columns[idx].visible = !this.columns[idx].visible;
+      this.columnVisibilityChange.emit([...this.columns]);
+    }
+  }
+
+  isColumnFixed(column: TableColumn): boolean {
+    return column.key === 'id' || column.key === 'actions';
+  }
+
+  // Cerrar menú si se hace click fuera
+  constructor() {
+    document.addEventListener('click', () => {
+      if (this.showColumnMenu) {
+        this.closeColumnMenu();
+      }
+    });
   }
   
   // Drag and drop methods for column reordering
@@ -130,5 +171,35 @@ export class DataTableComponent {
     document.querySelectorAll('th.drag-over').forEach(el => {
       el.classList.remove('drag-over');
     });
+  }
+
+  // Devuelve true si el item pasa los filtros activos (debe implementarse según tu lógica de filtros)
+  passesFilters(item: TableData): boolean {
+    // Esta función debe sobrescribirse en el componente padre según la lógica de filtros real
+    // Aquí solo es un placeholder que siempre devuelve true
+    return true;
+  }
+
+  getFilteredData(): TableData[] {
+    // Si no hay filtros activos, mostrar todos los datos
+    if (!this.activeFilters) return this.data;
+    
+    // Obtener IDs de elementos fijados
+    const pinnedIds = Array.from(this.pinnedItems);
+    
+    // Separar los elementos fijados - estos SIEMPRE se mostrarán
+    const pinnedRows = this.data.filter(item => pinnedIds.includes(item[this.idField]));
+    
+    // Filtrar solo los elementos no fijados
+    const filteredRows = this.data.filter(item => {
+      // Si el elemento está fijado, no lo incluimos aquí (ya está en pinnedRows)
+      if (pinnedIds.includes(item[this.idField])) return false;
+      
+      // Si no está fijado, aplicamos los filtros normalmente
+      return this.passesFilters(item);
+    });
+    
+    // Devolver primero los elementos fijados y luego los filtrados
+    return [...pinnedRows, ...filteredRows];
   }
 }

@@ -36,6 +36,7 @@ export class FilterDialogComponent {
   
   applyFilters(): void {
     this.apply.emit(this.tempFilters);
+    this.close.emit(); // Cierra el diálogo al aplicar
   }
   
   clearFilters(): void {

@@ -147,7 +147,7 @@ export class TakeoffListComponent implements OnInit {
   showColumnMenu = false;
   originalCubicaciones = [...this.cubicaciones];
   hasActiveFilters = false;
-  pinnedItems: Set<string> = new Set();
+  pinnedItems: Set<string> = new Set(); // Almacena IDs de filas fijadas
   constructor() {
     this.totalItems = this.cubicaciones.length;
     this.paginationConfig.totalItems = this.totalItems;
@@ -252,7 +252,7 @@ export class TakeoffListComponent implements OnInit {
     Object.keys(this.filters).forEach(column => {
       if (this.filters[column]) {
         this.filters[column].value = '';
-        if (this.columnTypes[column] === 'date' || this.columnTypes[column] === 'number') {
+        if ((this.columnTypes[column] === 'date' || this.columnTypes[column] === 'number')) {
           this.filters[column].from = null;
           this.filters[column].to = null;
         }
@@ -260,11 +260,10 @@ export class TakeoffListComponent implements OnInit {
     });
 
     this.hasActiveFilters = false;
-    this.cubicaciones = [...this.originalCubicaciones];
     
-    // Mantener los elementos fijados al principio después de limpiar
-    const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
+    // Separar y reordenar manteniendo los elementos fijados al principio
+    const pinnedItems = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
+    const unpinnedItems = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
     this.cubicaciones = [...pinnedItems, ...unpinnedItems];
     
     // Actualizamos la paginación
@@ -279,9 +278,13 @@ export class TakeoffListComponent implements OnInit {
     if (newFilters) {
       this.filters = newFilters;
     }
+
+    // Separar los elementos fijados y no fijados
+    const pinnedItems = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
+    const unpinnedItems = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
     
-    this.hasActiveFilters = false;
-    let filteredData = [...this.originalCubicaciones];
+    // Solo aplicar filtros a los elementos no fijados
+    let filteredData = [...unpinnedItems];
     
     // Aplicar todos los filtros
     for (const col in this.filters) {
@@ -290,36 +293,30 @@ export class TakeoffListComponent implements OnInit {
       // Skip if filter is empty
       if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
       if ((filter.type === 'date' || filter.type === 'number') && 
-          filter.from === null && filter.to === null) continue;
+          filter.from == null && filter.to == null) continue;
       
       switch (filter.type) {
         case 'text':
-          filteredData = filteredData.filter(item => 
-            filter.value ? String(item[col]).toLowerCase() === filter.value.toLowerCase() : true);
-          this.hasActiveFilters = true;
+          filteredData = filteredData.filter(item =>
+            filter.value ? String(item[col]).toLowerCase().includes(filter.value.toLowerCase()) : true
+          );
           break;
           
         case 'date':
           if (filter.from || filter.to) {
-            this.hasActiveFilters = true;
             filteredData = filteredData.filter(item => {
-              // Parse date from the item (assuming format is dd/mm/yyyy)
               const [day, month, year] = item[col].split('/').map(Number);
               const itemDate = new Date(year, month - 1, day);
-
               let matchesFrom = true;
               let matchesTo = true;
-
               if (filter.from) {
                 const filterFrom = new Date(filter.from as string);
                 matchesFrom = itemDate >= filterFrom;
               }
-
               if (filter.to) {
                 const filterTo = new Date(filter.to as string);
                 matchesTo = itemDate <= filterTo;
               }
-
               return matchesFrom && matchesTo;
             });
           }
@@ -327,35 +324,32 @@ export class TakeoffListComponent implements OnInit {
           
         case 'number':
           if (filter.from !== null || filter.to !== null) {
-            this.hasActiveFilters = true;
             filteredData = filteredData.filter(item => {
-              // Parse numeric value from the item
-              const itemValue = parseFloat(item[col].replace(/[^0-9.-]+/g, ""));
-
+              const value = parseFloat(item[col].replace(/[^0-9.-]+/g, ""));
               let matchesFrom = true;
               let matchesTo = true;
-
               if (filter.from !== null) {
-                matchesFrom = itemValue >= (filter.from as number);
+                matchesFrom = value >= Number(filter.from);
               }
-
               if (filter.to !== null) {
-                matchesTo = itemValue <= (filter.to as number);
+                matchesTo = value <= Number(filter.to);
               }
-
               return matchesFrom && matchesTo;
             });
           }
           break;
       }
     }
+
+    // Combinar los elementos fijados con los filtrados
+    this.cubicaciones = [...pinnedItems, ...filteredData];
+    this.hasActiveFilters = Object.values(this.filters).some(filter => 
+      (filter.type === 'text' && filter.value) || 
+      (filter.type !== 'text' && (filter.from !== null || filter.to !== null))
+    );
     
-    this.cubicaciones = filteredData;
     this.totalItems = this.cubicaciones.length;
-    this.currentPage = 1; // Reset to first page when applying filters
-  
-    // Cerrar el menú de filtros después de aplicar
-    this.closeFilterMenu();
+    this.currentPage = 1;
   }
   nuevaCubicacion() {
     console.log('Creando nueva cubicación desde TakeoffListComponent');
@@ -443,7 +437,7 @@ export class TakeoffListComponent implements OnInit {
     this.itemsPerPage = size;
     this.paginationConfig.itemsPerPage = size;
     
-    // Ajustar la página actual si es necesario
+    // Ajustar la página currentPage si es necesario
     const totalPages = this.getTotalPages();
     if (this.currentPage > totalPages) {
       this.currentPage = totalPages || 1;
@@ -537,30 +531,10 @@ export class TakeoffListComponent implements OnInit {
   // Métodos para el componente ColumnDialog
   applyColumnChanges(newColumns?: TableColumn[]): void {
     if (newColumns) {
-      // Si recibimos nuevas columnas desde el componente ColumnDialog
+      // Actualizar columnas y orden de columnas según la selección del diálogo
       this.columns = newColumns;
-      this.columnOrder = newColumns
-        .filter(col => col.visible) // Solo incluir columnas visibles
-        .map(col => col.key);       // Extraer solo las claves
-    } else {
-      // La implementación original si no recibimos columnas desde el componente
-      const newColumnOrder: string[] = [];
-      
-      // Asegurarse de que 'id' siempre está presente y es el primer elemento
-      newColumnOrder.push('id');
-      
-      // Agregar todas las demás columnas seleccionadas
-      this.defaultColumnOrder.forEach(col => {
-        if (col !== 'id' && this.tempColumnState.has(col)) {
-          newColumnOrder.push(col);
-        }
-      });
-      
-      // Actualizar el orden de columnas
-      this.columnOrder = newColumnOrder;
+      this.columnOrder = newColumns.filter(col => col.visible !== false).map(col => col.key);
     }
-    
-    // Cerrar el diálogo
     this.closeColumnMenu();
   }
   cancelColumnChanges(): void {
@@ -589,12 +563,48 @@ export class TakeoffListComponent implements OnInit {
   }
 
   togglePin(id: string) {
-    if (this.pinnedItems.has(id)) {
-      this.pinnedItems.delete(id);
+    const wasPinned = this.pinnedItems.has(id);
+    
+    // Actualizar el conjunto de elementos fijados
+    const updated = new Set(this.pinnedItems);
+    if (wasPinned) {
+      updated.delete(id);
     } else {
-      this.pinnedItems.add(id);
+      updated.add(id);
     }
-    this.sortTable(this.sortColumn || 'id');
+    this.pinnedItems = updated;
+
+    // Recargar los datos desde originalCubicaciones
+    this.cubicaciones = [...this.originalCubicaciones];
+
+    // Si estamos desfijando, recargar y reordenar toda la tabla
+    if (wasPinned) {
+      // Primero aplicar el orden si existe
+      if (this.sortColumn) {
+        this.sortTable(this.sortColumn);
+      }
+      
+      // Luego aplicar los filtros si están activos
+      if (this.hasActiveFilters) {
+        this.applyFilters();
+      } else {
+        // Si no hay filtros, al menos ordenar los fijados primero
+        const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
+        const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
+        this.cubicaciones = [...pinnedItems, ...unpinnedItems];
+      }
+    } else {
+      // Si estamos fijando, simplemente mover el elemento al inicio con los otros fijados
+      const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
+      const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
+      this.cubicaciones = [...pinnedItems, ...unpinnedItems];
+    }
+
+    // Actualizar la paginación
+    this.totalItems = this.cubicaciones.length;
+    this.currentPage = 1;
+    this.paginationConfig.currentPage = 1;
+    this.paginationConfig.totalItems = this.totalItems;
   }
 
   isColumnVisible(columnId: string): boolean {

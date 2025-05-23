@@ -1,16 +1,18 @@
 <div *ngIf="show" class="dialog-overlay" [ngClass]="show ? 'dialog-overlay show' : 'dialog-overlay'">
   <div class="dialog column-dialog">
     <div class="dialog-header">
-      <div class="header-title">
-        <i class="fas fa-columns" aria-hidden="true"></i>
-        <h2>Columnas visibles</h2>
+      <div class="header-title centered">
+        <i class="fas fa-columns filter-icon-black" aria-hidden="true"></i>
+        <h2>Columnas</h2>
       </div>
-      <button class="close-btn" (click)="closeDialog()" aria-label="Cerrar selección de columnas">
-        <i class="fas fa-times" aria-hidden="true"></i>
-        <span>Cerrar</span>
-      </button>
+      <span class="close-btn-wrapper">
+        <button class="close-btn custom-close" type="button" (click)="closeDialog()" aria-label="Cerrar selección de columnas">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          <span>Cerrar</span>
+        </button>
+      </span>
     </div>
-    
+    <div class="divider"></div>
     <div class="dialog-content">
       <div class="checkbox-group">
         <label *ngFor="let column of tempColumns">
@@ -22,8 +24,7 @@
         </label>
       </div>
     </div>
-    
-    <div class="dialog-footer">
+    <div class="dialog-footer centered-footer">
       <button class="btn btn-secondary" (click)="resetToDefault()">
         <i class="fas fa-undo"></i>
         Columnas por defecto
