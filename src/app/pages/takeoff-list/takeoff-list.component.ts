@@ -21,6 +21,7 @@ export class TakeoffListComponent implements OnInit {
   // Propiedades de columnas y orden
   columnOrder: string[] = ['id', 'nombre', 'descripcion', 'fecha', 'estado', 'monto', 'actions'];
   defaultColumnOrder: string[] = [...this.columnOrder];
+  tempColumnState: Set<string> = new Set(); // Estado temporal para las columnas en el diálogo
   draggedColumn: string | null = null;
   
   // Propiedades de ordenamiento
@@ -325,9 +326,8 @@ export class TakeoffListComponent implements OnInit {
     }
     return pages;
   }
-
   onDragStart(event: DragEvent, columnId: string) {
-    if (columnId === 'id') return;
+    if (columnId === 'id' || columnId === 'actions') return;
     this.draggedColumn = columnId;
     if (event.dataTransfer) {
       event.dataTransfer.setData('text/plain', columnId);
@@ -335,7 +335,7 @@ export class TakeoffListComponent implements OnInit {
   }
 
   onDragOver(event: DragEvent, columnId: string) {
-    if (columnId === 'id' || !this.draggedColumn) return;
+    if (columnId === 'id' || columnId === 'actions' || !this.draggedColumn) return;
     event.preventDefault();
     const th = (event.target as HTMLElement).closest('th');
     if (th) {
@@ -349,10 +349,9 @@ export class TakeoffListComponent implements OnInit {
       th.classList.remove('drag-over');
     }
   }
-
   onDrop(event: DragEvent, targetColumnId: string) {
     event.preventDefault();
-    if (targetColumnId === 'id' || !this.draggedColumn) return;
+    if (targetColumnId === 'id' || targetColumnId === 'actions' || !this.draggedColumn) return;
 
     const th = (event.target as HTMLElement).closest('th');
     if (th) {
@@ -383,7 +382,56 @@ export class TakeoffListComponent implements OnInit {
   }
 
   toggleColumnMenu() {
+    // Al abrir el diálogo, inicializar el estado temporal con las columnas actualmente visibles
+    if (!this.showColumnMenu) {
+      this.tempColumnState = new Set(this.columnOrder);
+    }
     this.showColumnMenu = !this.showColumnMenu;
+  }
+
+  closeColumnMenu(): void {
+    this.showColumnMenu = false;
+  }
+
+  applyColumnChanges(): void {
+    // Solo actualizar columnOrder cuando el usuario confirma los cambios
+    const newColumnOrder: string[] = [];
+    
+    // Asegurarse de que 'id' siempre está presente y es el primer elemento
+    newColumnOrder.push('id');
+    
+    // Agregar todas las demás columnas seleccionadas
+    this.defaultColumnOrder.forEach(col => {
+      if (col !== 'id' && this.tempColumnState.has(col)) {
+        newColumnOrder.push(col);
+      }
+    });
+    
+    // Actualizar el orden de columnas
+    this.columnOrder = newColumnOrder;
+    
+    // Cerrar el diálogo
+    this.closeColumnMenu();
+  }
+  cancelColumnChanges(): void {
+    // Restaurar columnas por defecto
+    this.resetColumns();
+    this.closeColumnMenu();
+  }
+
+  isColumnSelected(columnId: string): boolean {
+    // Para el diálogo, usamos el estado temporal
+    return this.tempColumnState.has(columnId);
+  }
+
+  toggleColumnSelection(columnId: string): void {
+    if (columnId === 'id') return; // La columna ID siempre debe estar visible
+    
+    if (this.tempColumnState.has(columnId)) {
+      this.tempColumnState.delete(columnId);
+    } else {
+      this.tempColumnState.add(columnId);
+    }
   }
 
   isPinned(id: string): boolean {

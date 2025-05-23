@@ -33,12 +33,11 @@
   <div class="table-container">    
     <table class="data-table" summary="Listado de cubicaciones con detalles" aria-label="Cubicaciones">
       <thead>
-        <tr>
-          <th *ngFor="let colId of columnOrder" 
+        <tr>          <th *ngFor="let colId of columnOrder" 
               scope="col" 
               class="sortable" 
               [class.dragging]="draggedColumn === colId"
-              [attr.draggable]="colId !== 'id'"
+              [attr.draggable]="colId !== 'id' && colId !== 'actions'"
               (dragstart)="onDragStart($event, colId)"
               (dragover)="onDragOver($event, colId)"
               (dragleave)="onDragLeave($event)"
@@ -132,7 +131,6 @@
       </button>
     </div>
   </div>
-
   <!-- Dialog de Filtros -->
   <div *ngIf="showFilterMenu" class="dialog-overlay" [ngClass]="showFilterMenu ? 'dialog-overlay show' : 'dialog-overlay'">
     <div class="dialog filter-dialog">      <div class="dialog-header">
@@ -145,11 +143,9 @@
           <span>Cerrar</span>
         </button>
       </div>
-      
-      <div class="dialog-content">
-        <div class="filter-group" *ngFor="let col of columnOrder">
+        <div class="dialog-content">        <div class="filter-group" *ngFor="let col of columnOrder">
           <ng-container *ngIf="col !== 'actions'">
-            <label [for]="col + '-filter'">{{ getColumnLabel(col) }}</label>
+            <label [for]="col + '-filter'">{{ getColumnLabel(col).toUpperCase() }}</label>
             
             <!-- Filtros de texto -->
             <ng-container *ngIf="columnTypes[col] === 'text'">
@@ -161,36 +157,34 @@
               </select>
             </ng-container>            <!-- Filtros de fecha -->
             <ng-container *ngIf="columnTypes[col] === 'date'">
-              <div class="date-range">
-                <div class="range-input">
-                  <label>Desde</label>
+              <div class="date-range">                <div class="range-input">                  <label>Desde</label>
                   <input type="date" 
                          [(ngModel)]="filters[col].from"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col)">
+                         placeholder="día - mes - año"
+                         [attr.aria-label]="'Desde ' + getColumnLabel(col).toUpperCase()">
                 </div>
-                <div class="range-input">
-                  <label>Hasta</label>
+                <div class="range-input">                  <label>Hasta</label>
                   <input type="date" 
                          [(ngModel)]="filters[col].to"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col)">
+                         placeholder="día - mes - año"
+                         [attr.aria-label]="'Hasta ' + getColumnLabel(col).toUpperCase()">
                 </div>
               </div>
             </ng-container>
 
             <!-- Filtros numéricos -->
             <ng-container *ngIf="columnTypes[col] === 'number'">
-              <div class="amount-range">
-                <div class="range-input">
-                  <label>Desde</label>
+              <div class="amount-range">                <div class="range-input">                  <label>Desde</label>
                   <input type="number" 
                          [(ngModel)]="filters[col].from"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col)">
+                         placeholder="5000"
+                         [attr.aria-label]="'Desde ' + getColumnLabel(col).toUpperCase()">
                 </div>
-                <div class="range-input">
-                  <label>Hasta</label>
+                <div class="range-input">                  <label>Hasta</label>
                   <input type="number" 
                          [(ngModel)]="filters[col].to"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col)">
+                         placeholder="10000"
+                         [attr.aria-label]="'Hasta ' + getColumnLabel(col).toUpperCase()">
                 </div>
               </div>
             </ng-container>
@@ -207,24 +201,37 @@
         Aplicar filtros
       </button>
       </div>
-    </div>
-  </div>
-
-  <!-- Menú de Columnas -->
-  <div *ngIf="showColumnMenu" class="dropdown-menu column-menu">
-    <div class="dropdown-header">
-      <h3>Columnas visibles</h3>
-      <button class="btn-link" (click)="resetColumns()">Restaurar</button>
-    </div>
-    <div class="dropdown-content">
-      <div class="checkbox-group">
-        <label *ngFor="let col of columnOrder">
-          <input type="checkbox" 
-                 [checked]="isColumnVisible(col)"
-                 (change)="toggleColumn(col)"
-                 [disabled]="col === 'id'">
-          {{ getColumnLabel(col) }}
-        </label>
+    </div>  </div>  <!-- Dialog de Columnas -->
+  <div *ngIf="showColumnMenu" class="dialog-overlay" [ngClass]="showColumnMenu ? 'dialog-overlay show' : 'dialog-overlay'">
+    <div class="dialog column-dialog">
+      <div class="dialog-header">
+        <div class="header-title">
+          <i class="fas fa-columns" aria-hidden="true"></i>
+          <h2>Columnas visibles</h2>
+        </div>
+        <button class="close-btn" (click)="closeColumnMenu()" aria-label="Cerrar selección de columnas">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          <span>Cerrar</span>
+        </button>
+      </div>
+        <div class="dialog-content">
+        <div class="checkbox-group">          <label *ngFor="let col of defaultColumnOrder">
+            <input type="checkbox" 
+                   [checked]="isColumnSelected(col)"
+                   (change)="toggleColumnSelection(col)"
+                   [disabled]="col === 'id'">
+            {{ getColumnLabel(col).toUpperCase() }}
+          </label>
+        </div>
+      </div>
+        <div class="dialog-footer">
+        <button class="bx--btn bx--btn--secondary" (click)="cancelColumnChanges()">
+          <i class="fas fa-undo"></i>
+          Columnas por defecto
+        </button>        <button class="bx--btn bx--btn--primary" (click)="applyColumnChanges()">
+          <i class="fas fa-columns"></i>
+          Seleccionar columnas
+        </button>
       </div>
     </div>
   </div>
