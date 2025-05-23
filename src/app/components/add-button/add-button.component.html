@@ -1,0 +1,9 @@
+<button 
+  class="btn-add" 
+  [class.btn-add-secondary]="variant === 'secondary'"
+  [disabled]="disabled"
+  [attr.aria-label]="label"
+  (click)="onClick()">
+  <i class="fas" [ngClass]="icon" aria-hidden="true"></i>
+  {{ label }}
+</button>

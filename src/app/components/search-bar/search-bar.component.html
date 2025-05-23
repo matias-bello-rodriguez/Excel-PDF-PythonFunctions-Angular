@@ -1,0 +1,21 @@
+<div class="search-container">
+  <div class="search-input-wrapper">
+    <i class="fas fa-search search-icon" aria-hidden="true"></i>
+    <input 
+      type="text" 
+      class="search-input" 
+      [placeholder]="placeholder" 
+      [disabled]="disabled"
+      [(ngModel)]="value"
+      (input)="onInputChange(getInputValue($event))"
+      (keyup.enter)="onSubmit()"
+      aria-label="Campo de búsqueda">
+    <button 
+      *ngIf="value.length > 0" 
+      class="clear-button" 
+      (click)="clearSearch()" 
+      aria-label="Limpiar búsqueda">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { TakeoffHeaderComponent } from './takeoff-header/takeoff-header.component';
+import { TakeoffTableComponent } from './takeoff-table/takeoff-table.component';
+import { FilterDialogComponent } from './filter-dialog/filter-dialog.component';
+import { ColumnDialogComponent } from './column-dialog/column-dialog.component';
+
+@Component({
+  selector: 'app-takeoff-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    TakeoffHeaderComponent,
+    TakeoffTableComponent,
+    FilterDialogComponent,
+    ColumnDialogComponent
+  ],
+  templateUrl: './takeoff-list.component.html',
+  styleUrls: ['./takeoff-list.component.scss']
+})
+export class TakeoffListComponent implements OnInit {
+  // Propiedades y métodos del componente principal
+  // ...
+}

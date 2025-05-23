@@ -1,0 +1,120 @@
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-04) var(--spacing-05);
+  border-top: 1px solid var(--carbon-gray-20);
+  background-color: white;
+  font-size: var(--font-label);
+}
+
+.page-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-06);
+  color: var(--text-helper);
+}
+
+.page-size-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+}
+
+.items-counter {
+  font-size: var(--font-label);
+  color: var(--text-secondary);
+}
+
+.select-container {
+  position: relative;
+  width: 70px;
+  
+  select {
+    width: 100%;
+    appearance: none;
+    padding: var(--spacing-02) var(--spacing-06) var(--spacing-02) var(--spacing-03);
+    border-radius: 4px;
+    border: 1px solid var(--carbon-gray-20);
+    background-color: white;
+    font-size: var(--font-label);
+    cursor: pointer;
+    color: var(--text-primary);
+    
+    &:focus {
+      outline: none;
+      border-color: var(--carbon-primary);
+      box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+    }
+  }
+  
+  .select-icon {
+    position: absolute;
+    right: var(--spacing-03);
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 10px;
+    color: var(--text-helper);
+  }
+}
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-02);
+}
+
+.page-controls button {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--carbon-gray-20);
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-primary);
+  
+  &:hover:not([disabled]) {
+    background-color: var(--carbon-gray-10);
+    border-color: var(--carbon-gray-40);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+  }
+  
+  &.active {
+    background-color: var(--carbon-primary);
+    color: white;
+    border-color: var(--carbon-primary);
+  }
+  
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--carbon-gray-10);
+  }
+}
+
+.pagination-arrow {
+  font-size: 12px;
+  
+  i {
+    color: inherit;
+  }
+}
+
+.pagination-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: var(--font-label);
+  color: var(--text-helper);
+}

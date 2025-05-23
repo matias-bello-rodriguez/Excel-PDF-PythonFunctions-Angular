@@ -1,0 +1,67 @@
+<div class="pagination">
+  <div class="page-info">
+    <div class="page-size-control">
+      <span>Mostrar</span>
+      <div class="select-container">
+        <select (change)="onPageSizeChange($event)" [value]="itemsPerPage" aria-label="Items por página">
+          <option *ngFor="let option of pageSizeOptions" [value]="option">{{ option }}</option>
+        </select>
+        <i class="fas fa-chevron-down select-icon" aria-hidden="true"></i>
+      </div>
+      <span>elementos</span>
+    </div>
+    <span class="items-counter">{{ getFirstItemIndex() }} - {{ getMaxDisplayed() }} de {{ totalItems }}</span>
+  </div>
+
+  <div class="page-controls">
+    <!-- Botón anterior -->
+    <button 
+      class="pagination-arrow" 
+      (click)="changePage(currentPage - 1)" 
+      [disabled]="currentPage === 1" 
+      aria-label="Página anterior">
+      <i class="fas fa-chevron-left" aria-hidden="true"></i>
+    </button>
+    
+    <!-- Primera página y puntos suspensivos -->
+    <ng-container *ngIf="shouldShowDots().start">
+      <button 
+        (click)="changePage(1)" 
+        [class.active]="currentPage === 1" 
+        [attr.aria-current]="currentPage === 1 ? 'page' : null">
+        1
+      </button>
+      <span class="pagination-ellipsis" *ngIf="getPageNumbers()[0] > 2">...</span>
+    </ng-container>
+    
+    <!-- Números de página visibles -->
+    <ng-container *ngFor="let pageNum of getPageNumbers()">
+      <button 
+        (click)="changePage(pageNum)" 
+        [class.active]="currentPage === pageNum" 
+        [attr.aria-current]="currentPage === pageNum ? 'page' : null">
+        {{ pageNum }}
+      </button>
+    </ng-container>
+    
+    <!-- Última página y puntos suspensivos -->
+    <ng-container *ngIf="shouldShowDots().end">
+      <span class="pagination-ellipsis" *ngIf="getPageNumbers()[getPageNumbers().length-1] < getTotalPages() - 1">...</span>
+      <button 
+        (click)="changePage(getTotalPages())" 
+        [class.active]="currentPage === getTotalPages()" 
+        [attr.aria-current]="currentPage === getTotalPages() ? 'page' : null">
+        {{ getTotalPages() }}
+      </button>
+    </ng-container>
+    
+    <!-- Botón siguiente -->
+    <button 
+      class="pagination-arrow" 
+      (click)="changePage(currentPage + 1)" 
+      [disabled]="currentPage === getTotalPages() || getTotalPages() === 0" 
+      aria-label="Página siguiente">
+      <i class="fas fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+<div *ngIf="show" class="dialog-overlay" [ngClass]="show ? 'dialog-overlay show' : 'dialog-overlay'">
+  <div class="dialog filter-dialog">
+    <div class="dialog-header">
+      <div class="header-title">
+        <i class="fas fa-filter" aria-hidden="true"></i>
+        <h2>Filtros</h2>
+      </div>
+      <button class="close-btn" (click)="closeDialog()" aria-label="Cerrar diálogo de filtros">
+        <i class="fas fa-times" aria-hidden="true"></i>
+        <span>Cerrar</span>
+      </button>
+    </div>
+    
+    <div class="dialog-content">
+      <div class="filter-group" *ngFor="let column of getFilterableColumns()">
+        <label [for]="column.key + '-filter'">{{ column.label.toUpperCase() }}</label>
+        
+        <!-- Filtros de texto -->
+        <ng-container *ngIf="tempFilters[column.key]?.type === 'text'">
+          <select [id]="column.key + '-filter'" [(ngModel)]="tempFilters[column.key].value">
+            <option value="">Todos</option>
+            <option *ngFor="let value of uniqueValues[column.key]" [value]="value">
+              {{ value }}
+            </option>
+          </select>
+        </ng-container>
+        
+        <!-- Filtros de fecha -->
+        <ng-container *ngIf="tempFilters[column.key]?.type === 'date'">
+          <div class="date-range">
+            <div class="range-input">
+              <label>Desde</label>
+              <input type="date" 
+                    [(ngModel)]="tempFilters[column.key].from"
+                    placeholder="día - mes - año"
+                    [attr.aria-label]="'Desde ' + column.label.toUpperCase()">
+            </div>
+            <div class="range-input">
+              <label>Hasta</label>
+              <input type="date" 
+                    [(ngModel)]="tempFilters[column.key].to"
+                    placeholder="día - mes - año"
+                    [attr.aria-label]="'Hasta ' + column.label.toUpperCase()">
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Filtros numéricos -->
+        <ng-container *ngIf="tempFilters[column.key]?.type === 'number'">
+          <div class="amount-range">
+            <div class="range-input">
+              <label>Desde</label>
+              <input type="number" 
+                    [(ngModel)]="tempFilters[column.key].from"
+                    placeholder="5000"
+                    [attr.aria-label]="'Desde ' + column.label.toUpperCase()">
+            </div>
+            <div class="range-input">
+              <label>Hasta</label>
+              <input type="number" 
+                    [(ngModel)]="tempFilters[column.key].to"
+                    placeholder="10000"
+                    [attr.aria-label]="'Hasta ' + column.label.toUpperCase()">
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" (click)="clearFilters()">
+        <i class="fas fa-eraser"></i>
+        Limpiar filtros
+      </button>
+      <button class="btn btn-primary" (click)="applyFilters()">
+        <i class="fas fa-filter"></i>
+        Aplicar filtros
+      </button>
+    </div>
+  </div>
+</div>

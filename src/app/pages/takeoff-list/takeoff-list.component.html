@@ -1,27 +1,29 @@
 <div class="page-header">
-  <h1 class="page-title">Gestión de Cubicaciones</h1>
-  <button class="btn-add" aria-label="Agregar nueva cubicación" (click)="nuevaCubicacion()">
-    <i class="fas fa-plus" aria-hidden="true"></i>
-    AGREGAR CUBICACIÓN
-  </button>
+  <app-page-title [title]="'Gestión de Cubicaciones'"></app-page-title>
+  <app-add-button 
+    label="AGREGAR CUBICACIÓN" 
+    icon="fa-plus" 
+    (buttonClick)="nuevaCubicacion()">
+  </app-add-button>
 </div>
 
-<div class="card">
-  <div class="table-toolbar">
+<div class="card">  <div class="table-toolbar">
     <div class="table-actions">
-      <div class="search-container">
-        <input type="text" class="search-input" placeholder="Buscar cubicaciones..." aria-label="Buscar cubicaciones">
-        <i class="fas fa-search search-icon" aria-hidden="true"></i>
-      </div>
+      <app-search-bar 
+        placeholder="Buscar cubicaciones..." 
+        (searchChange)="onSearchChange($event)"
+        (searchSubmit)="onSearchSubmit($event)">
+      </app-search-bar>
+      
       <div class="table-view-options">        
         <div class="tooltip-container">
-          <button class="btn-icon" (click)="toggleFilterMenu()" aria-label="Abrir menú de filtros">
+          <button class="btn-icon" (click)="toggleFilterDialog()" aria-label="Abrir menú de filtros">
             <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
             <span class="tooltip">Filtrar datos</span>
           </button>
         </div>
         <div class="tooltip-container">
-          <button class="btn-icon" (click)="toggleColumnMenu()" aria-label="Seleccionar columnas visibles">
+          <button class="btn-icon" (click)="toggleColumnDialog()" aria-label="Seleccionar columnas visibles">
             <i class="fas fa-columns" aria-hidden="true"></i>
             <span class="tooltip">Personalizar columnas</span>
           </button>
@@ -29,210 +31,46 @@
       </div>
     </div>
   </div>
-
   <div class="table-container">    
-    <table class="data-table" summary="Listado de cubicaciones con detalles" aria-label="Cubicaciones">
-      <thead>
-        <tr>          <th *ngFor="let colId of columnOrder" 
-              scope="col" 
-              class="sortable" 
-              [class.dragging]="draggedColumn === colId"
-              [attr.draggable]="colId !== 'id' && colId !== 'actions'"
-              (dragstart)="onDragStart($event, colId)"
-              (dragover)="onDragOver($event, colId)"
-              (dragleave)="onDragLeave($event)"
-              (drop)="onDrop($event, colId)"
-              (dragend)="onDragEnd()"
-              (click)="colId !== 'actions' && sortTable(colId)"
-              [class.sorted]="sortColumn === colId" 
-              [attr.aria-sort]="sortColumn === colId ? sortDirection : null">
-            <div class="th-content">
-              <span>{{ getColumnLabel(colId) }}</span>
-              <i *ngIf="colId !== 'actions'" class="fas" [class]="sortColumn === colId ? (sortDirection === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
-              <i *ngIf="colId !== 'id' && colId !== 'actions'" class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of cubicaciones; let i = index" [attr.data-index]="i" tabindex="0">
-          <td *ngFor="let colId of columnOrder" [ngClass]="{'actions-cell': colId === 'actions'}">
-            <ng-container [ngSwitch]="colId">
-              <ng-container *ngSwitchCase="'id'">{{ item.id }}</ng-container>
-              <ng-container *ngSwitchCase="'nombre'">{{ item.nombre }}</ng-container>
-              <ng-container *ngSwitchCase="'descripcion'">{{ item.descripcion }}</ng-container>
-              <ng-container *ngSwitchCase="'fecha'">{{ item.fecha }}</ng-container>
-              <ng-container *ngSwitchCase="'estado'">
-                <span [class]="'status status-' + item.estado" [attr.aria-label]="item.estado === 'activo' ? 'Estado: Activo' : 'Estado: Inactivo'">
-                  <i [class]="item.estado === 'activo' ? 'fas fa-check-circle' : 'fas fa-times-circle'" aria-hidden="true"></i>
-                  {{ item.estado === 'activo' ? 'Activo' : 'Inactivo' }}
-                </span>
-              </ng-container>
-              <ng-container *ngSwitchCase="'monto'">{{ item.monto }}</ng-container>
-              <ng-container *ngSwitchCase="'actions'">
-                <div class="actions-container">
-                  <div class="tooltip-container">
-                    <button class="action-btn" [attr.aria-label]="'Editar cubicación ' + item.id" (click)="editar(item.id)">
-                      <i class="fas fa-edit" aria-hidden="true"></i>
-                      <span class="tooltip">Editar</span>
-                    </button>
-                  </div>
-                  <div class="tooltip-container">
-                    <button class="action-btn delete" [attr.aria-label]="'Eliminar cubicación ' + item.id" (click)="eliminar(item.id)">
-                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                      <span class="tooltip">Eliminar</span>
-                    </button>
-                  </div>
-                  <div class="tooltip-container">
-                    <button class="action-btn pin" [attr.aria-label]="'Fijar cubicación ' + item.id" 
-                            (click)="togglePin(item.id)"
-                            [class.pinned]="isPinned(item.id)">
-                      <i class="fas fa-thumbtack" aria-hidden="true"></i>
-                      <span class="tooltip">{{ isPinned(item.id) ? 'Desfijar' : 'Fijar' }}</span>
-                    </button>
-                  </div>
-                </div>
-              </ng-container>
-            </ng-container>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <app-data-table
+      [columns]="columns"
+      [data]="cubicaciones"
+      [sortConfig]="sortConfig"
+      [pinnedItems]="pinnedItems"
+      [loading]="false"
+      [activeFilters]="hasActiveFilters"
+      (rowClick)="onRowClick($event)"
+      (sortChange)="onSortChange($event)"
+      (editItem)="editar($event)"
+      (deleteItem)="eliminar($event)"
+      (pinItem)="togglePin($event)"
+      (columnReorder)="onColumnReorder($event)"
+      summary="Listado de cubicaciones con detalles">
+    </app-data-table>
   </div>
-
-  <div class="pagination">
-    <div class="page-info">
-      <div class="page-size-control">
-        <span>Mostrar</span>
-        <div class="select-container">
-          <select (change)="onPageSizeChange($event)" [value]="itemsPerPage" aria-label="Items por página">
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          <i class="fas fa-chevron-down select-icon" aria-hidden="true"></i>
-        </div>
-        <span>elementos</span>
-      </div>
-      <span>{{ (currentPage - 1) * itemsPerPage + 1 }} - {{ getMaxDisplayed() }} de {{ totalItems }}</span>
-    </div>
-    <div class="page-controls">
-      <button class="pagination-arrow" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1" aria-label="Página anterior">
-        <i class="fas fa-chevron-left" aria-hidden="true"></i>
-      </button>
-      <ng-container *ngFor="let pageNum of getPageNumbers()">
-        <button (click)="changePage(pageNum)" [class.active]="currentPage === pageNum" [attr.aria-current]="currentPage === pageNum ? 'page' : null">
-          {{ pageNum }}
-        </button>
-      </ng-container>
-      <button class="pagination-arrow" (click)="changePage(currentPage + 1)" [disabled]="currentPage === getTotalPages()" aria-label="Página siguiente">
-        <i class="fas fa-chevron-right" aria-hidden="true"></i>
-      </button>
-    </div>
-  </div>
-  <!-- Dialog de Filtros -->
-  <div *ngIf="showFilterMenu" class="dialog-overlay" [ngClass]="showFilterMenu ? 'dialog-overlay show' : 'dialog-overlay'">
-    <div class="dialog filter-dialog">      <div class="dialog-header">
-        <div class="header-title">
-          <i class="fas fa-filter" aria-hidden="true"></i>
-          <h2>Filtros</h2>
-        </div>
-        <button class="close-btn" (click)="closeFilterMenu()" aria-label="Cerrar diálogo de filtros">
-          <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cerrar</span>
-        </button>
-      </div>
-        <div class="dialog-content">        <div class="filter-group" *ngFor="let col of columnOrder">
-          <ng-container *ngIf="col !== 'actions'">
-            <label [for]="col + '-filter'">{{ getColumnLabel(col).toUpperCase() }}</label>
-            
-            <!-- Filtros de texto -->
-            <ng-container *ngIf="columnTypes[col] === 'text'">
-              <select [id]="col + '-filter'" [(ngModel)]="filters[col].value">
-                <option value="">Todos</option>
-                <option *ngFor="let value of uniqueValues[col]" [value]="value">
-                  {{ value }}
-                </option>
-              </select>
-            </ng-container>            <!-- Filtros de fecha -->
-            <ng-container *ngIf="columnTypes[col] === 'date'">
-              <div class="date-range">                <div class="range-input">                  <label>Desde</label>
-                  <input type="date" 
-                         [(ngModel)]="filters[col].from"
-                         placeholder="día - mes - año"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col).toUpperCase()">
-                </div>
-                <div class="range-input">                  <label>Hasta</label>
-                  <input type="date" 
-                         [(ngModel)]="filters[col].to"
-                         placeholder="día - mes - año"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col).toUpperCase()">
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Filtros numéricos -->
-            <ng-container *ngIf="columnTypes[col] === 'number'">
-              <div class="amount-range">                <div class="range-input">                  <label>Desde</label>
-                  <input type="number" 
-                         [(ngModel)]="filters[col].from"
-                         placeholder="5000"
-                         [attr.aria-label]="'Desde ' + getColumnLabel(col).toUpperCase()">
-                </div>
-                <div class="range-input">                  <label>Hasta</label>
-                  <input type="number" 
-                         [(ngModel)]="filters[col].to"
-                         placeholder="10000"
-                         [attr.aria-label]="'Hasta ' + getColumnLabel(col).toUpperCase()">
-                </div>
-              </div>
-            </ng-container>
-          </ng-container>
-        </div>
-      </div>
-
-      <div class="dialog-footer">      <button class="bx--btn bx--btn--secondary" (click)="clearFilters()">
-        <i class="fas fa-eraser"></i>
-        Limpiar filtros
-      </button>
-      <button class="bx--btn bx--btn--primary" (click)="applyFilters()">
-        <i class="fas fa-filter"></i>
-        Aplicar filtros
-      </button>
-      </div>
-    </div>  </div>  <!-- Dialog de Columnas -->
-  <div *ngIf="showColumnMenu" class="dialog-overlay" [ngClass]="showColumnMenu ? 'dialog-overlay show' : 'dialog-overlay'">
-    <div class="dialog column-dialog">
-      <div class="dialog-header">
-        <div class="header-title">
-          <i class="fas fa-columns" aria-hidden="true"></i>
-          <h2>Columnas visibles</h2>
-        </div>
-        <button class="close-btn" (click)="closeColumnMenu()" aria-label="Cerrar selección de columnas">
-          <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cerrar</span>
-        </button>
-      </div>
-        <div class="dialog-content">
-        <div class="checkbox-group">          <label *ngFor="let col of defaultColumnOrder">
-            <input type="checkbox" 
-                   [checked]="isColumnSelected(col)"
-                   (change)="toggleColumnSelection(col)"
-                   [disabled]="col === 'id'">
-            {{ getColumnLabel(col).toUpperCase() }}
-          </label>
-        </div>
-      </div>
-        <div class="dialog-footer">
-        <button class="bx--btn bx--btn--secondary" (click)="cancelColumnChanges()">
-          <i class="fas fa-undo"></i>
-          Columnas por defecto
-        </button>        <button class="bx--btn bx--btn--primary" (click)="applyColumnChanges()">
-          <i class="fas fa-columns"></i>
-          Seleccionar columnas
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-table-pagination
+    [currentPage]="currentPage"
+    [totalItems]="totalItems"
+    [itemsPerPage]="itemsPerPage"
+    [pageSizeOptions]="[5, 10, 20, 50]"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="onPageSizeChange($event)">
+  </app-table-pagination>  <!-- Dialog de Filtros -->
+  <app-filter-dialog
+    [show]="showFilterMenu"
+    [columns]="columns"
+    [filters]="filters"
+    [uniqueValues]="uniqueValues"
+    (close)="closeFilterMenu()"
+    (apply)="applyFilters()"
+    (clear)="clearFilters()">
+  </app-filter-dialog>  <!-- Dialog de Columnas -->
+  <app-column-dialog
+    [show]="showColumnMenu"
+    [columns]="columns"
+    [defaultColumns]="defaultColumns"
+    (close)="closeColumnMenu()"
+    (apply)="applyColumnChanges()"
+    (reset)="cancelColumnChanges()">
+  </app-column-dialog>
 </div>

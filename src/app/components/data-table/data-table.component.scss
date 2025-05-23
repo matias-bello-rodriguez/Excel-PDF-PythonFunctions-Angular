@@ -1,0 +1,234 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  background-color: white;
+  margin-bottom: var(--spacing-06);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--font-body);
+  color: var(--text-primary);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--spacing-04) var(--spacing-05);
+  text-align: left;
+  border-bottom: 1px solid var(--carbon-gray-20);
+}
+
+.data-table th {
+  background-color: var(--carbon-gray-10);
+  font-weight: var(--font-weight-semibold);
+  user-select: none;
+  position: relative;
+  font-size: var(--font-label);
+  
+  &.sortable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: var(--carbon-gray-20);
+    }
+    
+    &.sorted {
+      background-color: rgba(15, 98, 254, 0.1);
+    }
+  }
+  
+  &.dragging {
+    opacity: 0.7;
+  }
+  
+  &.drag-over {
+    background-color: rgba(15, 98, 254, 0.2);
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background-color: var(--carbon-primary);
+    }
+  }
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  
+  i {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  
+  .drag-handle {
+    cursor: grab;
+    opacity: 0.3;
+    margin-left: auto;
+    transition: opacity 0.2s;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+tr {
+  transition: background-color 0.15s;
+  
+  &:hover {
+    background-color: var(--carbon-gray-10);
+  }
+  
+  &:focus {
+    outline: none;
+    background-color: rgba(15, 98, 254, 0.05);
+  }
+  
+  &.pinned {
+    background-color: var(--kinetta-primary-light);
+    
+    &:hover {
+      background-color: rgba(139, 28, 28, 0.1);
+    }
+  }
+}
+
+// Estilos para celdas de estado
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-02);
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: var(--font-label);
+  font-weight: var(--font-weight-medium);
+  
+  i {
+    font-size: 12px;
+  }
+}
+
+.status-activo {
+  background-color: rgba(25, 128, 56, 0.1);
+  color: var(--carbon-success);
+  
+  i {
+    color: var(--carbon-success);
+  }
+}
+
+.status-inactivo {
+  background-color: rgba(218, 30, 40, 0.1);
+  color: var(--carbon-danger);
+  
+  i {
+    color: var(--carbon-danger);
+  }
+}
+
+// Celdas de acciones
+.actions-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.actions-container {
+  display: flex;
+  gap: var(--spacing-02);
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+  position: relative;
+  
+  &:hover {
+    background-color: var(--carbon-gray-10);
+    color: var(--carbon-primary);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--carbon-primary);
+  }
+  
+  &.delete:hover {
+    color: var(--carbon-danger);
+  }
+  
+  &.pinned {
+    color: var(--kinetta-primary);
+    
+    &:hover {
+      color: var(--kinetta-primary);
+      background-color: rgba(139, 28, 28, 0.1);
+    }
+  }
+}
+
+.tooltip-container {
+  position: relative;
+  
+  .tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--carbon-gray-100);
+    color: white;
+    padding: var(--spacing-02) var(--spacing-03);
+    border-radius: 4px;
+    font-size: var(--font-caption);
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+  }
+  
+  &:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// Estados de carga y sin datos
+.loading-cell,
+.empty-cell {
+  text-align: center;
+  padding: var(--spacing-07);
+}
+
+.loading-spinner,
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-03);
+  color: var(--text-secondary);
+  
+  i {
+    font-size: var(--font-heading-03);
+    opacity: 0.7;
+  }
+}

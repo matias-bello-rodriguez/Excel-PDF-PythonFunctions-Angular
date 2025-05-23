@@ -1,34 +1,74 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+
+// Importamos los componentes modulares
+import { PageTitleComponent } from '../../components/page-title/page-title.component';
+import { AddButtonComponent } from '../../components/add-button/add-button.component';
+import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
+import { DataTableComponent } from '../../components/data-table/data-table.component';
+import { TablePaginationComponent } from '../../components/table-pagination/table-pagination.component';
+import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
+import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
+
+// Importamos los tipos
+import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/table.types';
 
 @Component({
   selector: 'app-takeoff-list',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
-    FontAwesomeModule,
-    FormsModule
+    FormsModule,
+    PageTitleComponent,
+    AddButtonComponent,
+    SearchBarComponent,
+    DataTableComponent,
+    TablePaginationComponent,
+    FilterDialogComponent,
+    ColumnDialogComponent
   ],
   templateUrl: './takeoff-list.component.html',
   styleUrl: './takeoff-list.component.scss'
 })
 export class TakeoffListComponent implements OnInit {
-  // Propiedades de columnas y orden
-  columnOrder: string[] = ['id', 'nombre', 'descripcion', 'fecha', 'estado', 'monto', 'actions'];
+  // Propiedades de la página
+  pageTitle: string = 'Gestión de Cubicaciones';
+  
+  // Propiedades de búsqueda
+  searchTerm: string = '';
+  
+  // Propiedades de columnas y tabla
+  columns: TableColumn[] = [
+    { key: 'id', label: 'ID', type: 'text', sortable: true, draggable: false, visible: true },
+    { key: 'nombre', label: 'Nombre', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'descripcion', label: 'Descripción', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'fecha', label: 'Fecha', type: 'date', sortable: true, draggable: true, visible: true },
+    { key: 'estado', label: 'Estado', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'monto', label: 'Monto', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'actions', label: 'Acciones', type: 'actions', sortable: false, draggable: false, visible: true }
+  ];
+  defaultColumns: TableColumn[] = JSON.parse(JSON.stringify(this.columns));
+  columnOrder: string[] = this.columns.map(col => col.key);
   defaultColumnOrder: string[] = [...this.columnOrder];
   tempColumnState: Set<string> = new Set(); // Estado temporal para las columnas en el diálogo
   draggedColumn: string | null = null;
   
   // Propiedades de ordenamiento
+  sortConfig: SortConfig = {
+    column: null,
+    direction: 'asc'
+  };
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
   
   // Propiedades de paginación
+  paginationConfig = {
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalItems: 0
+  };
   currentPage = 1;
   itemsPerPage = 10;
   totalItems = 0;
@@ -108,9 +148,9 @@ export class TakeoffListComponent implements OnInit {
   originalCubicaciones = [...this.cubicaciones];
   hasActiveFilters = false;
   pinnedItems: Set<string> = new Set();
-
   constructor() {
     this.totalItems = this.cubicaciones.length;
+    this.paginationConfig.totalItems = this.totalItems;
     this.initializeFilters();
     this.updateUniqueValues();
   }
@@ -122,6 +162,54 @@ export class TakeoffListComponent implements OnInit {
 
   getColumnLabel(colId: string): string {
     return this.columnLabels[colId] || colId;
+  }
+  
+  // Métodos para Search Bar
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    this.applySearch();
+  }
+  
+  onSearchSubmit(value: string): void {
+    this.searchTerm = value;
+    this.applySearch();
+  }
+  
+  applySearch(): void {
+    if (!this.searchTerm.trim()) {
+      this.resetSearch();
+      return;
+    }
+    
+    const searchTerm = this.searchTerm.toLowerCase().trim();
+    this.cubicaciones = this.originalCubicaciones.filter(item => {
+      return Object.keys(item).some(key => {
+        if (key !== 'actions') {
+          const value = String(item[key]).toLowerCase();
+          return value.includes(searchTerm);
+        }
+        return false;
+      });
+    });
+    
+    this.currentPage = 1;
+    this.paginationConfig.currentPage = 1;
+    this.totalItems = this.cubicaciones.length;
+    this.paginationConfig.totalItems = this.totalItems;
+  }
+  
+  resetSearch(): void {
+    this.cubicaciones = [...this.originalCubicaciones];
+    this.applyFilters();
+  }
+  
+  // Métodos para diálogos
+  toggleFilterDialog(): void {
+    this.showFilterMenu = !this.showFilterMenu;
+  }
+  
+  toggleColumnDialog(): void {
+    this.showColumnMenu = !this.showColumnMenu;
   }
 
   private initializeFilters() {
@@ -178,80 +266,128 @@ export class TakeoffListComponent implements OnInit {
     const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
     const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
     this.cubicaciones = [...pinnedItems, ...unpinnedItems];
-  }
-
-  applyFilters() {
-    // Separar elementos fijados y no fijados
-    const pinnedItems = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinnedItems = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
-
-    // Aplicar filtros solo a los elementos no fijados
-    const filteredUnpinnedItems = unpinnedItems.filter(item => {
-      return Object.entries(this.filters).every(([column, filter]) => {
-        if (column === 'actions') return true;
-        
-        // Filtros de texto
-        if (filter.type === 'text' && filter.value) {
-          return item[column].toLowerCase().includes(filter.value.toLowerCase());
-        }
-        
-        // Filtros de fecha
-        if (filter.type === 'date') {
-          const [day, month, year] = item[column].split('/');
-          const itemDate = new Date(`${year}-${month}-${day}`);
-          const fromDate = filter.from ? new Date(filter.from as string) : null;
-          const toDate = filter.to ? new Date(filter.to as string) : null;
-          
-          if (fromDate && toDate) {
-            return itemDate >= fromDate && itemDate <= toDate;
-          } else if (fromDate) {
-            return itemDate >= fromDate;
-          } else if (toDate) {
-            return itemDate <= toDate;
-          }
-        }
-        
-        // Filtros numéricos
-        if (filter.type === 'number') {
-          const value = parseFloat(item[column].replace(/[^0-9.-]+/g, ''));
-          const fromValue = filter.from ? parseFloat(filter.from as string) : null;
-          const toValue = filter.to ? parseFloat(filter.to as string) : null;
-          
-          if (fromValue !== null && toValue !== null) {
-            return value >= fromValue && value <= toValue;
-          } else if (fromValue !== null) {
-            return value >= fromValue;
-          } else if (toValue !== null) {
-            return value <= toValue;
-          }
-        }
-        
-        return true;
-      });
-    });
-
-    // Combinar elementos fijados con los filtrados
-    this.cubicaciones = [...pinnedItems, ...filteredUnpinnedItems];
-
-    // Actualizar estado de los filtros
-    this.hasActiveFilters = Object.values(this.filters).some(filter => 
-      filter.value || filter.from || filter.to
-    );
     
-    // Cerrar el menú de filtros
-    this.showFilterMenu = false;
+    // Actualizamos la paginación
+    this.totalItems = this.cubicaciones.length;
+    this.paginationConfig.totalItems = this.totalItems;
+    this.currentPage = 1;
+    this.paginationConfig.currentPage = 1;
   }
 
+  applyFilters(newFilters?: { [key: string]: TableFilter }): void {
+    // Actualiza los filtros si se reciben desde el componente
+    if (newFilters) {
+      this.filters = newFilters;
+    }
+    
+    this.hasActiveFilters = false;
+    let filteredData = [...this.originalCubicaciones];
+    
+    // Aplicar todos los filtros
+    for (const col in this.filters) {
+      const filter = this.filters[col];
+
+      // Skip if filter is empty
+      if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
+      if ((filter.type === 'date' || filter.type === 'number') && 
+          filter.from === null && filter.to === null) continue;
+      
+      switch (filter.type) {
+        case 'text':
+          filteredData = filteredData.filter(item => 
+            filter.value ? String(item[col]).toLowerCase() === filter.value.toLowerCase() : true);
+          this.hasActiveFilters = true;
+          break;
+          
+        case 'date':
+          if (filter.from || filter.to) {
+            this.hasActiveFilters = true;
+            filteredData = filteredData.filter(item => {
+              // Parse date from the item (assuming format is dd/mm/yyyy)
+              const [day, month, year] = item[col].split('/').map(Number);
+              const itemDate = new Date(year, month - 1, day);
+
+              let matchesFrom = true;
+              let matchesTo = true;
+
+              if (filter.from) {
+                const filterFrom = new Date(filter.from as string);
+                matchesFrom = itemDate >= filterFrom;
+              }
+
+              if (filter.to) {
+                const filterTo = new Date(filter.to as string);
+                matchesTo = itemDate <= filterTo;
+              }
+
+              return matchesFrom && matchesTo;
+            });
+          }
+          break;
+          
+        case 'number':
+          if (filter.from !== null || filter.to !== null) {
+            this.hasActiveFilters = true;
+            filteredData = filteredData.filter(item => {
+              // Parse numeric value from the item
+              const itemValue = parseFloat(item[col].replace(/[^0-9.-]+/g, ""));
+
+              let matchesFrom = true;
+              let matchesTo = true;
+
+              if (filter.from !== null) {
+                matchesFrom = itemValue >= (filter.from as number);
+              }
+
+              if (filter.to !== null) {
+                matchesTo = itemValue <= (filter.to as number);
+              }
+
+              return matchesFrom && matchesTo;
+            });
+          }
+          break;
+      }
+    }
+    
+    this.cubicaciones = filteredData;
+    this.totalItems = this.cubicaciones.length;
+    this.currentPage = 1; // Reset to first page when applying filters
+  
+    // Cerrar el menú de filtros después de aplicar
+    this.closeFilterMenu();
+  }
   nuevaCubicacion() {
     console.log('Creando nueva cubicación desde TakeoffListComponent');
   }
-
   editar(id: string) {
     console.log(`Editando cubicación ${id} desde TakeoffListComponent`);
   }
 
   eliminar(id: string) {
     console.log(`Eliminando cubicación ${id} desde TakeoffListComponent`);
+  }
+  
+  // Métodos para DataTable
+  onRowClick(item: any): void {
+    console.log('Fila seleccionada:', item);
+  }
+  
+  onSortChange(sortConfig: SortConfig): void {
+    this.sortConfig = sortConfig;
+    this.sortColumn = sortConfig.column;
+    this.sortDirection = sortConfig.direction;
+    this.applySort();
+  }
+  
+  applySort(): void {
+    // La ordenación se hace dentro del DataTable
+  }
+  
+  onColumnReorder(columns: TableColumn[]): void {
+    // Actualizar columnas después de reordenar
+    this.columns = columns;
+    this.columnOrder = columns.map(col => col.key);
   }
 
   sortTable(column: string): void {
@@ -302,11 +438,16 @@ export class TakeoffListComponent implements OnInit {
     return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 
-  onPageSizeChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    if (target) {
-      this.itemsPerPage = parseInt(target.value, 10);
-      this.currentPage = 1;
+  // Método para manejar el cambio de tamaño de página desde el componente TablePagination
+  onPageSizeChange(size: number): void {
+    this.itemsPerPage = size;
+    this.paginationConfig.itemsPerPage = size;
+    
+    // Ajustar la página actual si es necesario
+    const totalPages = this.getTotalPages();
+    if (this.currentPage > totalPages) {
+      this.currentPage = totalPages || 1;
+      this.paginationConfig.currentPage = this.currentPage;
     }
   }
 
@@ -393,22 +534,31 @@ export class TakeoffListComponent implements OnInit {
     this.showColumnMenu = false;
   }
 
-  applyColumnChanges(): void {
-    // Solo actualizar columnOrder cuando el usuario confirma los cambios
-    const newColumnOrder: string[] = [];
-    
-    // Asegurarse de que 'id' siempre está presente y es el primer elemento
-    newColumnOrder.push('id');
-    
-    // Agregar todas las demás columnas seleccionadas
-    this.defaultColumnOrder.forEach(col => {
-      if (col !== 'id' && this.tempColumnState.has(col)) {
-        newColumnOrder.push(col);
-      }
-    });
-    
-    // Actualizar el orden de columnas
-    this.columnOrder = newColumnOrder;
+  // Métodos para el componente ColumnDialog
+  applyColumnChanges(newColumns?: TableColumn[]): void {
+    if (newColumns) {
+      // Si recibimos nuevas columnas desde el componente ColumnDialog
+      this.columns = newColumns;
+      this.columnOrder = newColumns
+        .filter(col => col.visible) // Solo incluir columnas visibles
+        .map(col => col.key);       // Extraer solo las claves
+    } else {
+      // La implementación original si no recibimos columnas desde el componente
+      const newColumnOrder: string[] = [];
+      
+      // Asegurarse de que 'id' siempre está presente y es el primer elemento
+      newColumnOrder.push('id');
+      
+      // Agregar todas las demás columnas seleccionadas
+      this.defaultColumnOrder.forEach(col => {
+        if (col !== 'id' && this.tempColumnState.has(col)) {
+          newColumnOrder.push(col);
+        }
+      });
+      
+      // Actualizar el orden de columnas
+      this.columnOrder = newColumnOrder;
+    }
     
     // Cerrar el diálogo
     this.closeColumnMenu();

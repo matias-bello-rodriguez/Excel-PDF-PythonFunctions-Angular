@@ -1,0 +1,100 @@
+<div class="table-container">
+  <table class="data-table" [attr.summary]="summary" aria-label="Tabla de datos">
+    <thead>
+      <tr>
+        <th *ngFor="let column of getVisibleColumns()" 
+            scope="col" 
+            class="sortable" 
+            [class.dragging]="draggedColumn === column.key"
+            [attr.draggable]="column.draggable"
+            (dragstart)="onDragStart($event, column.key)"
+            (dragover)="onDragOver($event, column.key)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event, column.key)"
+            (dragend)="onDragEnd()"
+            (click)="column.sortable && onSort(column)"
+            [class.sorted]="sortConfig.column === column.key" 
+            [attr.aria-sort]="sortConfig.column === column.key ? sortConfig.direction : null">
+          <div class="th-content">
+            <span>{{ column.label }}</span>
+            <i *ngIf="column.sortable" class="fas" [class]="sortConfig.column === column.key ? 
+              (sortConfig.direction === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort'" aria-hidden="true"></i>
+            <i *ngIf="column.draggable" class="fas fa-grip-vertical drag-handle" aria-hidden="true"></i>
+          </div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="!loading && data.length > 0">
+        <tr *ngFor="let item of data; let i = index" 
+            [attr.data-index]="i" 
+            tabindex="0"
+            (click)="onRowClick(item)"
+            [class.pinned]="isPinned(item[idField])">
+          <td *ngFor="let column of getVisibleColumns()" [ngClass]="{'actions-cell': column.key === 'actions'}">
+            <ng-container [ngSwitch]="column.key">
+              <!-- Columna de acciones -->
+              <ng-container *ngSwitchCase="'actions'">
+                <div class="actions-container">
+                  <div class="tooltip-container">
+                    <button class="action-btn" [attr.aria-label]="'Editar ítem ' + item[idField]" (click)="onEdit(item[idField], $event)">
+                      <i class="fas fa-edit" aria-hidden="true"></i>
+                      <span class="tooltip">Editar</span>
+                    </button>
+                  </div>
+                  <div class="tooltip-container">
+                    <button class="action-btn delete" [attr.aria-label]="'Eliminar ítem ' + item[idField]" (click)="onDelete(item[idField], $event)">
+                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                      <span class="tooltip">Eliminar</span>
+                    </button>
+                  </div>
+                  <div class="tooltip-container">
+                    <button class="action-btn pin" [attr.aria-label]="(isPinned(item[idField]) ? 'Desfijar ' : 'Fijar ') + 'ítem ' + item[idField]" 
+                            (click)="onTogglePin(item[idField], $event)"
+                            [class.pinned]="isPinned(item[idField])">
+                      <i class="fas fa-thumbtack" aria-hidden="true"></i>
+                      <span class="tooltip">{{ isPinned(item[idField]) ? 'Desfijar' : 'Fijar' }}</span>
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              
+              <!-- Estado especial -->
+              <ng-container *ngSwitchCase="'estado'" [ngSwitch]="item[column.key]">
+                <span [class]="'status status-' + item[column.key]" [attr.aria-label]="'Estado: ' + item[column.key]">
+                  <i [class]="item[column.key] === 'activo' ? 'fas fa-check-circle' : 'fas fa-times-circle'" aria-hidden="true"></i>
+                  {{ item[column.key] === 'activo' ? 'Activo' : 'Inactivo' }}
+                </span>
+              </ng-container>
+              
+              <!-- Contenido predeterminado -->
+              <ng-container *ngSwitchDefault>
+                {{ item[column.key] }}
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </ng-container>
+      
+      <!-- Estado de carga -->
+      <tr *ngIf="loading">
+        <td [attr.colspan]="getVisibleColumns().length" class="loading-cell">
+          <div class="loading-spinner">
+            <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+            <span>Cargando datos...</span>
+          </div>
+        </td>
+      </tr>
+      
+      <!-- Sin datos -->
+      <tr *ngIf="!loading && data.length === 0">
+        <td [attr.colspan]="getVisibleColumns().length" class="empty-cell">
+          <div class="no-data">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <span>{{ activeFilters ? 'No hay resultados que coincidan con los filtros aplicados.' : 'No hay datos disponibles.' }}</span>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
