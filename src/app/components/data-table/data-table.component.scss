@@ -27,6 +27,7 @@
   user-select: none;
   position: relative;
   font-size: var(--font-label);
+  text-transform: uppercase; // Agregado para convertir el texto a mayúsculas
   
   &.sortable {
     cursor: pointer;
