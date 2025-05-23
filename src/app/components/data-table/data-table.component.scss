@@ -175,10 +175,21 @@ tr {
   
   &.delete:hover {
     color: var(--carbon-danger);
+    i {
+      color: var(--carbon-danger);
+    }
+  }
+  
+  // Modificado para apuntar al botón que contiene el icono fa-edit
+  &:has(i.fa-edit):hover {
+    color: var(--carbon-primary) !important;
+    i {
+      color: var(--carbon-primary) !important;
+    }
   }
   
   &.pin:hover {
-    color: var(--text-primary); // Mantiene el color original
+    color: var(--text-primary);
   }
   
   &.pinned {
@@ -205,7 +216,7 @@ tr.pinned .action-btn.pin i {
 
 // Editar botón
 .action-btn.edit:hover {
-  color: var(--text-primary); // Mantiene el color original al hacer hover
+  color: var(--carbon-primary); // Cambiado a azul (color primario de Carbon)
 }
 
 .tooltip-container {
