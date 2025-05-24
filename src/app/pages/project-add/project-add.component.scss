@@ -1,0 +1,91 @@
+.project-add-container {
+  padding: 0 var(--spacing-06) var(--spacing-06) var(--spacing-06); // Ajustado padding-top a 0
+  max-width: 900px;
+  margin: 0 auto;
+  margin-top: -var(--spacing-04); // Reducir aún más el espacio superior
+  
+  .page-header {
+    margin-bottom: var(--spacing-05);
+    
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--gray-90);
+      margin: 0;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: var(--spacing-02);
+      display: inline-block;
+      margin-bottom: var(--spacing-04);
+    }
+  }
+  
+  .form-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: var(--spacing-05);
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-05);
+      
+      // Ajustar espaciado del grid de formularios
+      .form-grid {
+        grid-gap: var(--spacing-05);
+      }
+    }
+
+    // Estilo para las acciones del formulario
+    .form-actions {
+      justify-content: center; // Centrar los botones
+      padding-top: var(--spacing-04);
+      border-top: 1px solid var(--gray-20);
+      margin-top: var(--spacing-06);
+    }
+
+    // Efecto suave al entrar en las secciones
+    app-form-section {
+      &:not(:first-of-type) {
+        margin-top: var(--spacing-06);
+      }
+    }
+  }
+}
+
+// Estilos responsivos
+@media (max-width: 768px) {
+  .project-add-container {
+    padding: var(--spacing-04);
+    
+    .form-container {
+      padding: var(--spacing-04);
+    }
+  }
+}
+
+// Estilos para alertas
+.alert-success, .alert-danger {
+  padding: var(--spacing-03) var(--spacing-04);
+  margin-bottom: var(--spacing-04);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  
+  i {
+    margin-right: var(--spacing-03);
+    font-size: 1.1rem;
+  }
+}
+
+.alert-success {
+  background-color: rgba(25, 128, 56, 0.1);
+  border-left: 3px solid var(--success-color);
+  color: var(--success-color);
+}
+
+.alert-danger {
+  background-color: rgba(218, 30, 40, 0.1);
+  border-left: 3px solid var(--danger-color);
+  color: var(--danger-color);
+}

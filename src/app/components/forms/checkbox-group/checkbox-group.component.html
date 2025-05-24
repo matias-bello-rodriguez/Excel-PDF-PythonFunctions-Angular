@@ -1,0 +1,22 @@
+<div class="checkbox-group">
+  <div class="checkbox-list">
+    <label 
+      *ngFor="let option of options" 
+      class="checkbox-item"
+      [class.disabled]="disabled">
+      <input 
+        type="checkbox"
+        [value]="option.value"
+        [checked]="isChecked(option.value)"
+        [disabled]="disabled"
+        (change)="onCheckboxChange(option.value, $event)">
+      <span class="checkbox-label">{{ option.label }}</span>
+    </label>
+  </div>
+  
+  <!-- Mensaje informativo -->
+  <div class="info-message">
+    <i class="fas fa-info-circle"></i>
+    Puedes seleccionar varios tipos.
+  </div>
+</div>

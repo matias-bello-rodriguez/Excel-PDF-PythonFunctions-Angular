@@ -7,6 +7,7 @@ import { DataTableComponent } from '../../components/data-table/data-table.compo
 import { TablePaginationComponent } from '../../components/table-pagination/table-pagination.component';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
+import { CustomerDialogComponent } from '../../components/customer-dialog/customer-dialog.component';
 import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/table.types';
 
 @Component({
@@ -20,7 +21,8 @@ import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/tab
     DataTableComponent,
     TablePaginationComponent,
     FilterDialogComponent,
-    ColumnDialogComponent
+    ColumnDialogComponent,
+    CustomerDialogComponent
   ],
   templateUrl: './customer-list.component.html',
   styleUrl: './customer-list.component.scss'
@@ -109,11 +111,12 @@ export class CustomerListComponent {
       direccion: 'Av. Brasil 789, Antofagasta',
       estado: 'inactivo'
     }
-  ];
-  originalData: any[] = [];
+  ];  originalData: any[] = [];
   data: any[] = [];
   showFilterMenu = false;
   showColumnMenu = false;
+  showCustomerDialog = false;
+  editingCustomer: any = null;
   originalClientes = [...this.clientes];
   hasActiveFilters = false;
   pinnedItems: Set<string> = new Set();
@@ -495,8 +498,60 @@ export class CustomerListComponent {
       this.columnOrder.splice(index, 1);
     }
   }
-
   resetColumns() {
     this.columnOrder = [...this.defaultColumnOrder];
+  }
+
+  // Métodos para el diálogo de cliente
+  onAddCustomer(): void {
+    this.editingCustomer = null;
+    this.showCustomerDialog = true;
+  }
+
+  onEditCustomer(customer: any): void {
+    this.editingCustomer = { ...customer };
+    this.showCustomerDialog = true;
+  }
+
+  closeCustomerDialog(): void {
+    this.showCustomerDialog = false;
+    this.editingCustomer = null;
+  }
+
+  saveCustomer(customerData: any): void {
+    if (this.editingCustomer) {
+      // Editar cliente existente
+      const index = this.clientes.findIndex(c => c.id === this.editingCustomer.id);
+      if (index !== -1) {
+        this.clientes[index] = { ...this.editingCustomer, ...customerData };
+        this.originalClientes[index] = { ...this.clientes[index] };
+      }
+    } else {
+      // Agregar nuevo cliente
+      const newCustomer = {
+        id: this.generateCustomerId(),
+        ...customerData,
+        estado: 'activo'
+      };
+      this.clientes.unshift(newCustomer);
+      this.originalClientes.unshift(newCustomer);
+    }
+
+    // Actualizar datos y cerrar diálogo
+    this.updateData();
+    this.closeCustomerDialog();
+  }
+
+  private generateCustomerId(): string {
+    const year = new Date().getFullYear();
+    const count = this.clientes.length + 1;
+    return `CLI-${year}-${count.toString().padStart(3, '0')}`;
+  }
+
+  private updateData(): void {
+    this.totalItems = this.clientes.length;
+    this.paginationConfig.totalItems = this.totalItems;
+    this.updateUniqueValues();
+    this.applySearch();
   }
 }

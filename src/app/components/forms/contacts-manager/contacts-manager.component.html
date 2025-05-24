@@ -1,0 +1,54 @@
+<div class="contacts-manager" [formGroup]="newContactForm">
+  <h4 class="section-title">Agregar Contacto</h4>
+  
+  <div class="form-row">
+    <app-form-field 
+      label="Nombre" 
+      [required]="true" 
+      [errorMessage]="getErrorMessage('nombre')" 
+      fieldId="contact-nombre"
+      class="form-field-flex">
+      <app-text-input 
+        formControlName="nombre" 
+        id="contact-nombre" 
+        placeholder="Nombre completo">
+      </app-text-input>
+    </app-form-field>
+
+    <app-form-field 
+      label="Email" 
+      [required]="true" 
+      [errorMessage]="getErrorMessage('email')" 
+      fieldId="contact-email"
+      class="form-field-flex">
+      <app-text-input 
+        formControlName="email" 
+        id="contact-email"
+        type="email"
+        placeholder="correo@ejemplo.com">
+      </app-text-input>
+    </app-form-field>
+
+    <app-form-field 
+      label="Teléfono" 
+      [errorMessage]="getErrorMessage('telefono')" 
+      fieldId="contact-telefono"
+      class="form-field-flex">
+      <app-text-input 
+        formControlName="telefono" 
+        id="contact-telefono"
+        type="tel"
+        placeholder="+56 9 XXXX XXXX">
+      </app-text-input>
+    </app-form-field>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary btn-sm" 
+              [disabled]="newContactForm.invalid"
+              (click)="addContact()">
+        <i class="fas fa-plus"></i>
+        Agregar
+      </button>
+    </div>
+  </div>
+</div>

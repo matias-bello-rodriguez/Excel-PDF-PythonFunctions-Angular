@@ -1,6 +1,6 @@
 <div class="page-header">
   <app-page-title [title]="pageTitle"></app-page-title>
-  <app-add-button label="AGREGAR CLIENTE" icon="fa-plus"></app-add-button>
+  <app-add-button label="AGREGAR CLIENTE" icon="fa-plus" (click)="onAddCustomer()"></app-add-button>
 </div>
 <div class="card">
   <div class="table-toolbar">
@@ -28,10 +28,9 @@
       [data]="clientes"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
-      [idField]="'id'"
-      (rowClick)="onRowClick($event)"
+      [idField]="'id'"      (rowClick)="onRowClick($event)"
       (sortChange)="onSortChange($event)"
-      (editItem)="editar($event)"
+      (editItem)="onEditCustomer($event)"
       (deleteItem)="eliminar($event)"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
@@ -52,8 +51,7 @@
     (close)="closeFilterMenu()"
     (apply)="applyFilters($event)"
     (clear)="clearFilters()">
-  </app-filter-dialog>
-  <app-column-dialog
+  </app-filter-dialog>  <app-column-dialog
     [show]="showColumnMenu"
     [columns]="columns"
     [defaultColumns]="defaultColumns"
@@ -61,4 +59,12 @@
     (apply)="applyColumnChanges($event)"
     (reset)="cancelColumnChanges()">
   </app-column-dialog>
+
+  <!-- Diálogo para agregar/editar cliente -->
+  <app-customer-dialog
+    [show]="showCustomerDialog"
+    [customer]="editingCustomer"
+    (close)="closeCustomerDialog()"
+    (save)="saveCustomer($event)">
+  </app-customer-dialog>
 </div>

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { PageTitleComponent } from '../../components/page-title/page-title.component';
 import { AddButtonComponent } from '../../components/add-button/add-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
@@ -127,8 +128,7 @@ export class ProjectListComponent {
 
   // --- PINNING Y ORDEN ORIGINAL ---
   private originalIndexMap: { [id: string]: number } = {};
-
-  constructor() {
+  constructor(private router: Router) {
     this.totalItems = this.proyectos.length;
     this.paginationConfig.totalItems = this.totalItems;
     this.initializeFilters();
@@ -304,10 +304,8 @@ export class ProjectListComponent {
     this.proyectos = [...pinned, ...filteredData];
     this.totalItems = this.proyectos.length;
     this.currentPage = 1;
-  }
-
-  nuevoProyecto() {
-    console.log('Creando nuevo proyecto desde ProjectListComponent');
+  }  nuevoProyecto() {
+    this.router.navigate(['/proyectos/agregar-proyecto']);
   }
   editar(id: string) {
     console.log(`Editando proyecto ${id} desde ProjectListComponent`);

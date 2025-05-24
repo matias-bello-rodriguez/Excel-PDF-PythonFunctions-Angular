@@ -1,0 +1,224 @@
+<!-- Overlay del diálogo -->
+<div *ngIf="show" class="dialog-overlay" [ngClass]="{ 'show': show }">
+  <div class="dialog customer-dialog">    <!-- Encabezado con título e icono -->
+    <div class="dialog-header">
+      <div class="header-title">
+        <!-- Modo editar: Logo de persona + lápiz -->
+        <div *ngIf="customer" class="edit-mode-header">
+          <i class="fas fa-user" aria-hidden="true"></i>
+          <h2>EDITAR CLIENTE - {{ customer?.nombre }}</h2>
+        </div>
+        
+        <!-- Modo agregar: Emoji + texto -->
+        <div *ngIf="!customer" class="add-mode-header">
+          <i class="fas fa-user" aria-hidden="true"></i>
+          <h2>AGREGAR NUEVO CLIENTE</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido del formulario -->
+    <div class="dialog-content">
+      <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()">
+        
+        <!-- Sección de Información Legal -->
+        <app-form-section title="INFORMACIÓN LEGAL" icon="fa-gavel">
+          <div class="form-grid form-grid--2">
+            
+            <!-- Nombre -->
+            <app-form-field 
+              label="Nombre" 
+              [required]="true" 
+              [errorMessage]="getErrorMessage('nombre')" 
+              fieldId="nombre">
+              <app-text-input 
+                formControlName="nombre" 
+                id="nombre"
+                placeholder="Ingrese el nombre del cliente">
+              </app-text-input>
+            </app-form-field>            <!-- RUT con validación SII -->
+            <app-form-field 
+              label="RUT" 
+              [required]="true" 
+              [errorMessage]="getErrorMessage('rut')" 
+              fieldId="rut">
+              <div class="rut-input-container">
+                <app-text-input 
+                  formControlName="rut" 
+                  id="rut"
+                  placeholder="12.345.678-9"
+                  (blur)="formatRut()">
+                </app-text-input>
+                <div class="rut-validation" *ngIf="customerForm.get('rut')?.value">
+                  <!-- Estado de carga -->
+                  <i class="fas fa-spinner fa-spin" *ngIf="rutValidating"></i>
+                  <span *ngIf="rutValidating" class="validation-text">Validando con SII...</span>
+                  
+                  <!-- RUT válido y existe en SII -->
+                  <i class="fas fa-check-circle" 
+                     *ngIf="rutValid && rutExists && !rutValidating" 
+                     class="valid"></i>
+                  <span *ngIf="rutValid && rutExists && !rutValidating" class="validation-text valid">
+                    ✅ Válido - {{ rutCompanyName || 'Registrado en SII' }}
+                  </span>
+                  
+                  <!-- RUT válido pero no existe en SII -->
+                  <i class="fas fa-exclamation-triangle" 
+                     *ngIf="rutValid && !rutExists && !rutValidating" 
+                     class="warning"></i>
+                  <span *ngIf="rutValid && !rutExists && !rutValidating" class="validation-text warning">
+                    ⚠️ Válido pero no encontrado en SII
+                  </span>
+                  
+                  <!-- RUT inválido -->
+                  <i class="fas fa-times-circle" 
+                     *ngIf="!rutValid && !rutValidating" 
+                     class="invalid"></i>
+                  <span *ngIf="!rutValid && !rutValidating" class="validation-text invalid">❌ inválido</span>
+                </div>
+              </div>
+            </app-form-field>
+
+          </div>
+        </app-form-section>
+
+        <!-- Sección de Datos de Contacto -->
+        <app-form-section title="DATOS DE CONTACTO" icon="fa-address-book">
+          <div class="form-grid form-grid--2">
+              <!-- Dirección con validación Correos de Chile -->
+            <app-form-field 
+              label="Dirección" 
+              [required]="false" 
+              [errorMessage]="getErrorMessage('direccion')" 
+              fieldId="direccion">
+              <div class="address-input-container">
+                <app-text-input 
+                  formControlName="direccion" 
+                  id="direccion"
+                  placeholder="Ingrese la dirección">
+                </app-text-input>
+                <button type="button" 
+                        class="btn-icon address-search" 
+                        (click)="searchAddress()"
+                        [disabled]="addressValidating"
+                        title="Buscar dirección">
+                  <i class="fas fa-spinner fa-spin" *ngIf="addressValidating"></i>
+                  <i class="fas fa-map-marker-alt" *ngIf="!addressValidating"></i>
+                </button>
+              </div>
+              
+              <!-- Estado de validación de dirección -->
+              <div class="address-validation" *ngIf="customerForm.get('direccion')?.value">
+                <div *ngIf="addressValidating" class="validation-status">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span class="validation-text">Validando dirección...</span>
+                </div>
+                
+                <div *ngIf="addressValid && !addressValidating" class="validation-status">
+                  <i class="fas fa-check-circle valid"></i>
+                  <span class="validation-text valid">✅ Dirección válida</span>
+                  <span *ngIf="addressFormatted" class="formatted-address">{{ addressFormatted }}</span>
+                </div>
+                
+                <div *ngIf="!addressValid && !addressValidating && customerForm.get('direccion')?.value.length >= 5" class="validation-status">
+                  <i class="fas fa-exclamation-triangle warning"></i>
+                  <span class="validation-text warning">⚠️ Dirección no encontrada</span>
+                </div>
+              </div>
+              
+              <!-- Sugerencias de direcciones -->
+              <div class="address-suggestions" *ngIf="addressSuggestions.length > 0">
+                <p class="suggestions-title">Sugerencias:</p>
+                <button type="button" 
+                        class="suggestion-item"
+                        *ngFor="let suggestion of addressSuggestions"
+                        (click)="selectAddressSuggestion(suggestion)">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ suggestion }}
+                </button>              </div>
+            </app-form-field>
+
+            <!-- Teléfono -->
+            <app-form-field 
+              label="Teléfono" 
+              [required]="false" 
+              [errorMessage]="getErrorMessage('telefono')" 
+              fieldId="telefono">
+              <app-text-input 
+                formControlName="telefono" 
+                id="telefono"
+                placeholder="+56 9 1234 5678"
+                (blur)="formatPhone()">
+              </app-text-input>
+            </app-form-field>
+
+          </div>          <!-- Email en una fila separada para mayor espacio -->
+          <div class="form-grid form-grid--1">
+            <app-form-field 
+              label="Email" 
+              [required]="false" 
+              [errorMessage]="getErrorMessage('email')" 
+              fieldId="email">
+              <div class="email-input-container">
+                <app-text-input 
+                  formControlName="email" 
+                  id="email"
+                  type="email"
+                  placeholder="contacto@empresa.cl">
+                </app-text-input>
+                
+                <!-- Estado de validación de email -->
+                <div class="email-validation" *ngIf="customerForm.get('email')?.value">
+                  <div *ngIf="emailValidating" class="validation-status">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span class="validation-text">Validando email...</span>
+                  </div>
+                  
+                  <div *ngIf="emailValid && emailExists && !emailValidating" class="validation-status">
+                    <i class="fas fa-check-circle valid"></i>
+                    <span class="validation-text valid">✅ Email válido y activo</span>
+                  </div>
+                  
+                  <div *ngIf="emailValid && !emailExists && !emailValidating" class="validation-status">
+                    <i class="fas fa-exclamation-triangle warning"></i>
+                    <span class="validation-text warning">⚠️ Email válido pero dominio no verificado</span>
+                  </div>
+                  
+                  <div *ngIf="!emailValid && !emailValidating && customerForm.get('email')?.value" class="validation-status">
+                    <i class="fas fa-times-circle invalid"></i>
+                    <span class="validation-text invalid">❌ Email inválido</span>
+                  </div>
+                </div>
+              </div>
+            </app-form-field>
+          </div></app-form-section>
+
+      </form>
+    </div>    <!-- Footer con botones -->
+    <div class="dialog-footer">
+      <button class="btn btn-secondary" (click)="closeDialog()">
+        <i class="fas fa-times"></i>
+        Cancelar
+      </button>
+      
+      <!-- Botón Editar (azul con lápiz) -->
+      <button *ngIf="customer" 
+              class="btn btn-edit" 
+              (click)="saveCustomer()">
+        <i class="fas fa-pencil-alt" *ngIf="!isLoading"></i>
+        <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
+        Editar
+      </button>
+      
+      <!-- Botón Guardar (verde) -->
+      <button *ngIf="!customer" 
+              class="btn btn-save" 
+              (click)="saveCustomer()">
+        <i class="fas fa-save" *ngIf="!isLoading"></i>
+        <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
+        Guardar
+      </button>
+    </div>
+
+  </div>
+</div>
