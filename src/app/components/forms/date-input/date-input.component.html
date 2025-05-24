@@ -1,0 +1,17 @@
+<div class="date-input-container">
+  <input
+    [id]="id"
+    type="date"
+    [placeholder]="placeholder"
+    [value]="value"
+    [disabled]="disabled"
+    [min]="min"
+    [max]="max"
+    (input)="onInputChange($event)"
+    (blur)="onBlur()"
+    class="date-input"
+  />
+  <div class="date-icon">
+    <i class="fas fa-calendar-alt"></i>
+  </div>
+</div>

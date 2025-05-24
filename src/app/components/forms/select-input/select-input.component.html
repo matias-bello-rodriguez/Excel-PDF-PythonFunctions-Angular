@@ -1,0 +1,18 @@
+<div class="select-container">
+  <select
+    [id]="id"
+    [value]="value"
+    [disabled]="disabled"
+    (change)="onSelectChange($event)"
+    (blur)="onBlur()"
+    class="select-input"
+  >
+    <option value="" disabled selected hidden>{{ placeholder }}</option>
+    <option *ngFor="let option of options" [value]="option.value">
+      {{ option.label }}
+    </option>
+  </select>
+  <div class="select-arrow">
+    <i class="fas fa-chevron-down"></i>
+  </div>
+</div>

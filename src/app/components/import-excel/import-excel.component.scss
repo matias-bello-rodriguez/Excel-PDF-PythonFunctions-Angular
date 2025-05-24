@@ -1,0 +1,154 @@
+.styled-dropdown {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 200px;
+  padding: 8px 0;
+}
+
+.styled-dropdown .dropdown-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  color: #333;
+  text-align: left;
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+.styled-dropdown .dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.import-excel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  height: 100%;
+}
+
+.file-input-section {
+  margin-bottom: 1rem;
+
+  .file-input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+}
+
+.preview-section {
+  display: flex;
+  gap: 2rem;
+  height: calc(100% - 4rem);
+}
+
+.excel-preview {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    text-align: left;
+    min-width: 100px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+  }
+
+  .header-letters {
+    th {
+      text-align: center;
+      background-color: #e9ecef;
+    }
+  }
+
+  .row-number {
+    position: sticky;
+    left: 0;
+    background-color: #f8f9fa;
+    z-index: 2;
+    width: 50px;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  tbody tr:hover {
+    background-color: #f5f5f5;
+  }
+}
+
+.mapping-section {
+  width: 300px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  overflow-y: auto;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  .mapping-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .mapping-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      label {
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      select {
+        padding: 0.25rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.import-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+}

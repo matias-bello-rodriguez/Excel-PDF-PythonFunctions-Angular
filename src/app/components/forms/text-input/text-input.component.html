@@ -1,0 +1,13 @@
+<input
+  [id]="id"
+  [type]="type"
+  [placeholder]="placeholder"
+  [value]="value"
+  [disabled]="disabled"
+  [readonly]="readonly"
+  [attr.maxlength]="maxLength"
+  [attr.minlength]="minLength"
+  (input)="onInputChange($event)"
+  (blur)="onBlur()"
+  class="text-input"
+/>

@@ -1,0 +1,31 @@
+.form-section {
+  margin-bottom: var(--spacing-06);
+  border-left: 4px solid var(--gray-20);
+  padding-left: var(--spacing-04);
+  transition: background-color 0.2s, border-left-color 0.2s;
+}
+
+.form-section:hover {
+  background-color: var(--gray-10);
+  border-left-color: var(--primary-color);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-90);
+  margin-bottom: var(--spacing-04);
+  padding-bottom: var(--spacing-02);
+  border-bottom: 1px solid var(--gray-20);
+  display: flex;
+  align-items: center;
+}
+
+.section-icon {
+  margin-right: var(--spacing-03);
+  color: var(--primary-color);
+}
+
+.section-content {
+  padding: var(--spacing-04) 0;
+}

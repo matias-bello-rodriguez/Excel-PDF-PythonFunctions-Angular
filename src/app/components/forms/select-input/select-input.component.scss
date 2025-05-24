@@ -1,0 +1,75 @@
+@import '../../../styles/variables'; // Importar variables globales
+
+.select-container {
+  position: relative;
+  width: 100%;
+
+  &.disabled {
+    .select-arrow {
+      color: var(--gray-40);
+    }
+  }
+}
+
+.select-input {
+  width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  padding-right: ($input-padding-x * 2) + $spacing-unit * 1.5; // Espacio para el ícono de flecha
+  border: 1px solid $form-border-color;
+  border-radius: $input-border-radius;
+  font-size: $input-font-size;
+  line-height: $input-line-height;
+  color: $form-text-color;
+  background-color: $input-bg-color;
+  transition: $input-transition;
+  appearance: none; // Quitar apariencia nativa
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $form-border-focus-color;
+    box-shadow: 0 0 0 2px rgba($form-border-focus-color, 0.25);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--gray-50); // O $form-border-focus-color con menor opacidad
+  }
+
+  &:disabled {
+    background-color: $input-disabled-bg;
+    border-color: $form-border-color;
+    color: var(--gray-50); // Texto del select desactivado más claro
+    cursor: not-allowed;
+    opacity: 0.7;
+    .select-arrow {
+      color: var(--gray-40); // Flecha también atenuada
+    }
+  }
+
+  // Estilos para cuando el campo tiene error
+  // &.ng-invalid.ng-touched {
+  //   border-color: $form-error-border-color;
+  //   box-shadow: 0 0 0 2px rgba($form-error-border-color, 0.2);
+  // }
+}
+
+.select-arrow {
+  position: absolute;
+  top: 50%;
+  right: $input-padding-x;
+  transform: translateY(-50%);
+  color: $form-icon-color; // Usar variable para color de ícono
+  pointer-events: none; // Para que no interfiera con el click en el select
+  transition: color 0.15s ease-in-out;
+  font-size: $input-font-size * 0.8; // Ajustar tamaño de flecha relativo al input
+
+  // i { // Si se usa un elemento <i> para el ícono
+  //   font-size: 12px; // O un tamaño más dinámico
+  // }
+}
+
+// Cambiar color de flecha en hover/focus del contenedor
+.select-container:hover:not(.disabled) .select-arrow,
+.select-input:focus ~ .select-arrow {
+  color: $form-border-focus-color; // Usar color de foco del borde
+}

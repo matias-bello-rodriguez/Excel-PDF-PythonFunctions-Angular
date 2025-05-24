@@ -1,9 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-
-// Importamos los componentes modulares
 import { PageTitleComponent } from '../../components/page-title/page-title.component';
 import { AddButtonComponent } from '../../components/add-button/add-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
@@ -11,16 +7,13 @@ import { DataTableComponent } from '../../components/data-table/data-table.compo
 import { TablePaginationComponent } from '../../components/table-pagination/table-pagination.component';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
-
-// Importamos los tipos
 import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/table.types';
 
 @Component({
-  selector: 'app-takeoff-list',
+  selector: 'app-project-list',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     PageTitleComponent,
     AddButtonComponent,
     SearchBarComponent,
@@ -29,22 +22,19 @@ import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/tab
     FilterDialogComponent,
     ColumnDialogComponent
   ],
-  templateUrl: './takeoff-list.component.html',
-  styleUrl: './takeoff-list.component.scss'
+  templateUrl: './project-list.component.html',
+  styleUrl: './project-list.component.scss'
 })
-export class TakeoffListComponent implements OnInit {
-  // Propiedades de la página
-  pageTitle: string = 'Gestión de Cubicaciones';
-  
-  // Propiedades de búsqueda
+export class ProjectListComponent {
+  pageTitle: string = 'Gestión de Proyectos';
   searchTerm: string = '';
-  
-  // Propiedades de columnas y tabla
   columns: TableColumn[] = [
     { key: 'id', label: 'Código', type: 'text', sortable: true, draggable: false, visible: true },
-    { key: 'proyecto', label: 'Proyecto', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'nombre', label: 'Nombre', type: 'text', sortable: true, draggable: true, visible: true },
-    { key: 'fecha', label: 'Fecha', type: 'date', sortable: true, draggable: true, visible: true },
+    { key: 'cliente', label: 'Cliente', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'ubicacion', label: 'Ubicación', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'fechaInicio', label: 'Fecha Inicio', type: 'date', sortable: true, draggable: true, visible: true },
+    { key: 'fechaEntrega', label: 'Fecha Entrega', type: 'date', sortable: true, draggable: true, visible: true },
     { key: 'estado', label: 'Estado', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'monto', label: 'Monto', type: 'number', sortable: true, draggable: true, visible: true },
     { key: 'actions', label: 'Acciones', type: 'actions', sortable: false, draggable: false, visible: true }
@@ -52,141 +42,126 @@ export class TakeoffListComponent implements OnInit {
   defaultColumns: TableColumn[] = JSON.parse(JSON.stringify(this.columns));
   columnOrder: string[] = this.columns.map(col => col.key);
   defaultColumnOrder: string[] = [...this.columnOrder];
-  tempColumnState: Set<string> = new Set(); // Estado temporal para las columnas en el diálogo
+  tempColumnState: Set<string> = new Set();
   draggedColumn: string | null = null;
-  
-  // Propiedades de ordenamiento
-  sortConfig: SortConfig = {
-    column: null,
-    direction: 'asc'
-  };
+  sortConfig: SortConfig = { column: null, direction: 'asc' };
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
-  
-  // Propiedades de paginación
-  paginationConfig = {
-    currentPage: 1,
-    itemsPerPage: 10,
-    totalItems: 0
-  };
+  paginationConfig = { currentPage: 1, itemsPerPage: 10, totalItems: 0 };
   currentPage = 1;
   itemsPerPage = 10;
   totalItems = 0;
-
-  // Propiedades de filtros
   columnTypes: { [key: string]: 'text' | 'date' | 'number' } = {
     id: 'text',
-    proyecto: 'text',
     nombre: 'text',
-    fecha: 'date',
+    cliente: 'text',
+    ubicacion: 'text',
+    fechaInicio: 'date',
+    fechaEntrega: 'date',
     estado: 'text',
     monto: 'number',
     actions: 'text'
   };
-
   uniqueValues: { [key: string]: string[] } = {};
-
   columnLabels: { [key: string]: string } = {
     id: 'Código',
-    proyecto: 'Proyecto',
     nombre: 'Nombre',
-    fecha: 'Fecha',
+    cliente: 'Cliente',
+    ubicacion: 'Ubicación',
+    fechaInicio: 'Fecha Inicio',
+    fechaEntrega: 'Fecha Entrega',
     estado: 'Estado',
     monto: 'Monto',
     actions: 'Acciones'
   };
-
-  filters: {
-    [key: string]: {
-      type: 'text' | 'date' | 'number';
-      value?: string;
-      from?: string | number | null;
-      to?: string | number | null;
-    };
-  } = {};
-
-  // Define interface for cubicacion objects
-  cubicaciones: Array<{
+  filters: { [key: string]: { type: 'text' | 'date' | 'number'; value?: string; from?: string | number | null; to?: string | number | null; }; } = {};
+  proyectos: Array<{
     id: string;
-    proyecto: string;
     nombre: string;
-    fecha: string;
+    cliente: string;
+    ubicacion: string;
+    fechaInicio: string;
+    fechaEntrega: string;
     estado: string;
     monto: string;
     [key: string]: string;
   }> = [
     {
-      id: 'CUB-2023-001',
-      proyecto: 'Edificio Central',
-      nombre: 'Torre Central',
-      fecha: '15/05/2023',
+      id: 'PRJ-2024-001',
+      nombre: 'Edificio Central',
+      cliente: 'Constructora Andes',
+      ubicacion: 'Santiago',
+      fechaInicio: '01/03/2024',
+      fechaEntrega: '15/12/2024',
       estado: 'activo',
-      monto: '$48.370.000'
+      monto: '$1.200.000.000'
     },
     {
-      id: 'CUB-2023-002',
-      proyecto: 'Parque Industrial',
-      nombre: 'Edificio Norte',
-      fecha: '22/05/2023',
+      id: 'PRJ-2024-002',
+      nombre: 'Parque Industrial',
+      cliente: 'Inmobiliaria Sur',
+      ubicacion: 'Concepción',
+      fechaInicio: '10/04/2024',
+      fechaEntrega: '30/11/2024',
       estado: 'activo',
-      monto: '$73.290.500'
+      monto: '$850.000.000'
     },
     {
-      id: 'CUB-2023-003',
-      proyecto: 'Torre Norte',
-      nombre: 'Bodega Industrial',
-      fecha: '30/05/2023',
+      id: 'PRJ-2024-003',
+      nombre: 'Torre Norte',
+      cliente: 'Grupo Norte',
+      ubicacion: 'Antofagasta',
+      fechaInicio: '20/02/2024',
+      fechaEntrega: '10/10/2024',
       estado: 'inactivo',
-      monto: '$88.560.750'
+      monto: '$950.000.000'
     }
   ];
-
   originalData: any[] = [];
   data: any[] = [];
   showFilterMenu = false;
   showColumnMenu = false;
-  originalCubicaciones = [...this.cubicaciones];
+  originalProyectos = [...this.proyectos];
   hasActiveFilters = false;
-  pinnedItems: Set<string> = new Set(); // Almacena IDs de filas fijadas
+  pinnedItems: Set<string> = new Set();
+
   // --- PINNING Y ORDEN ORIGINAL ---
   private originalIndexMap: { [id: string]: number } = {};
 
-  constructor(private router: Router) {
-    this.totalItems = this.cubicaciones.length;
+  constructor() {
+    this.totalItems = this.proyectos.length;
     this.paginationConfig.totalItems = this.totalItems;
     this.initializeFilters();
     this.updateUniqueValues();
-    this.cubicaciones.forEach((c, i) => this.originalIndexMap[c.id] = i);
+    this.proyectos.forEach((p, i) => this.originalIndexMap[p.id] = i);
   }
 
   ngOnInit() {
-    // Guardar una copia de los datos originales
     this.originalData = [...this.data];
   }
 
   getColumnLabel(colId: string): string {
     return this.columnLabels[colId] || colId;
   }
-  
+
   // Métodos para Search Bar
   onSearchChange(value: string): void {
     this.searchTerm = value;
     this.applySearch();
   }
-  
+
   onSearchSubmit(value: string): void {
     this.searchTerm = value;
     this.applySearch();
   }
-  
+
   applySearch(): void {
     if (!this.searchTerm.trim()) {
       this.resetSearch();
       return;
     }
-    
     const searchTerm = this.searchTerm.toLowerCase().trim();
-    const filtered = this.originalCubicaciones.filter(item => {
+    const filtered = this.originalProyectos.filter(item => {
       if (this.pinnedItems.has(item.id)) return false;
       return Object.keys(item).some(key => {
         if (key !== 'actions') {
@@ -196,24 +171,24 @@ export class TakeoffListComponent implements OnInit {
         return false;
       });
     });
-    const pinned = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    this.cubicaciones = [...pinned, ...filtered];
+    const pinned = this.originalProyectos.filter(item => this.pinnedItems.has(item.id));
+    this.proyectos = [...pinned, ...filtered];
     this.currentPage = 1;
     this.paginationConfig.currentPage = 1;
-    this.totalItems = this.cubicaciones.length;
+    this.totalItems = this.proyectos.length;
     this.paginationConfig.totalItems = this.totalItems;
   }
-  
+
   resetSearch(): void {
-    this.cubicaciones = [...this.originalCubicaciones];
+    this.proyectos = [...this.originalProyectos];
     this.applyFilters();
   }
-  
+
   // Métodos para diálogos
   toggleFilterDialog(): void {
     this.showFilterMenu = !this.showFilterMenu;
   }
-  
+
   toggleColumnDialog(): void {
     this.showColumnMenu = !this.showColumnMenu;
   }
@@ -236,7 +211,7 @@ export class TakeoffListComponent implements OnInit {
   private updateUniqueValues() {
     this.columnOrder.forEach(column => {
       if (this.columnTypes[column] === 'text' && column !== 'actions') {
-        const values = new Set(this.cubicaciones.map(item => item[column]));
+        const values = new Set(this.proyectos.map(item => item[column]));
         this.uniqueValues[column] = Array.from(values).sort();
       }
     });
@@ -245,7 +220,7 @@ export class TakeoffListComponent implements OnInit {
   resetFilters() {
     this.initializeFilters();
     this.hasActiveFilters = false;
-    this.cubicaciones = [...this.originalCubicaciones];
+    this.proyectos = [...this.originalProyectos];
     this.showFilterMenu = false;
   }
 
@@ -254,7 +229,6 @@ export class TakeoffListComponent implements OnInit {
   }
 
   clearFilters(): void {
-    // Limpiar valores manteniendo la estructura
     Object.keys(this.filters).forEach(column => {
       if (this.filters[column]) {
         this.filters[column].value = '';
@@ -264,39 +238,31 @@ export class TakeoffListComponent implements OnInit {
         }
       }
     });
-
     this.hasActiveFilters = false;
-    const pinned = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinned = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
-    this.cubicaciones = [...pinned, ...unpinned];
-    this.totalItems = this.cubicaciones.length;
+    const pinned = this.originalProyectos.filter(item => this.pinnedItems.has(item.id));
+    const unpinned = this.originalProyectos.filter(item => !this.pinnedItems.has(item.id));
+    this.proyectos = [...pinned, ...unpinned];
+    this.totalItems = this.proyectos.length;
     this.paginationConfig.totalItems = this.totalItems;
     this.currentPage = 1;
     this.paginationConfig.currentPage = 1;
   }
 
   applyFilters(newFilters?: { [key: string]: TableFilter }): void {
-    // Actualiza los filtros si se reciben desde el componente
     if (newFilters) {
       this.filters = newFilters;
     }
-    let filteredData = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
-    // Aplicar todos los filtros
+    let filteredData = this.originalProyectos.filter(item => !this.pinnedItems.has(item.id));
     for (const col in this.filters) {
       const filter = this.filters[col];
-
-      // Skip if filter is empty
       if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
-      if ((filter.type === 'date' || filter.type === 'number') && 
-          filter.from == null && filter.to == null) continue;
-      
+      if ((filter.type === 'date' || filter.type === 'number') && filter.from == null && filter.to == null) continue;
       switch (filter.type) {
         case 'text':
           filteredData = filteredData.filter(item =>
             filter.value ? String(item[col]).toLowerCase().includes(filter.value.toLowerCase()) : true
           );
           break;
-          
         case 'date':
           if (filter.from || filter.to) {
             filteredData = filteredData.filter(item => {
@@ -316,7 +282,6 @@ export class TakeoffListComponent implements OnInit {
             });
           }
           break;
-          
         case 'number':
           if (filter.from !== null || filter.to !== null) {
             filteredData = filteredData.filter(item => {
@@ -335,46 +300,38 @@ export class TakeoffListComponent implements OnInit {
           break;
       }
     }
-    const pinned = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    this.cubicaciones = [...pinned, ...filteredData];
-    this.totalItems = this.cubicaciones.length;
+    const pinned = this.originalProyectos.filter(item => this.pinnedItems.has(item.id));
+    this.proyectos = [...pinned, ...filteredData];
+    this.totalItems = this.proyectos.length;
     this.currentPage = 1;
   }
-  nuevaCubicacion() {
-    console.log('Creando nueva cubicación desde TakeoffListComponent');
+
+  nuevoProyecto() {
+    console.log('Creando nuevo proyecto desde ProjectListComponent');
   }
   editar(id: string) {
-    console.log(`Editando cubicación ${id} desde TakeoffListComponent`);
+    console.log(`Editando proyecto ${id} desde ProjectListComponent`);
+  }
+  eliminar(id: string) {
+    console.log(`Eliminando proyecto ${id} desde ProjectListComponent`);
   }
 
-  eliminar(id: string) {
-    console.log(`Eliminando cubicación ${id} desde TakeoffListComponent`);
-  }
-  
-  // Acción para ver detalle productos
-  verDetalleProductos(id: string) {
-    // Navega a la lista de productos de cubicaciones pasando el id
-    this.router.navigate(['/cubicaciones/productos', id]);
-  }
-  
-  // Métodos para DataTable
   onRowClick(item: any): void {
     console.log('Fila seleccionada:', item);
   }
-  
+
   onSortChange(sortConfig: SortConfig): void {
     this.sortConfig = sortConfig;
     this.sortColumn = sortConfig.column;
     this.sortDirection = sortConfig.direction;
     this.applySort();
   }
-  
+
   applySort(): void {
     // La ordenación se hace dentro del DataTable
   }
-  
+
   onColumnReorder(columns: TableColumn[]): void {
-    // Actualizar columnas después de reordenar
     this.columns = columns;
     this.columnOrder = columns.map(col => col.key);
   }
@@ -386,10 +343,8 @@ export class TakeoffListComponent implements OnInit {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
-    
-    const pinnedItems = this.cubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinnedItems = this.cubicaciones.filter(item => !this.pinnedItems.has(item.id));
-    
+    const pinnedItems = this.proyectos.filter(item => this.pinnedItems.has(item.id));
+    const unpinnedItems = this.proyectos.filter(item => !this.pinnedItems.has(item.id));
     const sortFn = (a: any, b: any) => {
       const valA = column === 'monto' ? 
         parseFloat(a[column].replace(/[^0-9.-]+/g, '')) : 
@@ -397,7 +352,6 @@ export class TakeoffListComponent implements OnInit {
       const valB = column === 'monto' ? 
         parseFloat(b[column].replace(/[^0-9.-]+/g, '')) : 
         b[column];
-
       let comparison = 0;
       if (valA > valB) {
         comparison = 1;
@@ -406,11 +360,9 @@ export class TakeoffListComponent implements OnInit {
       }
       return this.sortDirection === 'asc' ? comparison : comparison * -1;
     };
-
     pinnedItems.sort(sortFn);
     unpinnedItems.sort(sortFn);
-    
-    this.cubicaciones = [...pinnedItems, ...unpinnedItems];
+    this.proyectos = [...pinnedItems, ...unpinnedItems];
   }
 
   getMaxDisplayed(): number {
@@ -427,12 +379,9 @@ export class TakeoffListComponent implements OnInit {
     return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 
-  // Método para manejar el cambio de tamaño de página desde el componente TablePagination
   onPageSizeChange(size: number): void {
     this.itemsPerPage = size;
     this.paginationConfig.itemsPerPage = size;
-    
-    // Ajustar la página currentPage si es necesario
     const totalPages = this.getTotalPages();
     if (this.currentPage > totalPages) {
       this.currentPage = totalPages || 1;
@@ -446,16 +395,15 @@ export class TakeoffListComponent implements OnInit {
     const maxVisiblePages = 5;
     let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
     return pages;
   }
+
   onDragStart(event: DragEvent, columnId: string) {
     if (columnId === 'id' || columnId === 'actions') return;
     this.draggedColumn = columnId;
@@ -479,24 +427,21 @@ export class TakeoffListComponent implements OnInit {
       th.classList.remove('drag-over');
     }
   }
+
   onDrop(event: DragEvent, targetColumnId: string) {
     event.preventDefault();
     if (targetColumnId === 'id' || targetColumnId === 'actions' || !this.draggedColumn) return;
-
     const th = (event.target as HTMLElement).closest('th');
     if (th) {
       th.classList.remove('drag-over');
     }
-
     const fromIndex = this.columnOrder.indexOf(this.draggedColumn);
     const toIndex = this.columnOrder.indexOf(targetColumnId);
-
     if (fromIndex !== -1 && toIndex !== -1) {
       this.columnOrder = Array.from(this.columnOrder);
       this.columnOrder.splice(fromIndex, 1);
       this.columnOrder.splice(toIndex, 0, this.draggedColumn);
     }
-
     this.draggedColumn = null;
   }
 
@@ -512,7 +457,6 @@ export class TakeoffListComponent implements OnInit {
   }
 
   toggleColumnMenu() {
-    // Al abrir el diálogo, inicializar el estado temporal con las columnas actualmente visibles
     if (!this.showColumnMenu) {
       this.tempColumnState = new Set(this.columnOrder);
     }
@@ -523,29 +467,25 @@ export class TakeoffListComponent implements OnInit {
     this.showColumnMenu = false;
   }
 
-  // Métodos para el componente ColumnDialog
   applyColumnChanges(newColumns?: TableColumn[]): void {
     if (newColumns) {
-      // Actualizar columnas y orden de columnas según la selección del diálogo
       this.columns = newColumns;
       this.columnOrder = newColumns.filter(col => col.visible !== false).map(col => col.key);
     }
     this.closeColumnMenu();
   }
+
   cancelColumnChanges(): void {
-    // Restaurar columnas por defecto
     this.resetColumns();
     this.closeColumnMenu();
   }
 
   isColumnSelected(columnId: string): boolean {
-    // Para el diálogo, usamos el estado temporal
     return this.tempColumnState.has(columnId);
   }
 
   toggleColumnSelection(columnId: string): void {
-    if (columnId === 'id') return; // La columna ID siempre debe estar visible
-    
+    if (columnId === 'id') return;
     if (this.tempColumnState.has(columnId)) {
       this.tempColumnState.delete(columnId);
     } else {
@@ -565,28 +505,13 @@ export class TakeoffListComponent implements OnInit {
       updated.add(id);
     }
     this.pinnedItems = updated;
-    this.reorderCubicaciones();
+    this.reorderProyectos();
   }
 
-  private reorderCubicaciones() {
-    const pinned = this.originalCubicaciones.filter(item => this.pinnedItems.has(item.id));
-    const unpinned = this.originalCubicaciones.filter(item => !this.pinnedItems.has(item.id));
-    this.cubicaciones = [...pinned, ...unpinned];
-  }
-
-  isColumnVisible(columnId: string): boolean {
-    return this.columnOrder.includes(columnId);
-  }
-
-  toggleColumn(columnId: string) {
-    if (columnId === 'id') return;
-
-    const index = this.columnOrder.indexOf(columnId);
-    if (index === -1) {
-      this.columnOrder.push(columnId);
-    } else {
-      this.columnOrder.splice(index, 1);
-    }
+  private reorderProyectos() {
+    const pinned = this.originalProyectos.filter(item => this.pinnedItems.has(item.id));
+    const unpinned = this.originalProyectos.filter(item => !this.pinnedItems.has(item.id));
+    this.proyectos = [...pinned, ...unpinned];
   }
 
   resetColumns() {

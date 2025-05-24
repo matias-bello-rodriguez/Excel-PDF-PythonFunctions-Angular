@@ -650,6 +650,7 @@ body {
 
 /* Contenedor principal de la tabla */
 .table-container {
+  overflow-x: auto;
   width: 100%;
   border-radius: 0 0 4px 4px;
 }

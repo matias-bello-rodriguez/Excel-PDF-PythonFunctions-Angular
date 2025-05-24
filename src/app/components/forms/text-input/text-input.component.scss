@@ -1,0 +1,46 @@
+@import '../../../styles/variables'; // Importar variables globales
+
+.text-input {
+  width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  border: 1px solid $form-border-color;
+  border-radius: $input-border-radius;
+  font-size: $input-font-size;
+  line-height: $input-line-height;
+  color: $form-text-color;
+  background-color: $input-bg-color;
+  transition: $input-transition;
+
+  &:focus {
+    outline: none;
+    border-color: $form-border-focus-color;
+    box-shadow: 0 0 0 2px rgba($form-border-focus-color, 0.25); // Usar alpha estandarizada
+    // &::placeholder { // El cambio de color del placeholder en foco puede ser demasiado distractor
+    //   color: var(--primary-color); // O $form-border-focus-color si se prefiere variable SCSS
+    // }
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--gray-50); // Mantener un hover sutil o usar $form-border-focus-color con menor opacidad
+    // box-shadow: 0 0 0 1px var(--primary-color); // Considerar si este box-shadow es necesario en hover
+  }
+
+  &:disabled,
+  &[readonly] { // Aplicar estilos también a readonly, usando selector de atributo
+    background-color: $input-disabled-bg;
+    border-color: $form-border-color; // A menudo el borde también se atenúa
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &::placeholder {
+    color: $input-placeholder-color;
+    opacity: 1; // Asegurar visibilidad en todos los navegadores
+  }
+
+  // Estilos específicos para cuando el campo tiene error, si no se maneja por .has-error en form-field
+  // &.ng-invalid.ng-touched {
+  //   border-color: $form-error-border-color;
+  //   box-shadow: 0 0 0 2px rgba($form-error-border-color, 0.2);
+  // }
+}

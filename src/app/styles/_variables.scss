@@ -1,0 +1,52 @@
+// c:\app-kinetta\src\app\styles\_variables.scss
+
+// Typography
+$base-font-size: 16px;
+$label-font-size: 0.875rem; // 14px, consistent with current field label
+$help-text-font-size: 0.75rem; // 12px
+$input-font-size: 0.875rem; // 14px
+
+// Spacing
+$spacing-unit: 8px;
+$form-spacing-base: $spacing-unit * 2; // 16px
+$field-margin-bottom: $form-spacing-base * 1.25; // 20px
+$label-margin-bottom: $spacing-unit * 0.75; // 6px
+
+// Colors (using CSS variables defined in styles.scss, with fallbacks to actual values from styles.scss)
+$form-text-color: var(--gray-90, #262626);
+$form-label-color: var(--gray-90, #262626); // Mantenido en negro
+$form-border-color: var(--gray-30, #C6C6C6);
+$form-border-focus-color: var(--primary-color, #0F62FE);
+$form-required-indicator-color: var(--danger-color, #DA1E28); // Cambiado a rojo
+$form-error-text-color: var(--danger-color, #DA1E28); // Mantenido en rojo para mensajes de error
+$form-error-border-color: var(--danger-color, #DA1E28);
+$form-success-text-color: var(--success-color, #198038);
+$form-success-border-color: var(--success-color, #198038);
+$form-help-text-color: var(--gray-60, #6F6F6F);
+
+// Buttons (rely on global button styling or component-specific styles for app-form-buttons)
+// These can be used if styling raw button elements within forms.scss
+// $button-primary-bg: var(--primary-button-bg, var(--primary-color, #0F62FE));
+// $button-primary-text: var(--primary-button-text, #ffffff);
+// $button-secondary-bg: var(--secondary-button-bg, var(--gray-20, #E0E0E0));
+// $button-secondary-text: var(--secondary-button-text, var(--gray-80, #393939));
+
+// Sections
+$section-divider-color: var(--gray-20, #E0E0E0);
+$section-title-color: var(--gray-90, #262626);
+$section-padding: $form-spacing-base * 1.5; // 24px
+$section-margin-bottom: $form-spacing-base * 1.5; // 24px
+$section-bg-color: var(--gray-10, #F4F4F4); // Subtle background for sections
+
+// Inputs
+$input-padding-y: $spacing-unit * 1.1; // Approx 9px
+$input-padding-x: $spacing-unit * 1.5; // 12px
+$input-bg-color: var(--input-bg, #ffffff); // Assuming --input-bg might be defined, else white
+$input-disabled-bg: var(--gray-10, #F4F4F4);
+$input-placeholder-color: var(--gray-50, #8D8D8D);
+$input-border-radius: 4px;
+$input-line-height: 1.5;
+$input-transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+// Font Awesome default icon color
+$form-icon-color: var(--gray-60, #6F6F6F);

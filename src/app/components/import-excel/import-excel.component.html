@@ -1,0 +1,42 @@
+<div class="import-excel-container">
+  <div class="file-input-section">
+    <input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls" class="file-input" />
+  </div>
+
+  <div class="preview-section" *ngIf="previewData">
+    <div class="excel-preview">
+      <table class="excel-table">
+        <thead>
+          <tr class="header-letters">
+            <th></th>
+            <th *ngFor="let col of columnasExcel; let i = index">{{ getColumnLetter(i) }}</th>
+          </tr>
+          <tr>
+            <th class="row-number">#</th>
+            <th *ngFor="let columna of columnasExcel">{{ columna }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of excelData.slice(1); let i = index">
+            <td class="row-number">{{ i + 1 }}</td>
+            <td *ngFor="let celda of fila">{{ celda }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mapping-section">
+      <h3>Mapeo de Columnas</h3>
+      <div class="mapping-controls">
+        <div *ngFor="let columna of columnasSistema" class="mapping-row">
+          <label>{{ columna }}:</label>
+          <select [(ngModel)]="mapeo[columna]">
+            <option value="">Seleccionar columna</option>
+            <option *ngFor="let col of columnasExcel" [value]="col">{{ col }}</option>
+          </select>
+        </div>
+      </div>
+      <button (click)="onImportar()" class="import-button">Importar Datos</button>
+    </div>
+  </div>
+</div>

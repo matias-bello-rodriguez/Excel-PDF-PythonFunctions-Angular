@@ -1,0 +1,536 @@
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { PageTitleComponent } from '../../components/page-title/page-title.component';
+import { AddButtonComponent } from '../../components/add-button/add-button.component';
+import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
+import { DataTableComponent } from '../../components/data-table/data-table.component';
+import { TablePaginationComponent } from '../../components/table-pagination/table-pagination.component';
+import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
+import { TableColumn, SortConfig } from '../../types/table.types';
+import { ActivatedRoute } from '@angular/router';
+import { ImportExcelComponent } from '../../components/import-excel/import-excel.component';
+import { FormsModule } from '@angular/forms';
+import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
+import { ExcelImportService } from '../../services/excel-import.service';
+
+@Component({
+  selector: 'app-product-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    PageTitleComponent,
+    AddButtonComponent,
+    SearchBarComponent,
+    DataTableComponent,
+    TablePaginationComponent,
+    ColumnDialogComponent,
+    ImportExcelComponent,
+    FormsModule,
+    FilterDialogComponent
+  ],
+  templateUrl: './product-list.component.html',
+  styleUrl: './product-list.component.scss'
+})
+export class ProductListComponent {
+  pageTitle: string = 'Gestión de Productos';
+  searchTerm: string = '';
+  columns: TableColumn[] = [
+    { key: 'windowCode', label: 'WINDOW CODE', type: 'text', sortable: true, draggable: false, visible: true },
+    { key: 'takeoffCode', label: 'TAKEOFF CODE', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'location', label: 'Location', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'productName', label: 'Product Name', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'productType', label: 'Product Type', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'width', label: 'Width (m)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'height', label: 'Height (m)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'surface', label: 'Surface (m²)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'quantity', label: 'Quantity', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'installMethod', label: 'Installation Method', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'frameType', label: 'Frame Type', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'frameLength', label: 'Frame Length (m)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'unitPriceUsd', label: 'Unit Price (USD/m²)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'installCostClp', label: 'Install Cost (CLP/m²)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'finalPriceUsd', label: 'Final Price (USD, VAT incl.)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'totalInstallClp', label: 'Total Install (CLP, VAT incl.)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'pieceTotalUsd', label: 'Piece Total (USD)', type: 'number', sortable: true, draggable: true, visible: true },
+    { key: 'design1', label: 'Design 1', type: 'text', sortable: false, draggable: true, visible: true },
+    { key: 'design2', label: 'Design 2', type: 'text', sortable: false, draggable: true, visible: true },
+    { key: 'actions', label: 'Acciones', type: 'actions', sortable: false, draggable: false, visible: true }
+  ];
+  defaultColumns: TableColumn[] = JSON.parse(JSON.stringify(this.columns));
+  columnOrder: string[] = this.columns.map(col => col.key);
+  defaultColumnOrder: string[] = [...this.columnOrder];
+  tempColumnState: Set<string> = new Set();
+  draggedColumn: string | null = null;
+  sortConfig: SortConfig = { column: null, direction: 'asc' };
+  sortColumn: string | null = null;
+  sortDirection: 'asc' | 'desc' = 'asc';
+  paginationConfig = { currentPage: 1, itemsPerPage: 10, totalItems: 0 };
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalItems = 0;
+  columnTypes: { [key: string]: 'text' | 'number' } = {
+    windowCode: 'text',
+    takeoffCode: 'text',
+    location: 'text',
+    productName: 'text',
+    productType: 'text',
+    width: 'number',
+    height: 'number',
+    surface: 'number',
+    quantity: 'number',
+    installMethod: 'text',
+    frameType: 'text',
+    frameLength: 'number',
+    unitPriceUsd: 'number',
+    installCostClp: 'number',
+    finalPriceUsd: 'number',
+    totalInstallClp: 'number',
+    pieceTotalUsd: 'number',
+    design1: 'text',
+    design2: 'text',
+    actions: 'text'
+  };
+  columnLabels: { [key: string]: string } = {
+    windowCode: 'WINDOW CODE',
+    takeoffCode: 'TAKEOFF CODE',
+    location: 'Location',
+    productName: 'Product Name',
+    productType: 'Product Type',
+    width: 'Width (m)',
+    height: 'Height (m)',
+    surface: 'Surface (m²)',
+    quantity: 'Quantity',
+    installMethod: 'Installation Method',
+    frameType: 'Frame Type',
+    frameLength: 'Frame Length (m)',
+    unitPriceUsd: 'Unit Price (USD/m²)',
+    installCostClp: 'Install Cost (CLP/m²)',
+    finalPriceUsd: 'Final Price (USD, VAT incl.)',
+    totalInstallClp: 'Total Install (CLP, VAT incl.)',
+    pieceTotalUsd: 'Piece Total (USD)',
+    design1: 'Design 1',
+    design2: 'Design 2',
+    actions: 'Acciones'
+  };
+  filters: { [key: string]: { type: 'text' | 'number'; value?: string; from?: string | number | null; to?: string | number | null; }; } = {};
+  productos: Array<{
+    windowCode: string;
+    takeoffCode: string;
+    location: string;
+    productName: string;
+    productType: string;
+    width: number;
+    height: number;
+    surface: number;
+    quantity: number;
+    installMethod: string;
+    frameType: string;
+    frameLength: number;
+    unitPriceUsd: number;
+    installCostClp: number;
+    finalPriceUsd: number;
+    totalInstallClp: number;
+    pieceTotalUsd: number;
+    design1?: string;
+    design2?: string;
+    [key: string]: string | number | undefined;
+  }> = [
+    {
+      windowCode: 'WIN-001',
+      takeoffCode: 'TKF-2024-001',
+      location: 'Lobby',
+      productName: 'WPC Panels',
+      productType: 'Cladding',
+      width: 4.0,
+      height: 2.5,
+      surface: 10.0,
+      quantity: 5,
+      installMethod: 'Screwed on metal frame',
+      frameType: 'Straight',
+      frameLength: 2.5,
+      unitPriceUsd: 50,
+      installCostClp: 12000,
+      finalPriceUsd: 60,
+      totalInstallClp: 120000,
+      pieceTotalUsd: 542.0,
+      design1: '/public/plano-ejemplo.png',
+      design2: '/public/plano-ejemplo.png'
+    },
+    {
+      windowCode: 'WIN-002',
+      takeoffCode: 'TKF-2024-001',
+      location: 'Entrance Wall',
+      productName: 'Side Frame',
+      productType: 'Frame',
+      width: 1.0,
+      height: 2.5,
+      surface: 2.5,
+      quantity: 2,
+      installMethod: 'Adhesive',
+      frameType: 'Side',
+      frameLength: 2.5,
+      unitPriceUsd: 30,
+      installCostClp: 8000,
+      finalPriceUsd: 36,
+      totalInstallClp: 20000,
+      pieceTotalUsd: 72.0,
+      design1: '/assets/plano-ejemplo.png',
+      design2: '/assets/plano-ejemplo.png'
+    }
+  ];
+  originalProductos = [...this.productos];
+  hasActiveFilters = false;
+  pinnedItems: Set<string> = new Set();
+  cubicacionId: string | null = null;
+  showFilterMenu = false;
+  showColumnMenu = false;
+  uniqueValues: { [key: string]: string[]; } | undefined;  showExcelAlertDialog: boolean = false;
+  showExcelModal: boolean = false;
+  excelContent: string = '';
+  selectedFileName: string = '';
+  selectedFile: File | null = null;
+  excelPreviewData: any[][] = [];
+  excelHeaders: string[] = [];
+  isLoadingPreview: boolean = false;
+  showPreview: boolean = false;
+
+  constructor(private route: ActivatedRoute, private excelImportService: ExcelImportService) {
+    this.route.paramMap.subscribe(params => {
+      this.cubicacionId = params.get('cubicacionId');
+      // Si hay un id, podrías filtrar productos aquí o mostrar contexto
+      // Por ejemplo:
+      // if (this.cubicacionId) {
+      //   this.productos = this.originalProductos.filter(p => p.cubicacionId === this.cubicacionId);
+      // }
+    });
+  }
+
+  /**
+   * Prompt para Copilot:
+   *
+   * Genera una tabla en formato Markdown con las siguientes columnas. Utiliza los nombres de columna y las descripciones proporcionadas. Asegúrate de que las columnas estén en el mismo orden que se especifica. Esta tabla representa la vista de productos de una cubicación y debe estar lista para copiar y pegar en una hoja de cálculo.
+   *
+   * Columnas de la tabla:
+   *
+   * id_cubicacion: Identificador único de la cubicación a la que pertenece el producto.
+   * ubicacion_cubicacion: Ubicación específica de la cubicación (Ej. "Conserjería", "Muro de acceso").
+   * nombre_producto: Nombre comercial o descriptivo del producto cubicado (Ej. "Paneles WPC", "Esquinero lateral").
+   * tipo_producto: Categoría del producto (Ej. 'Revestimiento', 'Esquinero').
+   * alto_m: Altura del área cubicada o del producto en metros.
+   * largo_m: Largo del área cubicada o del producto en metros.
+   * superficie_cubierta_m2: Superficie total cubierta por el producto en metros cuadrados.
+   * cantidad_unidades: Cantidad estimada de unidades del producto (Ej. paneles WPC, esquineros).
+   * metodo_instalacion: Descripción del método de instalación para el revestimiento.
+   * tipo_esquinero: Tipo de esquinero (si aplica a la cubicación).
+   * longitud_esquinero_m: Longitud total del esquinero (si aplica).
+   * precio_unitario_m2_usd: Precio unitario del producto por metro cuadrado en USD.
+   * costo_instalacion_m2_clp: Costo de instalación por metro cuadrado en CLP.
+   * precio_final_con_iva_usd: Precio final de la pieza en USD, incluyendo IVA (si el producto es una "pieza" individual como una ventana).
+   * precio_total_instalacion_clp_iva: Precio total de la instalación en CLP, incluyendo IVA, para esta cubicación/producto.
+   * piece_total_usd: Total de la pieza en USD (por ejemplo, para ventanas o piezas individuales).
+   *
+   * Prioriza que la tabla no esté llena de todos los atributos, sino que definas los más importantes para que estén por defecto, y en caso de que el usuario quiera, este agregará más columnas, ayuda del column dialog.
+   */
+  // --- FUNCIONES Y ESTILOS UNIFICADOS DE TABLA ---
+  // Métodos de búsqueda, filtros, orden, pinning, paginación, drag & drop, dialogs, etc. (idénticos a los de customer-list, project-list y takeoff-list)
+  // Puedes copiar y adaptar los métodos de customer-list.component.ts aquí para mantener la experiencia y lógica unificada.
+
+  // Métodos para diálogos
+  toggleFilterDialog(): void {
+    this.showFilterMenu = !this.showFilterMenu;
+  }
+
+  toggleColumnDialog(): void {
+    this.showColumnMenu = !this.showColumnMenu;
+  }
+
+  // Métodos para diálogos de filtros y columnas (idénticos a customer-list/project-list)
+  applyFilters(newFilters?: { [key: string]: any }): void {
+    if (newFilters) {
+      this.filters = newFilters;
+    }
+    // Filtrar solo los no fijados
+    let filteredData = this.originalProductos.filter(item => !this.pinnedItems.has(item.windowCode));
+    for (const col in this.filters) {
+      const filter = this.filters[col];
+      if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
+      if ((filter.type === 'number') && filter.from == null && filter.to == null) continue;
+      switch (filter.type) {
+        case 'text':
+          filteredData = filteredData.filter(item =>
+            filter.value ? String(item[col] ?? '').toLowerCase().includes(filter.value.toLowerCase()) : true
+          );
+          break;
+        case 'number':
+          if (filter.from !== null || filter.to !== null) {
+            filteredData = filteredData.filter(item => {
+              let value = item[col];
+              if (typeof value === 'string') {
+                value = parseFloat(value.replace(/[^0-9.-]+/g, ''));
+              }
+              if (typeof value !== 'number' || isNaN(value)) return false;
+              let matchesFrom = true;
+              let matchesTo = true;
+              if (filter.from !== null && filter.from !== undefined && filter.from !== '') {
+                matchesFrom = value >= (parseFloat(filter.from as string));
+              }
+              if (filter.to !== null && filter.to !== undefined && filter.to !== '') {
+                matchesTo = value <= (parseFloat(filter.to as string));
+              }
+              return matchesFrom && matchesTo;
+            });
+          }
+          break;
+      }
+    }
+    // Los fijados siempre arriba, en orden original
+    const pinned = this.originalProductos.filter(item => this.pinnedItems.has(item.windowCode));
+    this.productos = [...pinned, ...filteredData];
+    this.hasActiveFilters = Object.values(this.filters).some(filter => filter.value || filter.from || filter.to);
+    this.showFilterMenu = false;
+    this.currentPage = 1;
+    this.totalItems = this.productos.length;
+  }
+
+  clearFilters(): void {
+    Object.keys(this.filters).forEach(column => {
+      if (this.filters[column]) {
+        this.filters[column].value = '';
+        if (typeof this.filters[column].from !== 'undefined') this.filters[column].from = null;
+        if (typeof this.filters[column].to !== 'undefined') this.filters[column].to = null;
+      }
+    });
+    this.hasActiveFilters = false;
+    // Los fijados siempre arriba, el resto en orden original
+    const pinned = this.originalProductos.filter(item => this.pinnedItems.has(item.windowCode));
+    const unpinned = this.originalProductos.filter(item => !this.pinnedItems.has(item.windowCode));
+    this.productos = [...pinned, ...unpinned];
+    this.showFilterMenu = false;
+    this.totalItems = this.productos.length;
+    this.currentPage = 1;
+  }
+
+  applyColumnChanges(newColumns?: TableColumn[]): void {
+    if (newColumns) {
+      this.columns = newColumns;
+      this.columnOrder = newColumns.filter(col => col.visible !== false).map(col => col.key);
+    }
+    this.showColumnMenu = false;
+  }
+
+  cancelColumnChanges(): void {
+    this.columns = JSON.parse(JSON.stringify(this.defaultColumns));
+    this.columnOrder = this.columns.map(col => col.key);
+    this.showColumnMenu = false;
+  }
+
+  // --- FUNCIONALIDAD DE PINNED Y DRAG & DROP DE COLUMNAS ---
+  isPinned(id: string): boolean {
+    return this.pinnedItems.has(id);
+  }
+
+  togglePin(id: string) {
+    const updated = new Set(this.pinnedItems);
+    if (updated.has(id)) {
+      updated.delete(id);
+    } else {
+      updated.add(id);
+    }
+    this.pinnedItems = updated;
+    this.reorderProductos();
+  }
+
+  // Reordena: fijados arriba (en orden original), luego no fijados (en orden original)
+  private reorderProductos() {
+    const pinned = this.originalProductos.filter(item => this.pinnedItems.has(item.windowCode));
+    const unpinned = this.originalProductos.filter(item => !this.pinnedItems.has(item.windowCode));
+    this.productos = [...pinned, ...unpinned];
+  }
+
+  // Drag & drop de columnas
+  onDragStart(event: DragEvent, columnId: string) {
+    if (columnId === 'codigo' || columnId === 'actions') return;
+    this.draggedColumn = columnId;
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', columnId);
+    }
+  }
+
+  onDragOver(event: DragEvent, columnId: string) {
+    if (columnId === 'codigo' || columnId === 'actions' || !this.draggedColumn) return;
+    event.preventDefault();
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.add('drag-over');
+    }
+  }
+
+  onDragLeave(event: DragEvent) {
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.remove('drag-over');
+    }
+  }
+
+  onDrop(event: DragEvent, targetColumnId: string) {
+    event.preventDefault();
+    if (targetColumnId === 'codigo' || targetColumnId === 'actions' || !this.draggedColumn) return;
+    const th = (event.target as HTMLElement).closest('th');
+    if (th) {
+      th.classList.remove('drag-over');
+    }
+    const fromIndex = this.columnOrder.indexOf(this.draggedColumn);
+    const toIndex = this.columnOrder.indexOf(targetColumnId);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      this.columnOrder = Array.from(this.columnOrder);
+      this.columnOrder.splice(fromIndex, 1);
+      this.columnOrder.splice(toIndex, 0, this.draggedColumn);
+    }
+    this.draggedColumn = null;
+  }
+
+  onDragEnd() {
+    this.draggedColumn = null;
+    document.querySelectorAll('th.drag-over').forEach(th => {
+      th.classList.remove('drag-over');
+    });
+  }
+
+  onColumnReorder(columns: TableColumn[]): void {
+    this.columns = columns;
+    this.columnOrder = columns.map(col => col.key);
+  }
+
+  onDatosImportados(datos: any[]): void {
+    // Validar y agregar los datos importados a la lista de productos
+    const datosValidados = datos.filter(dato => this.validarProducto(dato));
+    this.productos = [...this.productos, ...datosValidados];
+  }
+
+  private validarProducto(producto: any): boolean {
+    // Validar que el producto tenga las propiedades necesarias
+    const columnasRequeridas = [
+      'windowCode', 'takeoffCode', 'location', 'productName', 'productType',
+      'width', 'height', 'surface', 'quantity', 'installMethod',
+      'frameType', 'frameLength', 'unitPriceUsd', 'installCostClp',
+      'finalPriceUsd', 'totalInstallClp', 'pieceTotalUsd'
+    ];
+    return columnasRequeridas.every(columna => columna in producto);
+  }
+  procesarExcel(): void {
+    if (this.selectedFile) {
+      console.log('Archivo seleccionado para procesar:', this.selectedFile.name);
+      // Aquí puedes agregar la lógica para procesar el archivo Excel
+      // Por ejemplo, usando una librería como xlsx para leer el archivo
+      
+      // Simular procesamiento
+      setTimeout(() => {
+        console.log('Archivo procesado exitosamente');
+        this.showExcelModal = false;
+        this.selectedFile = null;
+        this.selectedFileName = '';
+      }, 1000);
+    }
+  }
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      this.selectedFileName = file.name;
+      this.generateExcelPreview();
+    }
+  }
+  generateExcelPreview(): void {
+    if (!this.selectedFile) return;
+    
+    console.log('Iniciando generación de vista previa para:', this.selectedFile.name);
+    this.isLoadingPreview = true;
+    this.showPreview = false;
+    
+    this.excelImportService.parseFile(this.selectedFile)
+      .then((data: any[][]) => {
+        console.log('Datos parseados del Excel:', data);
+        this.excelPreviewData = data;
+        if (data.length > 0) {
+          this.excelHeaders = data[0].map((header, index) => 
+            header ? String(header) : `Columna ${index + 1}`
+          );
+          console.log('Headers generados:', this.excelHeaders);
+          this.showPreview = true;
+        } else {
+          console.warn('No se encontraron datos en el archivo Excel');
+        }
+        this.isLoadingPreview = false;
+      })
+      .catch((error) => {
+        console.error('Error al procesar el archivo Excel:', error);
+        this.isLoadingPreview = false;
+        // Opcional: mostrar mensaje de error al usuario
+      });
+  }
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.selectedFileName = '';
+    this.excelPreviewData = [];
+    this.excelHeaders = [];
+    this.showPreview = false;
+    this.isLoadingPreview = false;
+  }
+
+  getPreviewRows(): any[][] {
+    // Mostrar máximo 5 filas de datos (excluyendo la cabecera)
+    if (this.excelPreviewData.length <= 1) return [];
+    return this.excelPreviewData.slice(1, 6);
+  }
+
+  trackByIndex(index: number, item: any): number {
+    return index;
+  }
+
+  // Métodos para drag and drop de archivos Excel
+  onFileDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.add('drag-over');
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.remove('drag-over');
+  }
+
+  onFileDropped(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.remove('drag-over');
+    
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (this.isValidExcelFile(file)) {
+        this.selectedFile = file;
+        this.selectedFileName = file.name;
+        this.generateExcelPreview();
+      } else {
+        console.error('Archivo no válido. Por favor, selecciona un archivo Excel (.xlsx, .xls, .csv)');
+      }
+    }
+  }
+
+  private isValidExcelFile(file: File): boolean {
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ];
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    
+    return validTypes.includes(file.type) || 
+           validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+  }
+}

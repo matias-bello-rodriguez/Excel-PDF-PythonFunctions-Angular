@@ -1,0 +1,144 @@
+@import 'variables'; // Import SCSS variables
+
+// Estilos globales para formularios
+
+// Variables específicas para formularios (si no están en _variables.scss)
+// $input-height: 38px; // Considerar si esto es necesario o se maneja con padding
+// $input-border-radius: $input-border-radius; // Ya definido en _variables.scss
+// $input-border-color: $form-border-color; // Ya definido en _variables.scss
+// $input-border-focus: $form-border-focus-color; // Ya definido en _variables.scss
+// $input-bg-color: $input-bg-color; // Ya definido en _variables.scss
+// $input-text-color: $form-text-color; // Ya definido en _variables.scss
+// $input-placeholder-color: $input-placeholder-color; // Ya definido en _variables.scss
+// $input-disabled-bg: $input-disabled-bg; // Ya definido en _variables.scss
+
+// Estilos para contenedores de formularios
+.form-container {
+  background-color: var(--background-color, #ffffff); // Usar variable global si existe
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  padding: $section-padding; // Usar variable de sección
+  margin-bottom: $section-margin-bottom; // Usar variable de sección
+
+  .form-title {
+    font-size: 1.5rem; // Mantener o ajustar según jerarquía de títulos global
+    font-weight: 600;
+    margin-bottom: $form-spacing-base * 1.5; // 24px
+    color: $section-title-color;
+    padding-bottom: $form-spacing-base * 0.75; // 12px
+    border-bottom: 1px solid $section-divider-color;
+  }
+}
+
+// Grid para campos del formulario
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $form-spacing-base * 1.25; // 20px
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+  
+  .span-2 {
+    grid-column: span 2;
+    
+    @media (max-width: 768px) {
+      grid-column: span 1;
+    }
+  }
+}
+
+// Ajustes para evitar overflow en grid
+.form-grid, .form-grid--3 {
+  > * {
+    min-width: 0;
+  }
+}
+
+// Grid de 3 columnas
+.form-grid--3 {
+  display: grid; // Asegurar que se aplique display grid
+  grid-template-columns: repeat(3, 1fr);
+  gap: $form-spacing-base * 1.25; // 20px
+  
+  @media (max-width: 992px) { // Ajustar breakpoint si es necesario
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Mensajes de validación y ayuda
+.validation-message,
+.help-text-message { // Unificar clase para mensajes debajo del input
+  display: block; // Cambiado a block para ocupar ancho completo
+  font-size: $help-text-font-size;
+  margin-top: $spacing-unit * 0.5; // 4px
+  line-height: 1.4;
+}
+
+.validation-message {
+  color: $form-error-text-color;
+  // i { // Si se usa ícono, se puede estilizar aquí o en el componente
+  //   margin-right: $spacing-unit * 0.5;
+  // }
+}
+
+.help-text-message {
+  color: $form-help-text-color;
+}
+
+// Estilos para los botones de acción del formulario
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $form-spacing-base; // 16px
+  margin-top: $section-margin-bottom; // 24px
+  padding-top: $form-spacing-base; // 16px
+  border-top: 1px solid $section-divider-color;
+}
+
+// Estilos base para todos los inputs (aplicados a través de componentes)
+// Se pueden definir estilos base aquí si no se manejan completamente en componentes
+// input[type="text"],
+// input[type="email"],
+// input[type="password"],
+// input[type="date"],
+// input[type="number"],
+// textarea,
+// select {
+//   font-size: $input-font-size;
+//   padding: $input-padding-y $input-padding-x;
+//   border: 1px solid $form-border-color;
+//   border-radius: $input-border-radius;
+//   background-color: $input-bg-color;
+//   color: $form-text-color;
+//   line-height: $input-line-height;
+//   transition: $input-transition;
+//   width: 100%; // Asegurar que ocupen el ancho del contenedor
+//   box-sizing: border-box;
+
+//   &:focus {
+//     outline: none;
+//     border-color: $form-border-focus-color;
+//     box-shadow: 0 0 0 2px rgba($form-border-focus-color, 0.25);
+//   }
+
+//   &::placeholder {
+//     color: $input-placeholder-color;
+//     opacity: 1; // Firefox
+//   }
+
+//   &:disabled {
+//     background-color: $input-disabled-bg;
+//     cursor: not-allowed;
+//   }
+// }
+
+// // Específico para textarea
+// textarea {
+//   min-height: 80px; // Altura mínima para textareas
+//   resize: vertical; // Permitir redimensionar verticalmente
+// }

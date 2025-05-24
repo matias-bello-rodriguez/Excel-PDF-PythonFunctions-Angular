@@ -1,0 +1,9 @@
+<div class="form-section">
+  <div *ngIf="title" class="section-title">
+    <i *ngIf="icon" class="fas {{icon}} section-icon"></i>
+    <span>{{ title }}</span>
+  </div>
+  <div class="section-content">
+    <ng-content></ng-content>
+  </div>
+</div>

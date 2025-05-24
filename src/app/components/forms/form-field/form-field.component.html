@@ -1,0 +1,10 @@
+<div class="form-field" [class.has-error]="errorMessage">
+  <label [for]="fieldId" class="field-label">
+    {{ label }}<span *ngIf="required" class="required-indicator">*</span>
+  </label>
+  <div class="field-content">
+    <ng-content></ng-content>
+    <div *ngIf="errorMessage" class="validation-message">{{ errorMessage }}</div>
+    <div *ngIf="helpText" class="help-text-message">{{ helpText }}</div>
+  </div>
+</div>

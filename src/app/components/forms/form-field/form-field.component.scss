@@ -1,0 +1,33 @@
+@import '../../../styles/variables'; // Importar variables globales
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $field-margin-bottom;
+}
+
+.field-label {
+  font-size: $label-font-size;
+  color: $form-label-color; // La etiqueta siempre será negra
+  font-weight: bold;
+  margin-bottom: $label-margin-bottom;
+  display: inline-block;
+}
+
+.required-indicator {
+  color: $form-required-indicator-color; // Asterisco ahora es rojo
+  margin-left: $spacing-unit * 0.25;
+  font-weight: bold;
+}
+
+.field-content {
+  flex: 1;
+  width: 100%;
+}
+
+.form-field.has-error {
+  // La etiqueta (.field-label) no cambia de color aquí, se mantiene negra.
+  // El asterisco (.required-indicator) será rojo si el campo es obligatorio.
+  // Los estilos para el borde del input con error y el mensaje de validación se manejan
+  // en los componentes de input específicos o en forms.scss (.validation-message).
+}

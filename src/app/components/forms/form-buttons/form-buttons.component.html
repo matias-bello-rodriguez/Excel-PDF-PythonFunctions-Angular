@@ -1,0 +1,18 @@
+<div class="form-buttons" [ngClass]="alignment">
+  <button 
+    *ngIf="showCancel" 
+    type="button" 
+    class="btn-cancel"
+    (click)="onCancel()">
+    {{ cancelText }}
+  </button>
+  <button 
+    type="submit"
+    class="btn-submit"
+    [disabled]="isSubmitting || isSubmitDisabled"
+    (click)="onSubmit()">
+    <i *ngIf="isSubmitting" class="fas fa-spinner fa-spin"></i>
+    <i *ngIf="!isSubmitting" class="fas fa-save"></i>
+    {{ submitText }}
+  </button>
+</div>

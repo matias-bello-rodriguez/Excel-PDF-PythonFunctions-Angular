@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FormsModule } from '@angular/forms';
 import { TableColumn, TableData, SortConfig } from '../../types/table.types';
@@ -14,7 +14,7 @@ import matchekbox from '@fortawesome/free-solid-svg-icons/faCheckSquare';
   styleUrl: './data-table.component.scss',
   templateUrl: './data-table.component.html'
 })
-export class DataTableComponent {
+export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   @Input() columns: TableColumn[] = [];
   @Input() data: TableData[] = [];
   @Input() sortConfig: SortConfig = { column: null, direction: 'asc' };
@@ -31,12 +31,42 @@ export class DataTableComponent {
   @Output() pinItem = new EventEmitter<string>();
   @Output() columnReorder = new EventEmitter<TableColumn[]>();
   @Output() columnVisibilityChange = new EventEmitter<TableColumn[]>();
+  @Output() viewDetail = new EventEmitter<string>();
 
   // Drag and drop variables
   draggedColumn: string | null = null;
-  
-  showColumnMenu: boolean = false;
+    showColumnMenu: boolean = false;
   columnMenuAnchor: HTMLElement | null = null;
+
+  hasProyectoColumn = false;
+  private clickListener?: () => void;
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+
+  ngOnInit(): void {
+    // Solo agregar el event listener si estamos en el navegador
+    if (isPlatformBrowser(this.platformId)) {
+      this.clickListener = () => {
+        if (this.showColumnMenu) {
+          this.closeColumnMenu();
+        }
+      };
+      document.addEventListener('click', this.clickListener);
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar el event listener cuando el componente se destruye
+    if (isPlatformBrowser(this.platformId) && this.clickListener) {
+      document.removeEventListener('click', this.clickListener);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['columns']) {
+      this.hasProyectoColumn = this.columns?.some(col => col.key === 'proyecto');
+    }
+  }
 
   getVisibleColumns(): TableColumn[] {
     return this.columns.filter(col => col.visible !== false);
@@ -102,18 +132,8 @@ export class DataTableComponent {
       this.columnVisibilityChange.emit([...this.columns]);
     }
   }
-
   isColumnFixed(column: TableColumn): boolean {
     return column.key === 'id' || column.key === 'actions';
-  }
-
-  // Cerrar menú si se hace click fuera
-  constructor() {
-    document.addEventListener('click', () => {
-      if (this.showColumnMenu) {
-        this.closeColumnMenu();
-      }
-    });
   }
   
   // Drag and drop methods for column reordering

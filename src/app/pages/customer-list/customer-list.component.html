@@ -1,29 +1,20 @@
 <div class="page-header">
-  <app-page-title [title]="'Gestión de Cubicaciones'"></app-page-title>
-  <app-add-button 
-    label="AGREGAR CUBICACIÓN" 
-    icon="fa-plus" 
-    (buttonClick)="nuevaCubicacion()">
-  </app-add-button>
+  <app-page-title [title]="pageTitle"></app-page-title>
+  <app-add-button label="AGREGAR CLIENTE" icon="fa-plus"></app-add-button>
 </div>
-
-<div class="card">  <div class="table-toolbar">
+<div class="card">
+  <div class="table-toolbar">
     <div class="table-actions">
-      <app-search-bar 
-        placeholder="Buscar cubicaciones..." 
-        (searchChange)="onSearchChange($event)"
-        (searchSubmit)="onSearchSubmit($event)">
-      </app-search-bar>
-      
-      <div class="table-view-options">        
+      <app-search-bar placeholder="Buscar clientes..." (searchChange)="searchTerm = $event"></app-search-bar>
+      <div class="table-view-options">
         <div class="tooltip-container">
-          <button class="btn-icon" (click)="toggleFilterDialog()" aria-label="Abrir menú de filtros">
-            <i class="fas fa-filter" [class.active]="hasActiveFilters" aria-hidden="true"></i>
+          <button class="btn-icon" (click)="showFilterMenu = !showFilterMenu" aria-label="Abrir menú de filtros">
+            <i class="fas fa-filter" aria-hidden="true"></i>
             <span class="tooltip">Filtrar datos</span>
           </button>
         </div>
         <div class="tooltip-container">
-          <button class="btn-icon" (click)="toggleColumnDialog()" aria-label="Seleccionar columnas visibles">
+          <button class="btn-icon" (click)="showColumnMenu = !showColumnMenu" aria-label="Seleccionar columnas visibles">
             <i class="fas fa-columns" aria-hidden="true"></i>
             <span class="tooltip">Personalizar columnas</span>
           </button>
@@ -31,10 +22,10 @@
       </div>
     </div>
   </div>
-  <div class="table-container">    
+  <div class="table-container">
     <app-data-table
       [columns]="columns"
-      [data]="cubicaciones"
+      [data]="clientes"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
       [idField]="'id'"
@@ -44,18 +35,15 @@
       (deleteItem)="eliminar($event)"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
-      (viewDetail)="verDetalleProductos($event)"
-      summary="Listado de cubicaciones con detalles">
+      summary="Listado de clientes con detalles">
     </app-data-table>
   </div>
   <app-table-pagination
     [currentPage]="currentPage"
     [totalItems]="totalItems"
     [itemsPerPage]="itemsPerPage"
-    [pageSizeOptions]="[5, 10, 20, 50]"
-    (pageChange)="changePage($event)"
-    (pageSizeChange)="onPageSizeChange($event)">
-  </app-table-pagination>  <!-- Dialog de Filtros -->
+    [pageSizeOptions]="[5, 10, 20, 50]">
+  </app-table-pagination>
   <app-filter-dialog
     [show]="showFilterMenu"
     [columns]="columns"
@@ -64,7 +52,7 @@
     (close)="closeFilterMenu()"
     (apply)="applyFilters($event)"
     (clear)="clearFilters()">
-  </app-filter-dialog>  <!-- Dialog de Columnas -->
+  </app-filter-dialog>
   <app-column-dialog
     [show]="showColumnMenu"
     [columns]="columns"

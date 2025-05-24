@@ -1,0 +1,16 @@
+<textarea
+  [id]="id"
+  [placeholder]="placeholder"
+  [value]="value"
+  [disabled]="disabled"
+  [readonly]="readonly"
+  [attr.maxlength]="maxLength"
+  [attr.minlength]="minLength"
+  [rows]="rows"
+  (input)="onInputChange($event)"
+  (blur)="onBlur()"
+  class="textarea-input"
+></textarea>
+<div *ngIf="maxLength" class="char-counter">
+  {{ value?.length || 0 }}/{{ maxLength }}
+</div>

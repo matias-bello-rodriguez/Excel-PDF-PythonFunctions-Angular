@@ -1,0 +1,51 @@
+@import '../../../styles/variables'; // Importar variables globales
+
+.textarea-input {
+  width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  border: 1px solid $form-border-color;
+  border-radius: $input-border-radius;
+  font-size: $input-font-size;
+  line-height: $input-line-height;
+  color: $form-text-color;
+  background-color: $input-bg-color;
+  transition: $input-transition;
+  resize: vertical; // Permitir redimensionar verticalmente
+  min-height: 80px; // Altura mínima estándar para textareas
+
+  &:focus {
+    outline: none;
+    border-color: $form-border-focus-color;
+    box-shadow: 0 0 0 2px rgba($form-border-focus-color, 0.25);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--gray-50); // O $form-border-focus-color con menor opacidad
+  }
+
+  &:disabled,
+  &[readonly] {
+    background-color: $input-disabled-bg;
+    border-color: $form-border-color;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &::placeholder {
+    color: $input-placeholder-color;
+    opacity: 1;
+  }
+
+  // Estilos específicos para cuando el campo tiene error
+  // &.ng-invalid.ng-touched {
+  //   border-color: $form-error-border-color;
+  //   box-shadow: 0 0 0 2px rgba($form-error-border-color, 0.2);
+  // }
+}
+
+.char-counter {
+  font-size: $help-text-font-size; // Usar variable para consistencia
+  color: $form-help-text-color; // Usar variable para consistencia
+  margin-top: $spacing-unit * 0.5; // 4px
+  text-align: right;
+}

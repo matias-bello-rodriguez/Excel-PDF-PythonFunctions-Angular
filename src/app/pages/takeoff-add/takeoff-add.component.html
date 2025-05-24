@@ -1,0 +1,111 @@
+<div class="takeoff-add-container">
+  <div class="page-header">
+    <h1 class="page-title">Agregar Nueva Cubicación</h1>
+  </div>
+  <div class="form-container">
+    <!-- Mensajes de éxito o error -->
+    <div *ngIf="successMessage" class="alert-success">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert-danger">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+    
+    <form [formGroup]="takeoffForm" (ngSubmit)="onSubmit()">
+      <!-- Sección de Información General -->
+      <app-form-section title="Información General" icon="fa-info-circle">
+        <div class="form-grid">
+          <app-form-field 
+            label="Nombre" 
+            [required]="true" 
+            [errorMessage]="getErrorMessage('nombre')" 
+            fieldId="nombre">
+            <app-text-input 
+              formControlName="nombre" 
+              id="nombre" 
+              placeholder="Ingrese nombre de la cubicación">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Proyecto" 
+            [required]="true" 
+            [errorMessage]="getErrorMessage('proyecto')" 
+            fieldId="proyecto">
+            <app-select-input 
+              formControlName="proyecto" 
+              id="proyecto"
+              [options]="proyectoOptions">
+            </app-select-input>
+          </app-form-field>
+
+          <div class="span-2">
+            <app-form-field 
+              label="Descripción" 
+              [errorMessage]="getErrorMessage('descripcion')" 
+              fieldId="descripcion">
+              <app-textarea-input 
+                formControlName="descripcion" 
+                id="descripcion" 
+                placeholder="Ingrese una descripción" 
+                [rows]="3"
+                [maxLength]="500">
+              </app-textarea-input>
+            </app-form-field>
+          </div>
+        </div>
+      </app-form-section>      <!-- Sección de Detalles -->
+      <app-form-section title="Detalles" icon="fa-clipboard-list">
+        <div class="form-grid form-grid--3">
+          <app-form-field 
+            label="Fecha" 
+            [required]="true" 
+            [errorMessage]="getErrorMessage('fecha')" 
+            fieldId="fecha">
+            <app-date-input 
+              formControlName="fecha" 
+              id="fecha">
+            </app-date-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Estado" 
+            [required]="true" 
+            [errorMessage]="getErrorMessage('estado')" 
+            fieldId="estado">
+            <app-select-input 
+              formControlName="estado" 
+              id="estado"
+              [options]="estadoOptions">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Monto" 
+            [required]="true" 
+            [errorMessage]="getErrorMessage('monto')" 
+            fieldId="monto">
+            <app-text-input 
+              formControlName="monto" 
+              id="monto"
+              placeholder="$0"
+              type="text">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>      <!-- Botones del formulario -->
+      <div class="form-actions">
+        <app-form-buttons
+          [isSubmitting]="isSubmitting"
+          [isSubmitDisabled]="takeoffForm.invalid && takeoffForm.touched"
+          [submitText]="'Guardar cubicación'"
+          (submitClick)="onSubmit()"
+          (cancelClick)="onCancel()"
+          [alignment]="'center'">
+        </app-form-buttons>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,96 @@
+@import '../../../styles/variables'; // Importar variables globales
+
+.form-buttons {
+  // margin-top: var(--spacing-06); // Espaciado gestionado por .form-actions en forms.scss
+  display: flex;
+  gap: $form-spacing-base; // Usar variable para el gap, 16px
+
+  &.left {
+    justify-content: flex-start;
+  }
+
+  &.center {
+    justify-content: center;
+  }
+
+  &.right {
+    justify-content: flex-end;
+  }
+}
+
+// Estilo base para botones, si no se usa un componente de botón global
+.btn {
+  padding: $input-padding-y $input-padding-x * 1.5; // Ajustar padding para botones
+  border-radius: $input-border-radius;
+  font-size: $base-font-size; // Botones con tamaño de fuente base
+  font-weight: 500; // Peso medio
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent; // Borde transparente por defecto
+  line-height: $input-line-height;
+  min-width: 120px; // Ancho mínimo para botones
+  text-align: center;
+
+  i {
+    margin-right: $spacing-unit * 0.75; // 6px
+  }
+
+  &:focus {
+    outline: none;
+    // El box-shadow de foco se define por tipo de botón
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.btn-submit {
+  @extend .btn; // Heredar estilos base
+  background-color: var(--success-color, #198038); // Verde primario para guardar
+  color: #ffffff;
+  border-color: var(--success-color, #198038);
+
+  &:hover:not(:disabled) {
+    background-color: darken(#198038, 8%); // Usar el color hexadecimal directamente
+    border-color: darken(#198038, 8%); // Usar el color hexadecimal directamente
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(var(--success-color-rgb, 25, 128, 56), 0.4); // Necesitarás --success-color-rgb
+  }
+}
+
+.btn-cancel {
+  @extend .btn; // Heredar estilos base
+  background-color: var(--gray-20, #e0e0e0); // Gris secundario para cancelar
+  color: var(--gray-80, #393939);
+  border-color: var(--gray-30, #c6c6c6); // Borde sutil
+
+  &:hover:not(:disabled) {
+    background-color: var(--gray-30, #c6c6c6);
+    border-color: var(--gray-40, #a8a8a8);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(var(--gray-50-rgb, 141, 141, 141), 0.4); // Necesitarás --gray-50-rgb
+  }
+}
+
+// Si se necesita un botón de "peligro" o "eliminar"
+// .btn-danger {
+//   @extend .btn;
+//   background-color: var(--danger-color, #da1e28);
+//   color: #ffffff;
+//   border-color: var(--danger-color, #da1e28);
+
+//   &:hover:not(:disabled) {
+//     background-color: darken(var(--danger-color, #da1e28), 8%);
+//     border-color: darken(var(--danger-color, #da1e28), 8%);
+//   }
+
+//   &:focus {
+//     box-shadow: 0 0 0 3px rgba(var(--danger-color-rgb, 218, 30, 40), 0.4);
+//   }
+// }

@@ -56,7 +56,25 @@
                       <span class="tooltip">{{ isPinned(item[idField]) ? 'Desfijar' : 'Fijar' }}</span>
                     </button>
                   </div>
+                  <!-- Acción ver detalle productos solo si existe la columna proyecto (cubicaciones) -->
+                  <div class="tooltip-container" *ngIf="hasProyectoColumn">
+                    <button class="action-btn view-detail-btn" [attr.aria-label]="'Ver detalle productos de ' + item[idField]" (click)="viewDetail.emit(item[idField]); $event.stopPropagation();">
+                      <i class="fas fa-plus" aria-hidden="true"></i>
+                      <i class="fas fa-search" aria-hidden="true" style="margin-left:2px;"></i>
+                      <span class="tooltip">Ver detalle productos</span>
+                    </button>
+                  </div>
                 </div>
+              </ng-container>
+              
+              <!-- Imagen para Design 1 -->
+              <ng-container *ngSwitchCase="'design1'">
+                <img *ngIf="item['design1']" [src]="'../../../public/' + item['design1']" alt="Design 1" style="max-width: 80px; max-height: 80px; border-radius: 4px; box-shadow: 0 1px 4px #0001;" />
+              </ng-container>
+              
+              <!-- Imagen para Design 2 -->
+              <ng-container *ngSwitchCase="'design2'">
+                <img *ngIf="item['design2']" [src]="'../../../public/' + item['design2']" alt="Design 2" style="max-width: 80px; max-height: 80px; border-radius: 4px; box-shadow: 0 1px 4px #0001;" />
               </ng-container>
               
               <!-- Estado especial -->
