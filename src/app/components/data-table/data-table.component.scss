@@ -281,3 +281,14 @@ tr.pinned .action-btn.pin i {
     color: var(--carbon-success); // Verde
   }
 }
+
+// Nueva clase para texto de diseño
+.design-text {
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--carbon-gray-10);
+  border-radius: 4px;
+  display: inline-block;
+}

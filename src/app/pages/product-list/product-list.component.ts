@@ -1,18 +1,19 @@
-import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 import { PageTitleComponent } from '../../components/page-title/page-title.component';
 import { AddButtonComponent } from '../../components/add-button/add-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
 import { DataTableComponent } from '../../components/data-table/data-table.component';
 import { TablePaginationComponent } from '../../components/table-pagination/table-pagination.component';
 import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
-import { TableColumn, SortConfig } from '../../types/table.types';
-import { ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { ExcelImportService } from '../../services/excel-import.service';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { isPlatformBrowser } from '@angular/common';
+import { PdfService } from '../../services/pdf.service';
+import { TableColumn } from '../../types/table.types';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 @Component({
   selector: 'app-product-list',
@@ -128,6 +129,7 @@ export class ProductListComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private excelService: ExcelImportService,
+    private pdfService: PdfService,
     private sanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
@@ -137,24 +139,8 @@ export class ProductListComponent implements OnInit {
 
     this.totalItems = this.productos.length;
   }  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      // Importar dinámicamente pdfMake y vfs solo en el navegador
-      this.initializePdfMake();
-    }
-  }
-
-  private async initializePdfMake(): Promise<void> {
-    try {
-      const pdfMake = await import('pdfmake/build/pdfmake');
-      const { vfs } = await import('pdfmake/build/vfs_fonts');
-      
-      (pdfMake.default as any).vfs = vfs;
-    } catch (error) {
-      console.error('Error initializing pdfMake:', error);
-    }
-  }
-
-  // Métodos para diálogos
+    // La inicialización de pdfMake se maneja en el PdfService
+  }  // Métodos para diálogos
   toggleFilterDialog(): void {
     this.showFilterMenu = !this.showFilterMenu;
   }
@@ -166,78 +152,262 @@ export class ProductListComponent implements OnInit {
    */
   async toggleExportDialog(): Promise<void> {
     if (!this.showExportModal) {
-      // Solo generar PDF en el navegador
       if (isPlatformBrowser(this.platformId)) {
         try {
-          const pdfMake = await import('pdfmake/build/pdfmake');
-          
-          // Construir definición del PDF con datos de productos
-          const headers = ['Código', 'Ubicación', 'Dimensiones', 'Material', 'Cantidad', 'Precio'];
-          const body = this.productos.map(p => [
-            p.windowCode || '',
-            p.location || '',
-            `${p.width || 0} x ${p.height || 0}`,
-            p.material || '',
-            p.quantityPerUnit?.toString() || '0',
-            `$${p.pieceTotal?.toFixed(2) || '0.00'}`
-          ]);
-          const docDefinition = {
-            content: [
-              { text: 'Listado de Productos', style: 'header', margin: [0, 0, 0, 10] },
-              { table: { headerRows: 1, widths: ['auto','*','auto','*','auto','auto'], body: [headers, ...body] } }
-            ],
-            styles: { header: { fontSize: 14, bold: true } },
-            defaultStyle: { font: 'Helvetica' }
-          };
-          
-          // Generar DataURL para vista previa
-          (pdfMake.default as any).createPdf(docDefinition).getDataUrl((url: string) => {
-            this.exportPreviewUrl = url;
-            this.safeExportUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-            this.showExportModal = true;
-          });
+          const docDefinition = this.getDocDefinition();
+          const dataUrl = await this.pdfService.generatePdfDataUrl(docDefinition);
+          this.exportPreviewUrl = dataUrl;
+          this.safeExportUrl = this.sanitizer.bypassSecurityTrustResourceUrl(dataUrl);
+          this.showExportModal = true;
         } catch (error) {
-          console.error('Error generating PDF:', error);
+          console.error('Error al generar PDF:', error);
         }
       }
     } else {
       this.showExportModal = false;
+      this.exportPreviewUrl = '';
+      this.safeExportUrl = '';
     }
   }
-
   /**
    * Descargar el PDF generado
    */
   async downloadPdf(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       try {
-        const pdfMake = await import('pdfmake/build/pdfmake');
-        
-        // Construir la misma definición del PDF
-        const headers = ['Código', 'Ubicación', 'Dimensiones', 'Material', 'Cantidad', 'Precio'];
-        const body = this.productos.map(p => [
-          p.windowCode || '',
-          p.location || '',
-          `${p.width || 0} x ${p.height || 0}`,
-          p.material || '',
-          p.quantityPerUnit?.toString() || '0',
-          `$${p.pieceTotal?.toFixed(2) || '0.00'}`
-        ]);
-        const docDefinition = {
-          content: [
-            { text: 'Listado de Productos', style: 'header', margin: [0, 0, 0, 10] },
-            { table: { headerRows: 1, widths: ['auto','*','auto','*','auto','auto'], body: [headers, ...body] } }
-          ],
-          styles: { header: { fontSize: 14, bold: true } },
-          defaultStyle: { font: 'Helvetica' }
-        };
-        
-        // Descargar el PDF
-        (pdfMake.default as any).createPdf(docDefinition).download('listado-productos.pdf');
+        const docDefinition = this.getDocDefinition();
+        await this.pdfService.downloadPdf(docDefinition, 'listado-productos.pdf');
       } catch (error) {
-        console.error('Error downloading PDF:', error);
+        console.error('Error al descargar PDF:', error);
       }
     }
+  }
+
+  /**
+   * Abrir vista previa del PDF en una nueva pestaña
+   */
+  openPdfPreview(): void {
+    if (this.exportPreviewUrl && isPlatformBrowser(this.platformId)) {
+      window.open(this.exportPreviewUrl, '_blank');
+    }
+  }  private calculateTotal(): number {
+    return this.originalProductos.reduce((total, producto) => 
+      total + (producto.pieceTotal || 0), 0);
+  }private getDocDefinition(): TDocumentDefinitions {
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    
+    return {
+      pageSize: 'A4',
+      pageMargins: [40, 60, 40, 60],
+      content: [
+        // Encabezado con información de la empresa
+        {
+          columns: [
+            {
+              text: 'KINETTA',
+              style: 'companyName'
+            },
+            {
+              text: `Fecha: ${currentDate}\nPágina: `,
+              style: 'headerRight',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 0, 0, 20]
+        },
+        
+        // Título del documento
+        {
+          text: 'LISTA DE PRODUCTOS - CUBICACIÓN',
+          style: 'documentTitle',
+          margin: [0, 0, 0, 20]
+        },
+          // Información del resumen
+        {
+          columns: [
+            {
+              text: `Total de productos: ${this.originalProductos.length}`,
+              style: 'summaryInfo'
+            },
+            {
+              text: `Total superficie: ${this.originalProductos.reduce((sum, p) => sum + (p.totalSurface || 0), 0).toFixed(2)} m²`,
+              style: 'summaryInfo',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 0, 0, 15]
+        },
+        
+        // Tabla principal
+        {
+          style: 'tableStyle',
+          table: {
+            headerRows: 1,
+            widths: [50, 80, 60, 40, 40, 40, 80, 60, 60, 60],
+            body: [
+              // Encabezados de tabla
+              [
+                { text: 'CÓDIGO', style: 'tableHeader' },
+                { text: 'UBICACIÓN', style: 'tableHeader' },
+                { text: 'TIPO VENTANA', style: 'tableHeader' },
+                { text: 'ANCHO', style: 'tableHeader' },
+                { text: 'ALTO', style: 'tableHeader' },
+                { text: 'CANT.', style: 'tableHeader' },
+                { text: 'MATERIAL', style: 'tableHeader' },
+                { text: 'SUP. TOTAL', style: 'tableHeader' },
+                { text: 'PRECIO UNIT.', style: 'tableHeader' },
+                { text: 'TOTAL', style: 'tableHeader' }
+              ],              // Filas de datos
+              ...this.originalProductos.map((producto, index) => [
+                { text: producto.windowCode || '', style: 'tableCell' },
+                { text: producto.location || '', style: 'tableCell' },
+                { text: producto.windowType || '', style: 'tableCell' },
+                { text: `${producto.width?.toFixed(2) || '0.00'}m`, style: 'tableCellCenter' },
+                { text: `${producto.height?.toFixed(2) || '0.00'}m`, style: 'tableCellCenter' },
+                { text: producto.quantityPerUnit || '0', style: 'tableCellCenter' },
+                { text: producto.material || '', style: 'tableCell' },
+                { text: `${producto.totalSurface?.toFixed(2) || '0.00'} m²`, style: 'tableCellRight' },
+                { text: `$${producto.unitPriceUsdSqm?.toFixed(2) || '0.00'}`, style: 'tableCellRight' },
+                { text: `$${producto.pieceTotal?.toFixed(2) || '0.00'}`, style: 'tableCellRightBold' }
+              ])
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === 1 || i === node.table.body.length) ? 2 : 1;
+            },
+            vLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+            },
+            hLineColor: function(i: number, node: any) {
+              return (i === 0 || i === 1 || i === node.table.body.length) ? '#8B1C1C' : '#cccccc';
+            },
+            vLineColor: function(i: number, node: any) {
+              return (i === 0 || i === node.table.widths.length) ? '#8B1C1C' : '#cccccc';
+            },
+            fillColor: function(i: number, node: any) {
+              return (i === 0) ? '#f8f9fa' : (i % 2 === 0) ? '#ffffff' : '#f8f9fa';
+            }
+          }
+        },
+        
+        // Separador
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0, y1: 10,
+              x2: 515, y2: 10,
+              lineWidth: 1,
+              lineColor: '#8B1C1C'
+            }
+          ],
+          margin: [0, 20, 0, 10]
+        },
+        
+        // Resumen final
+        {
+          columns: [
+            {
+              text: 'RESUMEN DEL PROYECTO',
+              style: 'summaryTitle'
+            },
+            {
+              table: {
+                widths: [120, 80],
+                body: [                  [
+                    { text: 'Superficie Total:', style: 'summaryLabel' },
+                    { text: `${this.originalProductos.reduce((sum, p) => sum + (p.totalSurface || 0), 0).toFixed(2)} m²`, style: 'summaryValue' }
+                  ],
+                  [
+                    { text: 'Total General:', style: 'summaryLabelBold' },
+                    { text: `$${this.calculateTotal().toFixed(2)}`, style: 'summaryValueBold' }
+                  ]
+                ]
+              },
+              layout: 'noBorders',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 10, 0, 0]
+        }
+      ],
+      styles: {
+        companyName: {
+          fontSize: 20,
+          bold: true,
+          color: '#8B1C1C'
+        },
+        headerRight: {
+          fontSize: 10,
+          color: '#666666'
+        },
+        documentTitle: {
+          fontSize: 16,
+          bold: true,
+          alignment: 'center',
+          color: '#333333'
+        },
+        summaryInfo: {
+          fontSize: 10,
+          color: '#666666'
+        },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          alignment: 'center',
+          color: '#ffffff',
+          fillColor: '#8B1C1C'
+        },
+        tableCell: {
+          fontSize: 8,
+          alignment: 'left'
+        },
+        tableCellCenter: {
+          fontSize: 8,
+          alignment: 'center'
+        },
+        tableCellRight: {
+          fontSize: 8,
+          alignment: 'right'
+        },
+        tableCellRightBold: {
+          fontSize: 8,
+          alignment: 'right',
+          bold: true,
+          color: '#8B1C1C'
+        },
+        summaryTitle: {
+          fontSize: 12,
+          bold: true,
+          color: '#8B1C1C'
+        },
+        summaryLabel: {
+          fontSize: 10,
+          alignment: 'right'
+        },
+        summaryValue: {
+          fontSize: 10,
+          alignment: 'right',
+          bold: true
+        },
+        summaryLabelBold: {
+          fontSize: 11,
+          alignment: 'right',
+          bold: true
+        },
+        summaryValueBold: {
+          fontSize: 12,
+          alignment: 'right',
+          bold: true,
+          color: '#8B1C1C'
+        }
+      },
+      defaultStyle: {
+        font: 'Roboto',
+        fontSize: 9
+      }
+    };
   }
 
   applyFilters(appliedFilters: any): void {

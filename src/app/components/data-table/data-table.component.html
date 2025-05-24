@@ -66,15 +66,14 @@
                   </div>
                 </div>
               </ng-container>
-              
-              <!-- Imagen para Design 1 -->
+                <!-- Design 1 como texto -->
               <ng-container *ngSwitchCase="'design1'">
-                <img *ngIf="item['design1']" [src]="'../../../public/' + item['design1']" alt="Design 1" style="max-width: 80px; max-height: 80px; border-radius: 4px; box-shadow: 0 1px 4px #0001;" />
+                <span class="design-text">{{ item['design1'] }}</span>
               </ng-container>
               
-              <!-- Imagen para Design 2 -->
+              <!-- Design 2 como texto -->
               <ng-container *ngSwitchCase="'design2'">
-                <img *ngIf="item['design2']" [src]="'../../../public/' + item['design2']" alt="Design 2" style="max-width: 80px; max-height: 80px; border-radius: 4px; box-shadow: 0 1px 4px #0001;" />
+                <span class="design-text">{{ item['design2'] }}</span>
               </ng-container>
               
               <!-- Estado especial -->
