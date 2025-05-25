@@ -1,10 +1,15 @@
-<div class="form-field" [class.has-error]="errorMessage">
-  <label [for]="fieldId" class="field-label">
-    {{ label }}<span *ngIf="required" class="required-indicator">*</span>
+<div class="form-field">
+  <label [for]="fieldId" *ngIf="label">
+    {{ label }} <span *ngIf="required">*</span>
   </label>
-  <div class="field-content">
-    <ng-content></ng-content>
-    <div *ngIf="errorMessage" class="validation-message">{{ errorMessage }}</div>
-    <div *ngIf="helpText" class="help-text-message">{{ helpText }}</div>
+  <ng-content></ng-content>
+  <div 
+    class="validation-message" 
+    [class.hidden]="!shouldShowValidationClass()">
+    {{ errorMessage }}
+  </div>
+  <div 
+    class="help-text-message">
+    {{ helpText }}
   </div>
 </div>

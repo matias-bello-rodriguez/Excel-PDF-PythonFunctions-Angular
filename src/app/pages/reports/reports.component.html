@@ -1,0 +1,104 @@
+<div class="reports-container">
+  <!-- Page Title -->
+  <app-page-title 
+    title="Reportes y Análisis"
+    subtitle="Dashboard de métricas y estadísticas del sistema"
+    icon="pi pi-chart-line">
+  </app-page-title>
+  <!-- KPIs Section -->
+  <div class="kpi-section">
+    <div class="kpi-grid">
+      <div class="kpi-card" *ngFor="let kpi of kpis">
+        <p-card>
+          <div class="kpi-content">
+            <div class="kpi-header">
+              <div class="kpi-icon" [style.background-color]="kpi.color">
+                <i [class]="kpi.icon"></i>
+              </div>
+              <div class="kpi-main">
+                <h3>{{ kpi.title }}</h3>
+                <div class="kpi-value">{{ kpi.value }}</div>
+                <span class="kpi-subtitle" *ngIf="kpi.subtitle">{{ kpi.subtitle }}</span>
+              </div>
+              <div class="kpi-metrics" *ngIf="kpi.percentage || kpi.trend">
+                <span class="kpi-percentage" *ngIf="kpi.percentage">{{ kpi.percentage }}</span>
+                <span class="kpi-trend" *ngIf="kpi.trend">{{ kpi.trend }}</span>
+              </div>
+            </div>
+            
+            <!-- Detalles expandibles -->
+            <div class="kpi-details" *ngIf="kpi.details && kpi.details.length > 0">
+              <p-divider></p-divider>
+              <div class="details-list">
+                <div class="detail-item" *ngFor="let detail of kpi.details">
+                  <span class="detail-label">{{ detail.label }}</span>
+                  <div class="detail-values">
+                    <span class="detail-value">{{ detail.value }}</span>
+                    <span class="detail-percentage" *ngIf="detail.percentage">{{ detail.percentage }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-section">
+    <!-- Top Row: Project and Client Charts -->
+    <div class="charts-row">
+      <div class="chart-container chart-left">
+        <p-card>
+          <div class="chart-wrapper">
+            <p-chart 
+              type="bar" 
+              [data]="m2PorProyectoData" 
+              [options]="horizontalBarOptions">
+            </p-chart>
+          </div>
+        </p-card>
+      </div>
+      
+      <div class="chart-container chart-right">
+        <p-card>
+          <div class="chart-wrapper">
+            <p-chart 
+              type="pie" 
+              [data]="m2PorClienteData" 
+              [options]="pieOptions">
+            </p-chart>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Status and Monthly Charts -->
+    <div class="charts-row">
+      <div class="chart-container chart-left">
+        <p-card>
+          <div class="chart-wrapper">
+            <p-chart 
+              type="doughnut" 
+              [data]="cubicacionesPorEstadoData" 
+              [options]="donutOptions">
+            </p-chart>
+          </div>
+        </p-card>
+      </div>
+      
+      <div class="chart-container chart-right">
+        <p-card>
+          <div class="chart-wrapper">
+            <p-chart 
+              type="bar" 
+              [data]="m2PorMesData" 
+              [options]="stackedBarOptions">
+            </p-chart>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+</div>

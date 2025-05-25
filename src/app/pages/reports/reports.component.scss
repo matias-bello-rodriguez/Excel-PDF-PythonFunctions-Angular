@@ -1,0 +1,289 @@
+.reports-container {
+  padding: 2rem;
+  min-height: 100vh;
+  background-color: #f8fafc;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+// KPI Section
+.kpi-section {
+  margin-bottom: 2rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.kpi-card {
+  ::ng-deep .p-card {
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .p-card-content {
+      padding: 1.5rem;
+    }
+  }
+}
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kpi-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.kpi-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 1.5rem;
+    color: white;
+  }
+}
+
+.kpi-main {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .kpi-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+  }
+
+  .kpi-subtitle {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+}
+
+.kpi-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+
+  .kpi-percentage {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #059669;
+    background-color: #dcfce7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+  }
+
+  .kpi-trend {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+}
+
+.kpi-details {
+  margin-top: 0.5rem;
+
+  ::ng-deep .p-divider {
+    margin: 0.75rem 0;
+    
+    .p-divider-content {
+      display: none;
+    }
+  }
+}
+
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  border-left: 3px solid #e5e7eb;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f3f4f6;
+    border-left-color: #6b7280;
+  }
+
+  .detail-label {
+    font-size: 0.75rem;
+    color: #4b5563;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    margin-right: 1rem;
+  }
+
+  .detail-values {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+
+    .detail-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .detail-percentage {
+      font-size: 0.75rem;
+      color: #059669;
+      background-color: #dcfce7;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-weight: 500;
+    }
+  }
+}
+
+// Charts Section
+.charts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.chart-container {
+  ::ng-deep .p-card {
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .p-card-content {
+      padding: 1.5rem;
+    }
+  }
+}
+
+.chart-wrapper {
+  height: 400px;
+  width: 100%;
+
+  ::ng-deep canvas {
+    max-height: 100%;
+    max-width: 100%;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .kpi-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .kpi-details {
+    text-align: center;
+
+    .kpi-value {
+      font-size: 1.5rem;
+    }
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reports-container {
+    padding: 0.5rem;
+  }
+
+  .kpi-grid {
+    margin-top: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 250px;
+  }
+
+  .charts-section {
+    gap: 1rem;
+  }
+}
+
+// Custom chart title styling
+::ng-deep .chartjs-title {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+}
+
+// Custom legend styling
+::ng-deep .chartjs-legend {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+  
+  .chartjs-legend-item {
+    margin-bottom: 8px !important;
+  }
+}

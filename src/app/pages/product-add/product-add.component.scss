@@ -1,8 +1,8 @@
-.project-add-container {
-  padding: 0 var(--spacing-06) var(--spacing-06) var(--spacing-06) var(--spacing-06); // Ajustado padding-top a 0
+.product-add-container {
+  padding: 0 var(--spacing-06) var(--spacing-06) var(--spacing-06);
   max-width: 900px;
   margin: 0 auto;
-  margin-top: -var(--spacing-04); // Reducir aún más el espacio superior
+  margin-top: -var(--spacing-04);
   
   .page-header {
     margin-bottom: var(--spacing-05);
@@ -30,29 +30,36 @@
       flex-direction: column;
       gap: var(--spacing-05);
       
-      // Ajustar espaciado del grid de formularios
       .form-grid {
-        grid-gap: var(--spacing-05);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--spacing-05);
+        
+        .span-2 {
+          grid-column: span 2;
+        }
       }
     }
 
-    // Estilo para las acciones del formulario
     .form-actions {
-      justify-content: center; // Centrar los botones
+      justify-content: center;
       padding-top: var(--spacing-04);
       border-top: 1px solid var(--gray-20);
       margin-top: var(--spacing-06);
     }
 
-    // Efecto suave al entrar en las secciones
     app-form-section {
+      background-color: #f9f9f9;
+      padding: var(--spacing-04);
+      border-radius: 4px;
+      margin-bottom: var(--spacing-05);
+      
       &:not(:first-of-type) {
         margin-top: var(--spacing-06);
       }
     }
   }
 
-  // Estilo para el botón de enviar en formularios inválidos
   .form-container form.ng-invalid .submit-btn {
     opacity: 0.6;
     cursor: not-allowed;
@@ -61,7 +68,7 @@
 
 // Estilos responsivos
 @media (max-width: 768px) {
-  .project-add-container {
+  .product-add-container {
     padding: var(--spacing-04);
   }
   .form-container {
@@ -88,6 +95,7 @@
   border-left: 3px solid var(--success-color);
   color: var(--success-color);
 }
+
 .alert-danger {
   background-color: rgba(218, 30, 40, 0.1);
   border-left: 3px solid var(--danger-color);
@@ -101,28 +109,26 @@
   font-size: var(--font-size-sm);
   margin-top: var(--spacing-02);
   line-height: 1.4;
-  min-height: 1.4em; // Reserva espacio para el mensaje
-  visibility: hidden; // Oculta el mensaje cuando no hay contenido
-  opacity: 0; // Oculta visualmente
-  transition: visibility 0.2s, opacity 0.2s ease-in-out; // Transición suave
+  min-height: 1.4em;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.2s, opacity 0.2s ease-in-out;
 }
 
 .validation-message {
   color: var(--danger-color);
 
-  // Muestra el mensaje cuando hay contenido
   &:not(:empty) {
     visibility: visible;
-    opacity: 1; // Hace visible el mensaje
+    opacity: 1;
   }
 }
 
 .help-text-message {
   color: var(--gray-60);
 
-  // Muestra el mensaje cuando hay contenido
   &:not(:empty) {
     visibility: visible;
-    opacity: 1; // Hace visible el mensaje
+    opacity: 1;
   }
 }

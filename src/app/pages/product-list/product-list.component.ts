@@ -2,7 +2,7 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleComponent } from '../../components/page-title/page-title.component';
 import { AddButtonComponent } from '../../components/add-button/add-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
@@ -125,9 +125,9 @@ export class ProductListComponent implements OnInit {
   excelPreviewData: any[][] = [];
   isLoadingPreview = false;
   exportPreviewUrl: string = '';
-  safeExportUrl: SafeResourceUrl = '';
-  constructor(
+  safeExportUrl: SafeResourceUrl = '';  constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private excelService: ExcelImportService,
     private pdfService: PdfService,
     private sanitizer: DomSanitizer,
@@ -140,7 +140,12 @@ export class ProductListComponent implements OnInit {
     this.totalItems = this.productos.length;
   }  ngOnInit(): void {
     // La inicialización de pdfMake se maneja en el PdfService
-  }  // Métodos para diálogos
+  }
+
+  // Método para navegar al formulario de agregar producto
+  nuevoProducto(): void {
+    this.router.navigate(['/productos/agregar-producto']);
+  }// Métodos para diálogos
   toggleFilterDialog(): void {
     this.showFilterMenu = !this.showFilterMenu;
   }

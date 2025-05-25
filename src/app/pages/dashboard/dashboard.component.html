@@ -1,0 +1,56 @@
+<div class="dashboard">
+  <div class="welcome-section">
+    <h1 class="kinetta-title">Bienvenido al Sistema Integral de Kinetta</h1>
+    <p>Selecciona una opción para comenzar</p>
+  </div>
+  
+  <div class="card-container">
+    <div class="card card-cubicaciones" (click)="navigateTo('cubicaciones')">
+      <i class="fas fa-calculator"></i>
+      <h3>Cubicaciones</h3>
+      <p>Gestiona y crea nuevas cubicaciones de proyectos</p>
+    </div>
+    
+    <div class="card card-clientes" (click)="navigateTo('clientes')">
+      <i class="fas fa-users"></i>
+      <h3>Clientes</h3>
+      <p>Administra tu base de datos de clientes</p>
+    </div>
+    
+    <div class="card card-productos" (click)="navigateTo('productos')">
+      <i class="fas fa-boxes"></i>
+      <h3>Productos</h3>
+      <p>Catálogo de productos y materiales</p>
+    </div>
+    
+    <div class="card card-proyectos" (click)="navigateTo('proyectos')">
+      <i class="fas fa-project-diagram"></i>
+      <h3>Proyectos</h3>
+      <p>Gestión de proyectos y seguimiento</p>
+    </div>
+    
+    <div class="card card-reportes" (click)="navigateTo('reportes')">
+      <i class="fas fa-chart-bar"></i>
+      <h3>Reportes</h3>
+      <p>Informes y análisis de datos</p>
+    </div>
+    
+    <div class="card card-configuracion" (click)="navigateTo('configuracion')">
+      <i class="fas fa-cog"></i>
+      <h3>Configuración</h3>
+      <p>Ajustes del sistema y preferencias</p>
+    </div>
+    
+    <div class="card card-usuarios" (click)="navigateTo('equipo')">
+      <i class="fas fa-user-friends"></i>
+      <h3>Usuarios</h3>
+      <p>Gestión de usuarios y permisos del equipo</p>
+    </div>
+    
+    <div class="card card-ayuda" (click)="navigateTo('ayuda')">
+      <i class="fas fa-question-circle"></i>
+      <h3>Ayuda</h3>
+      <p>Centro de ayuda y documentación</p>
+    </div>
+  </div>
+</div>

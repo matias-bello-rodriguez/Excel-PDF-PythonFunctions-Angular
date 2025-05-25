@@ -1,0 +1,380 @@
+// Import global styles and variables
+// Using CSS custom properties directly from the global styles
+
+.login-container {
+  height: 100vh;
+  max-height: 100vh;
+  background: linear-gradient(135deg, var(--gray-100) 0%, #1a1a1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.login-card {
+  background: var(--gray-90);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  border: 1px solid var(--gray-70);
+  overflow-y: auto;
+  
+  @media (max-width: 480px) {
+    padding: 1.5rem 1rem;
+    max-height: 95vh;
+  }
+  
+  @media (max-height: 700px) {
+    padding: 1.5rem;
+    max-height: 95vh;
+  }
+}
+
+// Logo section
+.logo-section {
+  text-align: center;
+  margin-bottom: 1rem;
+  
+  @media (max-height: 700px) {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.login-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+  filter: brightness(1.1);
+  
+  @media (max-height: 700px) {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 0.25rem;
+  }
+  
+  @media (max-height: 600px) {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+.brand-title {
+  color: var(--kinetta-primary);
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.brand-subtitle {
+  color: var(--gray-30);
+  font-size: 0.875rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+// Form styles
+.login-form {
+  width: 100%;
+}
+
+.form-title {
+  color: var(--gray-10);
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  
+  @media (max-height: 700px) {
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+  }
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+  
+  @media (max-height: 700px) {
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-height: 600px) {
+    margin-bottom: 0.8rem;
+  }
+}
+
+.form-label {
+  display: block;
+  color: var(--gray-20);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--gray-80);
+  border: 1px solid var(--gray-60);
+  border-radius: 8px;
+  padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+  color: var(--gray-10);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+
+  @media (max-height: 700px) {
+    padding: 0.6rem 2.25rem 0.6rem 2.25rem;
+    font-size: 0.8rem;
+  }
+
+  &::placeholder {
+    color: var(--gray-50);
+  }
+
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+    background: var(--gray-90);
+  }
+
+  &.error {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 2px rgba(218, 30, 40, 0.2);
+  }
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--gray-50);
+  font-size: 0.875rem;
+  z-index: 1;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--gray-50);
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--gray-30);
+  }
+
+  &:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+// Checkbox styles
+.checkbox-group {
+  margin-bottom: 1.5rem;
+  
+  @media (max-height: 700px) {
+    margin-bottom: 1rem;
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--gray-30);
+  font-size: 0.875rem;
+  
+  @media (max-height: 700px) {
+    font-size: 0.8rem;
+  }
+}
+
+.checkbox-input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--gray-60);
+  border-radius: 3px;
+  margin-right: 0.5rem;
+  position: relative;
+  background: var(--gray-80);
+  transition: all 0.2s ease;
+
+  &::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--gray-10);
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+
+  &::after {
+    opacity: 1;
+  }
+}
+
+.checkbox-text {
+  user-select: none;
+}
+
+// Button styles
+.login-button {
+  width: 100%;
+  background: var(--primary-color);
+  color: var(--gray-10);
+  border: none;
+  border-radius: 8px;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+
+  @media (max-height: 700px) {
+    padding: 0.7rem 1.25rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: #0353e9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 98, 254, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  &.loading {
+    background: var(--gray-60);
+  }
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+// Form footer
+.form-footer {
+  text-align: center;
+}
+
+.forgot-password {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #0353e9;
+    text-decoration: underline;
+  }
+}
+
+// Footer
+.login-footer {
+  margin-top: 1rem;
+  text-align: center;
+
+  @media (max-height: 700px) {
+    margin-top: 0.5rem;
+  }
+
+  p {
+    color: var(--gray-50);
+    font-size: 0.75rem;
+    margin: 0;
+    
+    @media (max-height: 700px) {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .brand-title {
+    font-size: 1.75rem;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+}
+
+// Animation for form validation
+.form-input.error {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+// Loading spinner animation
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

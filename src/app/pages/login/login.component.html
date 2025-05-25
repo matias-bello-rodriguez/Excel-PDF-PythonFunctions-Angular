@@ -1,0 +1,97 @@
+<div class="login-container">
+  <div class="login-card">
+    <!-- Login form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      
+      <!-- Logo section -->
+      <div class="logo-section">
+        <img src="/login-logo.webp" alt="Kinetta Logo" class="login-logo">
+      </div>
+      
+      <!-- Email field -->
+      <div class="form-group">
+        <label for="email" class="form-label">Correo Electrónico</label>
+        <div class="input-wrapper">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="form-input"
+            [class.error]="loginForm.get('email')?.errors && loginForm.get('email')?.touched"
+            placeholder="usuario@ejemplo.com"
+            autocomplete="email"
+          >
+          <i class="input-icon fas fa-envelope"></i>
+        </div>
+        <div class="error-message" *ngIf="loginForm.get('email')?.errors && loginForm.get('email')?.touched">
+          {{ getFieldError('email') }}
+        </div>
+      </div>
+
+      <!-- Password field -->
+      <div class="form-group">
+        <label for="password" class="form-label">Contraseña</label>
+        <div class="input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            class="form-input"
+            [class.error]="loginForm.get('password')?.errors && loginForm.get('password')?.touched"
+            placeholder="Ingresa tu contraseña"
+            autocomplete="current-password"
+          >
+          <i class="input-icon fas fa-lock"></i>
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            aria-label="Mostrar/ocultar contraseña"
+          >
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+        <div class="error-message" *ngIf="loginForm.get('password')?.errors && loginForm.get('password')?.touched">
+          {{ getFieldError('password') }}
+        </div>
+      </div>
+
+      <!-- Remember me checkbox -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="rememberMe"
+            class="checkbox-input"
+          >
+          <span class="checkbox-custom"></span>
+          <span class="checkbox-text">Recordar mis datos</span>
+        </label>
+      </div>
+
+      <!-- Submit button -->
+      <button
+        type="submit"
+        class="login-button"
+        [disabled]="isLoading"
+        [class.loading]="isLoading"
+      >
+        <span *ngIf="!isLoading">Iniciar Sesión</span>
+        <span *ngIf="isLoading" class="loading-content">
+          <i class="fas fa-spinner fa-spin"></i>
+          Autenticando...
+        </span>
+      </button>
+
+      <!-- Additional links -->
+      <div class="form-footer">
+        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <footer class="login-footer">
+    <p>&copy; 2024 Kinetta. Todos los derechos reservados.</p>
+  </footer>
+</div>

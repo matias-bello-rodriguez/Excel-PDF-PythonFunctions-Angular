@@ -8,21 +8,22 @@ import { HttpClientModule } from '@angular/common/http';
 import { FormSectionComponent } from '../forms/form-section/form-section.component';
 import { FormFieldComponent } from '../forms/form-field/form-field.component';
 import { TextInputComponent } from '../forms/text-input/text-input.component';
+import { FormButtonsComponent } from '../forms/form-buttons/form-buttons.component';
 
 // Importación del servicio de validación
 import { ValidationService, AddressValidationResponse, RutValidationResponse, EmailValidationResponse } from '../../services/validation.service';
 
 @Component({
   selector: 'app-customer-dialog',
-  standalone: true,
-  imports: [
+  standalone: true,  imports: [
     CommonModule,
     ReactiveFormsModule,
     FontAwesomeModule,
     HttpClientModule,
     FormSectionComponent,
     FormFieldComponent,
-    TextInputComponent
+    TextInputComponent,
+    FormButtonsComponent
   ],
   templateUrl: './customer-dialog.component.html',
   styleUrl: './customer-dialog.component.scss'
@@ -33,9 +34,10 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
   
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
-  
-  customerForm!: FormGroup;
+    customerForm!: FormGroup;
   isLoading = false;
+  successMessage: string = '';
+  errorMessage: string = '';
   
   // Estados de validación
   rutValid = false;

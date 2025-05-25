@@ -38,10 +38,10 @@ export class MainLayoutComponent {
     ).subscribe(() => {
       let title = 'Sistema de Cubicaciones | Kinetta';
       const currentRoute = this.router.url;
-      
-      // Mapa de títulos según la ruta
+        // Mapa de títulos según la ruta
       const titleMap: { [key: string]: string } = {
         '/takeoff-list': 'Gestión de Cubicaciones',
+        '/reportes': 'Reportes y Análisis',
         // Agregar más mapeos de ruta a título según sea necesario
       };
 

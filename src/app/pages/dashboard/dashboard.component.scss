@@ -1,0 +1,365 @@
+// Estilos para el dashboard con tarjetas de navegación
+
+.kinetta-title {
+  background: linear-gradient(45deg, #545b62, #c82333);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+
+.dashboard {
+  padding: var(--spacing-05);
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .welcome-section {
+    text-align: center;
+    margin-bottom: var(--spacing-06);
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin: 0 0 var(--spacing-03) 0;
+      
+      @media (max-width: 768px) {
+        font-size: 2rem;
+      }
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: var(--gray-60);
+      margin: 0;
+    }
+  }
+
+  .card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-05);
+    width: 100%;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: var(--spacing-04);
+    }
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: var(--spacing-05);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid var(--gray-20);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    i {
+      font-size: 3rem;
+      color: var(--primary-color);
+      margin-bottom: var(--spacing-03);
+      transition: all 0.3s ease;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: var(--spacing-02) 0 var(--spacing-03) 0;
+      color: var(--gray-90);
+      transition: color 0.3s ease;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--gray-60);
+      line-height: 1.5;
+      margin: 0;
+      transition: color 0.3s ease;
+    }    &:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary-light);
+
+      &::before {
+        transform: scaleX(1);
+      }
+
+      &::after {
+        opacity: 1;
+      }
+
+      i {
+        transform: scale(1.1);
+        color: var(--primary-dark);
+      }
+
+      h3 {
+        color: var(--primary-color);
+      }
+
+      p {
+        color: var(--gray-70);
+      }
+    }
+
+    &:active {
+      transform: translateY(-4px);
+      transition: transform 0.1s ease;
+    }
+
+    @media (max-width: 768px) {
+      padding: var(--spacing-04);
+
+      i {
+        font-size: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.25rem;
+      }
+
+      p {
+        font-size: 0.875rem;
+      }
+
+      &:hover {
+        transform: translateY(-4px);
+      }
+    }
+  }
+
+  // Colores específicos para cada tarjeta
+  .card-cubicaciones {
+    &::before {
+      background: linear-gradient(90deg, #007acc, #0099ff);
+    }
+    
+    i {
+      color: #007acc;
+    }
+    
+    &:hover i {
+      color: #005a99;
+    }
+    
+    &:hover {
+      border-color: #007acc;
+      
+      h3 {
+        color: #007acc;
+      }
+    }
+  }
+
+  .card-clientes {
+    &::before {
+      background: linear-gradient(90deg, #28a745, #20c997);
+    }
+    
+    i {
+      color: #28a745;
+    }
+    
+    &:hover i {
+      color: #1e7e34;
+    }
+    
+    &:hover {
+      border-color: #28a745;
+      
+      h3 {
+        color: #28a745;
+      }
+    }
+  }
+
+  .card-productos {
+    &::before {
+      background: linear-gradient(90deg, #fd7e14, #ffc107);
+    }
+    
+    i {
+      color: #fd7e14;
+    }
+    
+    &:hover i {
+      color: #e8650e;
+    }
+    
+    &:hover {
+      border-color: #fd7e14;
+      
+      h3 {
+        color: #fd7e14;
+      }
+    }
+  }
+
+  .card-proyectos {
+    &::before {
+      background: linear-gradient(90deg, #6f42c1, #9561e2);
+    }
+    
+    i {
+      color: #6f42c1;
+    }
+    
+    &:hover i {
+      color: #59359a;
+    }
+    
+    &:hover {
+      border-color: #6f42c1;
+      
+      h3 {
+        color: #6f42c1;
+      }
+    }
+  }
+
+  .card-reportes {
+    &::before {
+      background: linear-gradient(90deg, #dc3545, #e74c3c);
+    }
+    
+    i {
+      color: #dc3545;
+    }
+    
+    &:hover i {
+      color: #c82333;
+    }
+    
+    &:hover {
+      border-color: #dc3545;
+      
+      h3 {
+        color: #dc3545;
+      }
+    }
+  }
+
+  .card-configuracion {
+    &::before {
+      background: linear-gradient(90deg, #6c757d, #868e96);
+    }
+    
+    i {
+      color: #6c757d;
+    }
+    
+    &:hover i {
+      color: #545b62;
+    }
+    
+    &:hover {
+      border-color: #6c757d;
+      
+      h3 {
+        color: #6c757d;
+      }
+    }
+  }
+
+  .card-usuarios {
+    &::before {
+      background: linear-gradient(90deg, #17a2b8, #20c997);
+    }
+    
+    i {
+      color: #17a2b8;
+    }
+    
+    &:hover i {
+      color: #138496;
+    }
+    
+    &:hover {
+      border-color: #17a2b8;
+      
+      h3 {
+        color: #17a2b8;
+      }
+    }
+  }
+
+  .card-ayuda {
+    &::before {
+      background: linear-gradient(90deg, #6610f2, #e83e8c);
+    }
+    
+    i {
+      color: #6610f2;
+    }
+    
+    &:hover i {
+      color: #520dc2;
+    }
+    
+    &:hover {
+      border-color: #6610f2;
+      
+      h3 {
+        color: #6610f2;
+      }
+    }
+  }
+}
+
+// Animación de entrada para las tarjetas
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: cardFadeIn 0.6s ease-out;
+  
+  &:nth-child(1) { animation-delay: 0.1s; }
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
+  &:nth-child(4) { animation-delay: 0.4s; }
+  &:nth-child(5) { animation-delay: 0.5s; }
+  &:nth-child(6) { animation-delay: 0.6s; }
+  &:nth-child(7) { animation-delay: 0.7s; }
+  &:nth-child(8) { animation-delay: 0.8s; }
+}

@@ -31,3 +31,7 @@
   // Los estilos para el borde del input con error y el mensaje de validación se manejan
   // en los componentes de input específicos o en forms.scss (.validation-message).
 }
+
+.hidden {
+  visibility: hidden; /* Oculta el elemento pero mantiene su espacio */
+}

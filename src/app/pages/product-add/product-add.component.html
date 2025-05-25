@@ -1,0 +1,388 @@
+<div class="product-add-container">
+  <div class="page-header">
+    <h1 class="page-title">Agregar Nuevo Producto</h1>
+  </div>
+  
+  <div class="form-container">
+    <!-- Mensajes de éxito o error -->
+    <div *ngIf="successMessage" class="alert-success">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert-danger">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+      <!-- Información básica del producto -->
+      <app-form-section title="Información General" icon="fa-info-circle">
+        <div class="form-grid">
+          <app-form-field 
+            label="Código Casa/Torre" 
+            [required]="true" 
+            [errorMessage]="getFieldError('houseTowerCode')" 
+            fieldId="houseTowerCode">
+            <app-text-input
+              id="houseTowerCode"
+              formControlName="houseTowerCode"
+              placeholder="Ej: CASA-A1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Unidades" 
+            [required]="true" 
+            [errorMessage]="getFieldError('units')" 
+            fieldId="units">
+            <app-text-input
+              id="units"
+              type="number"
+              formControlName="units"
+              placeholder="Ej: 1"
+              min="1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Ubicación" 
+            [required]="true" 
+            [errorMessage]="getFieldError('location')" 
+            fieldId="location">
+            <app-select-input
+              id="location"
+              formControlName="location"
+              [options]="locationOptions"
+              placeholder="Seleccionar ubicación">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Código de Ventana" 
+            [required]="true" 
+            [errorMessage]="getFieldError('windowCode')" 
+            fieldId="windowCode">
+            <app-text-input
+              id="windowCode"
+              formControlName="windowCode"
+              placeholder="Ej: WIN-001">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Tipo y Material -->
+      <app-form-section title="Tipo y Material" icon="fa-cog">
+        <div class="form-grid">
+          <app-form-field 
+            label="Tipo de Ventana" 
+            [required]="true" 
+            [errorMessage]="getFieldError('windowType')" 
+            fieldId="windowType">
+            <app-select-input
+              id="windowType"
+              formControlName="windowType"
+              [options]="windowTypeOptions"
+              placeholder="Seleccionar tipo">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Material" 
+            [required]="true" 
+            [errorMessage]="getFieldError('material')" 
+            fieldId="material">
+            <app-select-input
+              id="material"
+              formControlName="material"
+              [options]="materialOptions"
+              placeholder="Seleccionar material">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Sección de Perfil" 
+            [required]="true" 
+            [errorMessage]="getFieldError('profileSection')" 
+            fieldId="profileSection">
+            <app-text-input
+              id="profileSection"
+              formControlName="profileSection"
+              placeholder="Ej: 60x30">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Color del Cuerpo" 
+            [required]="true" 
+            [errorMessage]="getFieldError('bodyColor')" 
+            fieldId="bodyColor">
+            <app-text-input
+              id="bodyColor"
+              formControlName="bodyColor"
+              placeholder="Ej: Blanco">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Dimensiones -->
+      <app-form-section title="Dimensiones" icon="fa-ruler">
+        <div class="form-grid">
+          <app-form-field 
+            label="Ancho (mm)" 
+            [required]="true" 
+            [errorMessage]="getFieldError('width')" 
+            fieldId="width">
+            <app-text-input
+              id="width"
+              type="number"
+              formControlName="width"
+              placeholder="Ej: 1200"
+              min="1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Alto (mm)" 
+            [required]="true" 
+            [errorMessage]="getFieldError('height')" 
+            fieldId="height">
+            <app-text-input
+              id="height"
+              type="number"
+              formControlName="height"
+              placeholder="Ej: 1000"
+              min="1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Profundidad (mm)" 
+            [required]="false" 
+            [errorMessage]="getFieldError('depth')" 
+            fieldId="depth">
+            <app-text-input
+              id="depth"
+              type="number"
+              formControlName="depth"
+              placeholder="Ej: 100"
+              min="1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Área (m²)" 
+            [required]="false" 
+            [errorMessage]="getFieldError('area')" 
+            fieldId="area">
+            <app-text-input
+              id="area"
+              type="number"
+              formControlName="area"
+              placeholder="Calculada automáticamente"
+              step="0.01"
+              [readonly]="true">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Especificaciones del Vidrio -->
+      <app-form-section title="Especificaciones del Vidrio" icon="fa-window-maximize">
+        <div class="form-grid">
+          <app-form-field 
+            label="Tipo de Vidrio" 
+            [required]="true" 
+            [errorMessage]="getFieldError('glassType')" 
+            fieldId="glassType">
+            <app-select-input
+              id="glassType"
+              formControlName="glassType"
+              [options]="glassTypeOptions"
+              placeholder="Seleccionar tipo de vidrio">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Espesor del Vidrio (mm)" 
+            [required]="true" 
+            [errorMessage]="getFieldError('glassThickness')" 
+            fieldId="glassThickness">
+            <app-text-input
+              id="glassThickness"
+              type="number"
+              formControlName="glassThickness"
+              placeholder="Ej: 6"
+              min="1">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Vidrio Opaco" 
+            [required]="false" 
+            [errorMessage]="getFieldError('opaqueGlass')" 
+            fieldId="opaqueGlass">
+            <app-select-input
+              id="opaqueGlass"
+              formControlName="opaqueGlass"
+              [options]="opaqueGlassOptions"
+              placeholder="Seleccionar opción">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="DVH (Doble Vidriado Hermético)" 
+            [required]="false" 
+            [errorMessage]="getFieldError('dvh')" 
+            fieldId="dvh">
+            <app-text-input
+              id="dvh"
+              formControlName="dvh"
+              placeholder="Especificaciones DVH">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Funcionalidad -->
+      <app-form-section title="Funcionalidad" icon="fa-tools">
+        <div class="form-grid">
+          <app-form-field 
+            label="Tipo de Apertura" 
+            [required]="true" 
+            [errorMessage]="getFieldError('opening')" 
+            fieldId="opening">
+            <app-select-input
+              id="opening"
+              formControlName="opening"
+              [options]="openingOptions"
+              placeholder="Seleccionar apertura">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Tipo de Cierre" 
+            [required]="true" 
+            [errorMessage]="getFieldError('lock')" 
+            fieldId="lock">
+            <app-select-input
+              id="lock"
+              formControlName="lock"
+              [options]="lockOptions"
+              placeholder="Seleccionar cierre">
+            </app-select-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Mosquitero" 
+            [required]="false" 
+            [errorMessage]="getFieldError('mosquitoNet')" 
+            fieldId="mosquitoNet">
+            <app-text-input
+              id="mosquitoNet"
+              formControlName="mosquitoNet"
+              placeholder="Especificar tipo si aplica">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Cortina de Enrollar" 
+            [required]="false" 
+            [errorMessage]="getFieldError('rollerShutter')" 
+            fieldId="rollerShutter">
+            <app-text-input
+              id="rollerShutter"
+              formControlName="rollerShutter"
+              placeholder="Especificar si aplica">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Diseño y Acabados -->
+      <app-form-section title="Diseño y Acabados" icon="fa-palette">
+        <div class="form-grid">
+          <app-form-field 
+            label="Color del Marco" 
+            [required]="false" 
+            [errorMessage]="getFieldError('frameColor')" 
+            fieldId="frameColor">
+            <app-text-input
+              id="frameColor"
+              formControlName="frameColor"
+              placeholder="Ej: Blanco">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Color de la Hoja" 
+            [required]="false" 
+            [errorMessage]="getFieldError('leafColor')" 
+            fieldId="leafColor">
+            <app-text-input
+              id="leafColor"
+              formControlName="leafColor"
+              placeholder="Ej: Blanco">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Diseño" 
+            [required]="false" 
+            [errorMessage]="getFieldError('design')" 
+            fieldId="design">
+            <app-text-input
+              id="design"
+              formControlName="design"
+              placeholder="Descripción del diseño">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Laminado" 
+            [required]="false" 
+            [errorMessage]="getFieldError('laminate')" 
+            fieldId="laminate">
+            <app-text-input
+              id="laminate"
+              formControlName="laminate"
+              placeholder="Tipo de laminado si aplica">
+            </app-text-input>
+          </app-form-field>
+        </div>
+      </app-form-section>
+
+      <!-- Comentarios adicionales -->
+      <app-form-section title="Información Adicional" icon="fa-comment">
+        <div class="form-grid">
+          <div class="span-2">
+            <app-form-field 
+              label="Comentarios" 
+              [required]="false" 
+              [errorMessage]="getFieldError('comments')" 
+              fieldId="comments">
+              <app-textarea-input
+                id="comments"
+                formControlName="comments"
+                placeholder="Comentarios adicionales sobre el producto..."
+                [rows]="4">
+              </app-textarea-input>
+            </app-form-field>
+          </div>
+        </div>
+      </app-form-section>      <!-- Botones del formulario -->
+      <div class="form-actions">
+        <app-form-buttons
+          [isSubmitting]="isSubmitting"
+          [isSubmitDisabled]="productForm.invalid && productForm.touched"
+          [submitText]="'Guardar Producto'"
+          (submitClick)="onSubmit()"
+          (cancelClick)="onCancel()"
+          [alignment]="'center'">
+        </app-form-buttons>
+      </div>
+
+    </form>
+  </div>
+</div>

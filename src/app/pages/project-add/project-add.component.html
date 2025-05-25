@@ -17,7 +17,7 @@
     <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
       <!-- Sección de Información General -->
       <app-form-section title="Información General" icon="fa-info-circle">
-        <div class="form-grid">
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
           <app-form-field 
             label="Nombre del Proyecto" 
             [required]="true" 
@@ -54,17 +54,19 @@
             </app-form-field>
           </div>
 
-          <app-form-field 
-            label="Tipo de Mercado" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('tipoMercado')" 
-            fieldId="tipoMercado">
-            <app-select-input 
-              formControlName="tipoMercado" 
-              id="tipoMercado"
-              [options]="tipoMercadoOptions">
-            </app-select-input>
-          </app-form-field><div class="span-2">
+          <div class="span-2" style="display: grid; grid-template-columns: 1fr 1fr; grid-gap: var(--spacing-05);">
+            <app-form-field 
+              label="Tipo de Mercado" 
+              [required]="true" 
+              [errorMessage]="getErrorMessage('tipoMercado')" 
+              fieldId="tipoMercado">
+              <app-select-input 
+                formControlName="tipoMercado" 
+                id="tipoMercado"
+                [options]="tipoMercadoOptions">
+              </app-select-input>
+            </app-form-field>
+
             <app-form-field 
               label="Tipos de obra asociados" 
               [required]="true" 
@@ -75,20 +77,6 @@
                 [options]="tiposObraOptions">
               </app-checkbox-group>
             </app-form-field>
-            
-            <!-- Campo adicional para "Otro" -->
-            <app-form-field 
-              *ngIf="isOtroSelected"
-              label="Especificar otro tipo de obra" 
-              [required]="true" 
-              [errorMessage]="getErrorMessage('tipoObraOtro')" 
-              fieldId="tipoObraOtro">
-              <app-text-input 
-                formControlName="tipoObraOtro" 
-                id="tipoObraOtro"
-                placeholder="Especificar otro tipo de obra">
-              </app-text-input>
-            </app-form-field>
           </div>
 
           <div class="span-2">
@@ -96,46 +84,18 @@
               label="Descripción" 
               [errorMessage]="getErrorMessage('descripcion')" 
               fieldId="descripcion">
-              <app-textarea-input 
-                formControlName="descripcion" 
-                id="descripcion"
-                placeholder="Ingrese una descripción del proyecto" 
+              <app-textarea-input
+                formControlName="descripcion"
+                placeholder="Ingrese una descripción"
                 [rows]="3"
                 [maxLength]="500">
               </app-textarea-input>
             </app-form-field>
           </div>
         </div>
-      </app-form-section>      <!-- Sección de Cronograma -->
-      <app-form-section title="Cronograma" icon="fa-calendar-alt">
-        <!-- Fechas en una fila usando todo el ancho -->
-        <div class="form-grid form-grid--2">
-          <app-form-field 
-            label="Fecha de Inicio" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('fechaInicio')" 
-            fieldId="fechaInicio">
-            <app-date-input 
-              formControlName="fechaInicio" 
-              id="fechaInicio">
-            </app-date-input>
-          </app-form-field>
-
-          <app-form-field 
-            label="Fecha de Entrega" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('fechaEntrega')" 
-            fieldId="fechaEntrega">
-            <app-date-input 
-              formControlName="fechaEntrega" 
-              id="fechaEntrega">
-            </app-date-input>
-          </app-form-field>
-        </div>
       </app-form-section>      <!-- Sección de Contactos y Responsables -->
       <app-form-section title="Contactos y Responsables" icon="fa-users">
         <app-form-field 
-          label="Contactos del Proyecto" 
           [errorMessage]="getErrorMessage('contactos')" 
           fieldId="contactos">
           <app-contacts-manager 
@@ -158,4 +118,15 @@
       </div>
     </form>
   </div>
+  <div class="help-text-message">
+    Seleccione al menos un tipo de obra.
+  </div>
 </div>
+
+<style>
+app-form-section {
+  background-color: #f9f9f9;
+  padding: var(--spacing-04);
+  border-radius: 4px;
+}
+</style>

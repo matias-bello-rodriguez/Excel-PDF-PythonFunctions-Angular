@@ -1,8 +1,8 @@
 <div class="page-header">
-  <app-page-title [title]="pageTitle"></app-page-title>
-  <app-add-button 
+  <app-page-title [title]="pageTitle"></app-page-title>  <app-add-button 
     label="AGREGAR PRODUCTO" 
-    icon="fa-plus">
+    icon="fa-plus"
+    (buttonClick)="nuevoProducto()">
   </app-add-button>
 </div>
 <div class="card">

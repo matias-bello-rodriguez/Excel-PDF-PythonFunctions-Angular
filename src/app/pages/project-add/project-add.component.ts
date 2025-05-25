@@ -19,7 +19,8 @@ import { ProjectService } from '../../services/project.service';
 
 @Component({
   selector: 'app-project-add',
-  standalone: true,  imports: [
+  standalone: true,
+  imports: [
     CommonModule,
     ReactiveFormsModule,
     FormFieldComponent,
@@ -46,12 +47,9 @@ export class ProjectAddComponent implements OnInit {  projectForm!: FormGroup;
   ];
 
   tiposObraOptions = [
-    { value: 'residencial', label: 'Residencial' },
-    { value: 'comercial', label: 'Comercial' },
-    { value: 'industrial', label: 'Industrial' },
-    { value: 'infraestructura', label: 'Infraestructura' },
-    { value: 'institucional', label: 'Institucional' },
-    { value: 'otro', label: 'Otro' }
+    { value: 'departamento', label: 'Departamento' },
+    { value: 'casa', label: 'Casa' },
+    { value: 'institucion', label: 'Institución' }
   ];
 
   clienteOptions: Array<{value: string, label: string}> = [];
@@ -97,10 +95,7 @@ export class ProjectAddComponent implements OnInit {  projectForm!: FormGroup;
     // Cargar opciones de clientes
     this.projectService.getClientOptions().subscribe({
       next: (options) => {
-        this.clienteOptions = [
-          ...options,
-          { value: 'nuevo', label: '+ Agregar nuevo cliente' }
-        ];
+        this.clienteOptions = [...options];
       },
       error: (error) => {
         console.error('Error cargando clientes:', error);
@@ -187,28 +182,19 @@ export class ProjectAddComponent implements OnInit {  projectForm!: FormGroup;
     if (control?.hasError('required')) {
       return 'Este campo es obligatorio';
     }
-    if (control?.hasError('minlength')) {
-      if (controlName === 'tiposObra') {
-        return 'Debe seleccionar al menos un tipo de obra';
-      }
-      if (controlName === 'contactos') {
-        return 'Debe agregar al menos un contacto';
-      }
-      return 'Este campo es obligatorio';
-    }
     if (control?.hasError('maxlength')) {
       const maxLength = control.getError('maxlength').requiredLength;
       return `No debe exceder los ${maxLength} caracteres`;
     }
-    if (control?.hasError('pattern')) {
-      if (controlName === 'telefono') {
-        return 'Formato de teléfono inválido';
-      }
-      return 'Formato inválido';
-    }
-    if (control?.hasError('email')) {
-      return 'Debe ingresar un email válido';
-    }
     return '';
+  }
+
+  addContact(): void {
+    const contactosControl = this.projectForm.get('contactos');
+    if (contactosControl) {
+      const newContact = { name: 'Nuevo Contacto', email: 'nuevo@correo.com' }; // Ejemplo
+      const currentContacts = contactosControl.value || [];
+      contactosControl.setValue([...currentContacts, newContact]);
+    }
   }
 }

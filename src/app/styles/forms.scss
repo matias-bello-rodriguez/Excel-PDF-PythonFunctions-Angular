@@ -72,22 +72,35 @@
 
 // Mensajes de validación y ayuda
 .validation-message,
-.help-text-message { // Unificar clase para mensajes debajo del input
-  display: block; // Cambiado a block para ocupar ancho completo
+.help-text-message {
+  display: block;
   font-size: $help-text-font-size;
   margin-top: $spacing-unit * 0.5; // 4px
   line-height: 1.4;
+  min-height: 1.4em; // Reserva espacio para el mensaje
+  visibility: hidden; // Oculta el mensaje cuando no hay contenido
+  opacity: 0; // Oculta visualmente
+  transition: visibility 0.2s, opacity 0.2s ease-in-out; // Transición suave
 }
 
 .validation-message {
   color: $form-error-text-color;
-  // i { // Si se usa ícono, se puede estilizar aquí o en el componente
-  //   margin-right: $spacing-unit * 0.5;
-  // }
+
+  // Muestra el mensaje cuando hay contenido
+  &:not(:empty) {
+    visibility: visible;
+    opacity: 1; // Hace visible el mensaje
+  }
 }
 
 .help-text-message {
   color: $form-help-text-color;
+
+  // Muestra el mensaje cuando hay contenido
+  &:not(:empty) {
+    visibility: visible;
+    opacity: 1; // Hace visible el mensaje
+  }
 }
 
 // Estilos para los botones de acción del formulario
