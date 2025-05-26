@@ -601,7 +601,7 @@ body {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; // Alineamos desde arriba
+  align-items: flex-start;
   margin-bottom: var(--spacing-04);
 
   app-page-title {

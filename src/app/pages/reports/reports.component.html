@@ -1,104 +1,82 @@
+<div class="page-header text-center">
+  <h1 class="page-title">{{ pageTitle }}</h1>
+</div>
+
 <div class="reports-container">
-  <!-- Page Title -->
-  <app-page-title 
-    title="Reportes y Análisis"
-    subtitle="Dashboard de métricas y estadísticas del sistema"
-    icon="pi pi-chart-line">
-  </app-page-title>
-  <!-- KPIs Section -->
-  <div class="kpi-section">
-    <div class="kpi-grid">
-      <div class="kpi-card" *ngFor="let kpi of kpis">
-        <p-card>
-          <div class="kpi-content">
-            <div class="kpi-header">
-              <div class="kpi-icon" [style.background-color]="kpi.color">
-                <i [class]="kpi.icon"></i>
-              </div>
-              <div class="kpi-main">
-                <h3>{{ kpi.title }}</h3>
-                <div class="kpi-value">{{ kpi.value }}</div>
-                <span class="kpi-subtitle" *ngIf="kpi.subtitle">{{ kpi.subtitle }}</span>
-              </div>
-              <div class="kpi-metrics" *ngIf="kpi.percentage || kpi.trend">
-                <span class="kpi-percentage" *ngIf="kpi.percentage">{{ kpi.percentage }}</span>
-                <span class="kpi-trend" *ngIf="kpi.trend">{{ kpi.trend }}</span>
-              </div>
-            </div>
-            
-            <!-- Detalles expandibles -->
-            <div class="kpi-details" *ngIf="kpi.details && kpi.details.length > 0">
-              <p-divider></p-divider>
-              <div class="details-list">
-                <div class="detail-item" *ngFor="let detail of kpi.details">
-                  <span class="detail-label">{{ detail.label }}</span>
-                  <div class="detail-values">
-                    <span class="detail-value">{{ detail.value }}</span>
-                    <span class="detail-percentage" *ngIf="detail.percentage">{{ detail.percentage }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </p-card>
-      </div>
+  <!-- KPIs Grid Layout -->
+  <div class="reports-grid">
+    <!-- Gráfico: m² por proyecto -->
+    <div class="chart-container">
+      <p-card>
+        <div class="chart-wrapper">
+          <p-chart 
+            type="bar" 
+            [data]="m2PorProyectoData" 
+            [options]="horizontalBarOptions">
+          </p-chart>
+        </div>
+      </p-card>
     </div>
-  </div>
-
-  <!-- Charts Section -->
-  <div class="charts-section">
-    <!-- Top Row: Project and Client Charts -->
-    <div class="charts-row">
-      <div class="chart-container chart-left">
-        <p-card>
-          <div class="chart-wrapper">
-            <p-chart 
-              type="bar" 
-              [data]="m2PorProyectoData" 
-              [options]="horizontalBarOptions">
-            </p-chart>
-          </div>
-        </p-card>
-      </div>
-      
-      <div class="chart-container chart-right">
-        <p-card>
-          <div class="chart-wrapper">
-            <p-chart 
-              type="pie" 
-              [data]="m2PorClienteData" 
-              [options]="pieOptions">
-            </p-chart>
-          </div>
-        </p-card>
-      </div>
+    
+    <!-- Gráfico: m² por cliente -->
+    <div class="chart-container">
+      <p-card>
+        <div class="chart-wrapper">
+          <p-chart 
+            type="bar" 
+            [data]="m2PorClienteData" 
+            [options]="verticalBarOptions">
+          </p-chart>
+        </div>
+      </p-card>
     </div>
-
-    <!-- Bottom Row: Status and Monthly Charts -->
-    <div class="charts-row">
-      <div class="chart-container chart-left">
-        <p-card>
-          <div class="chart-wrapper">
-            <p-chart 
-              type="doughnut" 
-              [data]="cubicacionesPorEstadoData" 
-              [options]="donutOptions">
-            </p-chart>
+    
+    <!-- KPI: Proyecto con más m² -->
+    <div class="kpi-container">
+      <p-card>
+        <div class="kpi-content">
+          <div class="kpi-header">
+            <div class="kpi-icon" style="background-color: #4361ee;">
+              <i class="pi pi-trophy"></i>
+            </div>
+            <div class="kpi-main">
+              <h3>Proyecto con más m²</h3>
+              <div class="kpi-value">{{ proyectoConMasM2.nombre }}</div>
+              <span class="kpi-subtitle">{{ proyectoConMasM2.m2 }} m²</span>
+            </div>
+            <div class="kpi-metrics" *ngIf="proyectoConMasM2.porcentaje">
+              <span class="kpi-percentage">{{ proyectoConMasM2.porcentaje }}</span>
+            </div>
           </div>
-        </p-card>
-      </div>
-      
-      <div class="chart-container chart-right">
-        <p-card>
-          <div class="chart-wrapper">
-            <p-chart 
-              type="bar" 
-              [data]="m2PorMesData" 
-              [options]="stackedBarOptions">
-            </p-chart>
+        </div>
+      </p-card>
+    </div>
+    
+    <!-- Gráfico: Estados de cubicaciones -->
+    <div class="chart-container">
+      <p-card>
+        <div class="chart-wrapper donut-wrapper">
+          <p-chart 
+            type="doughnut" 
+            [data]="cubicacionesPorEstadoData" 
+            [options]="donutOptions">
+          </p-chart>
+          <div class="cubicacion-counters">
+            <div class="counter-item counter-completed">
+              <span class="counter-value">{{ estadosCubicaciones.realizadas }}</span>
+              <span class="counter-label">Realizadas</span>
+            </div>
+            <div class="counter-item counter-active">
+              <span class="counter-value">{{ estadosCubicaciones.activas }}</span>
+              <span class="counter-label">Activas</span>
+            </div>
+            <div class="counter-item counter-rejected">
+              <span class="counter-value">{{ estadosCubicaciones.rechazadas }}</span>
+              <span class="counter-label">Rechazadas</span>
+            </div>
           </div>
-        </p-card>
-      </div>
+        </div>
+      </p-card>
     </div>
   </div>
 </div>

@@ -65,15 +65,14 @@
                     </button>
                   </div>
                 </div>
-              </ng-container>
-                <!-- Design 1 como texto -->
+              </ng-container>              <!-- Design 1 como texto -->
               <ng-container *ngSwitchCase="'design1'">
-                <span class="design-text">{{ item['design1'] }}</span>
+                <span class="design-text">{{ item[column.key] }}</span>
               </ng-container>
               
               <!-- Design 2 como texto -->
               <ng-container *ngSwitchCase="'design2'">
-                <span class="design-text">{{ item['design2'] }}</span>
+                <span class="design-text">{{ item[column.key] }}</span>
               </ng-container>
               
               <!-- Estado especial -->

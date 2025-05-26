@@ -598,10 +598,11 @@ body {
   margin-bottom: var(--spacing-06);
 }
 
+/* ESTILOS GLOBALES PARA PAGE HEADERS - Agregar después de las variables */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; // Alineamos desde arriba
+  align-items: flex-start;
   margin-bottom: var(--spacing-04);
 
   app-page-title {
@@ -615,7 +616,7 @@ body {
         .page-title {
           margin: 0;
           padding: 0;
-          line-height: 40px; // Altura exacta del botón
+          line-height: 40px;
           display: flex;
           align-items: center;
         }
@@ -628,7 +629,7 @@ body {
   }
 
   app-add-button {
-    margin-top: 0; // Elimina el margen superior
+    margin-top: 0;
   }
 }
 

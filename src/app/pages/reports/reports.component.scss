@@ -8,6 +8,20 @@
   }
 }
 
+// Nueva estructura de grid para los reportes
+.reports-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+}
+
 // KPI Section
 .kpi-section {
   margin-bottom: 2rem;
@@ -205,30 +219,90 @@
   }
 }
 
-.chart-container {
+.chart-container, .kpi-container {
   ::ng-deep .p-card {
     border: none;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border-radius: 0.75rem;
     transition: all 0.3s ease;
+    height: 100%;
 
     &:hover {
+      transform: translateY(-2px);
       box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
     .p-card-content {
       padding: 1.5rem;
+      height: calc(100% - 3rem);
     }
   }
 }
 
 .chart-wrapper {
-  height: 400px;
+  height: 100%;
+  min-height: 300px;
   width: 100%;
+  position: relative;
 
   ::ng-deep canvas {
     max-height: 100%;
     max-width: 100%;
+  }
+}
+
+.donut-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cubicacion-counters {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.counter-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  min-width: 80px;
+
+  .counter-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .counter-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  &.counter-completed {
+    background-color: rgba(16, 185, 129, 0.1);
+    .counter-value {
+      color: #10b981;
+    }
+  }
+
+  &.counter-active {
+    background-color: rgba(245, 158, 11, 0.1);
+    .counter-value {
+      color: #f59e0b;
+    }
+  }
+
+  &.counter-rejected {
+    background-color: rgba(239, 68, 68, 0.1);
+    .counter-value {
+      color: #ef4444;
+    }
   }
 }
 
@@ -285,5 +359,57 @@
   
   .chartjs-legend-item {
     margin-bottom: 8px !important;
+  }
+}
+
+.page-header {
+  display: flex;
+  justify-content: flex-start; // Cambiar a flex-start ya que no hay botón
+  align-items: flex-start;
+  margin-bottom: 1.5rem; // Equivalente a --spacing-06
+  padding: 0.75rem 0; // Equivalente a --spacing-04
+
+  app-page-title {
+    margin: 0;
+    
+    ::ng-deep {
+      .page-title-container {
+        padding: 0;
+        margin: 0;
+        
+        .page-title {
+          margin: 0;
+          padding: 0;
+          line-height: 40px; // Altura exacta del botón
+          display: flex;
+          align-items: center;
+        }
+
+        .title-underline {
+          margin-top: var(--spacing-02);
+        }
+      }
+    }
+  }
+
+  app-add-button {
+    display: none; // Ocultar el botón como solicitaste
+  }
+
+  &.text-center {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-90);
+    margin: 0;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: var(--spacing-02);
+    display: inline-block;
+    margin-bottom: var(--spacing-04);
   }
 }
