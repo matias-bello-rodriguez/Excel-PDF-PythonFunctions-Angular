@@ -159,6 +159,7 @@ export class ProductListComponent implements OnInit {
   toggleColumnDialog(): void {
     this.showColumnMenu = !this.showColumnMenu;
   }
+
   /**
    * Alternar entre el idioma original y el español para las etiquetas de columnas
    */
@@ -173,8 +174,8 @@ export class ProductListComponent implements OnInit {
       this.columns = this.columns.map(column => {
         const translatedColumn = { ...column };
         
-        // Mapeo de traducciones para etiquetas
-        const labelTranslations: { [key: string]: string } = {
+        // Mapeo de traducciones
+        const translations: { [key: string]: string } = {
           'HOUSE/TOWER (CODE)': 'CASA/TORRE (CÓDIGO)',
           'UNITS': 'UNIDADES',
           'WINDOW CODE': 'CÓDIGO DE VENTANA',
@@ -206,55 +207,19 @@ export class ProductListComponent implements OnInit {
           'Actions': 'Acciones'
         };
         
-        // Mapeo de traducciones para atributos (keys)
-        const keyTranslations: { [key: string]: string } = {
-          'houseTowerCode': 'casaTorreCode',
-          'units': 'unidades',
-          'windowCode': 'codigoVentana',
-          'width': 'ancho',
-          'height': 'alto',
-          'surface': 'superficie',
-          'quantityPerUnit': 'cantidadPorUnidad',
-          'totalSurface': 'superficieTotal',
-          'manufacturingWidth': 'anchoFabricacion',
-          'manufacturingHeight': 'altoFabricacion',
-          'design1': 'diseno1',
-          'design2': 'diseno2',
-          'comment1': 'comentario1',
-          'comment2': 'comentario2',
-          'material': 'material',
-          'profileSection': 'seccionPerfil',
-          'bodyColor': 'colorCuerpo',
-          'glassThickness': 'espesorVidrio',
-          'glassProtection': 'proteccionVidrio',
-          'filmColor': 'colorPelicula',
-          'opaqueClearGlass': 'vidrioOpacoClaro',
-          'windowType': 'tipoVentana',
-          'glassType': 'tipoVidrio',
-          'opening': 'apertura',
-          'lock': 'cerradura',
-          'unitPriceUsdSqm': 'precioUnitarioUsdM2',
-          'pieceBasePrice': 'precioPiezaBase',
-          'pieceTotal': 'totalPieza',
-          'actions': 'acciones'
-        };
-        
-        // Asignar traducción de etiqueta si existe, sino mantener la etiqueta original
-        translatedColumn.label = labelTranslations[column.label] || column.label;
-        
-        // Asignar traducción de atributo (key) si existe, sino mantener el atributo original
-        translatedColumn.key = keyTranslations[column.key] || column.key;
+        // Asignar traducción si existe, sino mantener la etiqueta original
+        translatedColumn.label = translations[column.label] || column.label;
         
         return translatedColumn;
       });
       
       this.isTranslated = true;
     } else {
-      // Volver a las etiquetas y atributos originales
+      // Volver a las etiquetas originales
       this.columns = JSON.parse(JSON.stringify(this.originalLanguageColumns));
       this.isTranslated = false;
     }
-  }/**
+  }  /**
    * Alternar diálogo de exportación con vista previa PDF
    */
   async toggleExportDialog(): Promise<void> {

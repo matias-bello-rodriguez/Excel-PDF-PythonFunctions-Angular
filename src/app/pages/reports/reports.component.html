@@ -1,5 +1,8 @@
-<div class="page-header text-center">
-  <h1 class="page-title">{{ pageTitle }}</h1>
+    <div class="page-header">
+    <app-page-title [title]="pageTitle"></app-page-title>
+    <app-add-button 
+      (onClick)="exportarDatos()">
+    </app-add-button>
 </div>
 
 <div class="reports-container">
