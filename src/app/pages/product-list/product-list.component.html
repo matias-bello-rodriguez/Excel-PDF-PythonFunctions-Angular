@@ -61,12 +61,12 @@
       [data]="productos"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
-      [idField]="'codigo'"
+      [idField]="isTranslated ? 'codigo' : 'codigo'"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
       summary="Listado de productos de cubicación">
     </app-data-table>
-  </div><app-table-pagination
+  </div>  <app-table-pagination
     [currentPage]="currentPage"
     [totalItems]="totalItems"
     [itemsPerPage]="itemsPerPage"
