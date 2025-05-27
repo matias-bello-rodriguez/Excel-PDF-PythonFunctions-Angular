@@ -57,6 +57,162 @@
       &:not(:first-of-type) {
         margin-top: var(--spacing-06);
       }
+
+      // Nuevos estilos para las subsecciones
+      .subsection {
+        background-color: #f0f0f0;
+        border-left: 3px solid var(--primary-color);
+        padding: var(--spacing-03);
+        border-radius: 4px;
+        margin-bottom: var(--spacing-04);
+
+        h4 {
+          font-size: 1rem;
+          color: var(--gray-80);
+          margin-top: 0;
+          margin-bottom: var(--spacing-03);
+        }
+      }
+
+      // Estilos para campos dinámicos
+      .dynamic-rows {
+        margin-top: var(--spacing-04);
+        
+        .row-item {
+          background-color: #fff;
+          padding: var(--spacing-03);
+          border-radius: 4px;
+          margin-bottom: var(--spacing-03);
+          border: 1px solid var(--gray-20);
+          position: relative;
+          
+          .remove-btn {
+            position: absolute;
+            top: var(--spacing-02);
+            right: var(--spacing-02);
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+          }
+        }
+        
+        .add-row-btn {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-02);
+          background-color: #fff;
+          border: hsl(119, 63%, 39%) solid 1px !important;
+          color: hsl(119, 63%, 39%) !important;
+          padding: var(--spacing-03) var(--spacing-02);
+          border-radius: 4px;
+          cursor: pointer;
+          width: 100%;
+          justify-content: center;
+          transition: all 0.2s;
+          
+          &:hover {
+            background-color: var(--gray-10);
+            border-color:  hsl(119, 63%, 39%) !important;
+            color: var(--primary-color);
+          }
+          
+          i {
+            font-size: 1rem;
+          }
+        }
+      }
+
+      // Estilos para la zona de dropzone
+      .dropzone {
+        background-color: #fff;
+        border: 2px dashed var(--gray-30);
+        border-radius: 8px;
+        padding: var(--spacing-05);
+        text-align: center;
+        color: var(--gray-60);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: var(--spacing-04);
+        
+        &:hover, &.drag-over {
+          border-color: var(--primary-color);
+          background-color: rgba(var(--primary-color-rgb), 0.05);
+        }
+        
+        input[type="file"] {
+          display: none;
+        }
+        
+        .upload-btn {
+          display: inline-block;
+          margin-top: var(--spacing-03);
+          background-color: var(--primary-color);
+          color: white;
+          padding: var(--spacing-02) var(--spacing-04);
+          border-radius: 4px;
+          cursor: pointer;
+          
+          &:hover {
+            background-color: var(--primary-color-dark);
+          }
+        }
+      }
+      
+      // Estilos para preview de imágenes
+      .image-previews {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: var(--spacing-03);
+        margin-top: var(--spacing-04);
+        
+        .image-preview {
+          position: relative;
+          height: 100px;
+          border-radius: 4px;
+          overflow: hidden;
+          
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          
+          .remove-img {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+          }
+        }
+      }
+      
+      // Estilos para medidas y valores calculados
+      .calculated-value {
+        background-color: var(--gray-10);
+        padding: var(--spacing-02) var(--spacing-03);
+        border-radius: 4px;
+        border: 1px solid var(--gray-20);
+        font-weight: 500;
+        color: var(--gray-80);
+      }
+      
+      .dimensions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--spacing-03);
+      }
     }
   }
 
@@ -73,6 +229,17 @@
   }
   .form-container {
     padding: var(--spacing-04);
+  }
+  
+  // Ajustes responsivos para las nuevas secciones
+  .product-add-container .form-container app-form-section {
+    .dimensions-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    .image-previews {
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
   }
 }
 
