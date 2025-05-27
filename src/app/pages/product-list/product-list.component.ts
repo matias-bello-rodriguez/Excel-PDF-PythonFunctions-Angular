@@ -125,10 +125,7 @@ export class ProductListComponent implements OnInit {
   excelPreviewData: any[][] = [];
   isLoadingPreview = false;
   exportPreviewUrl: string = '';
-  safeExportUrl: SafeResourceUrl = '';
-  // Translation feature
-  isTranslated: boolean = false;
-  originalLanguageColumns: TableColumn[] = [];  constructor(
+  safeExportUrl: SafeResourceUrl = '';  constructor(
     private route: ActivatedRoute,
     private router: Router,
     private excelService: ExcelImportService,
@@ -143,9 +140,6 @@ export class ProductListComponent implements OnInit {
     this.totalItems = this.productos.length;
   }  ngOnInit(): void {
     // La inicialización de pdfMake se maneja en el PdfService
-    
-    // Guardar copia de las columnas originales para la funcionalidad de traducción
-    this.originalLanguageColumns = JSON.parse(JSON.stringify(this.columns));
   }
 
   // Método para navegar al formulario de agregar producto
@@ -158,67 +152,6 @@ export class ProductListComponent implements OnInit {
 
   toggleColumnDialog(): void {
     this.showColumnMenu = !this.showColumnMenu;
-  }
-
-  /**
-   * Alternar entre el idioma original y el español para las etiquetas de columnas
-   */
-  toggleTranslation(): void {
-    if (!this.isTranslated) {
-      // Guardar las columnas originales si es la primera vez
-      if (this.originalLanguageColumns.length === 0) {
-        this.originalLanguageColumns = JSON.parse(JSON.stringify(this.columns));
-      }
-      
-      // Traducir las etiquetas de columnas al español
-      this.columns = this.columns.map(column => {
-        const translatedColumn = { ...column };
-        
-        // Mapeo de traducciones
-        const translations: { [key: string]: string } = {
-          'HOUSE/TOWER (CODE)': 'CASA/TORRE (CÓDIGO)',
-          'UNITS': 'UNIDADES',
-          'WINDOW CODE': 'CÓDIGO DE VENTANA',
-          'Width (m)': 'Ancho (m)',
-          'Height (m)': 'Alto (m)',
-          'Surface (m2)': 'Superficie (m2)',
-          'Quantity PER UNIT': 'Cantidad POR UNIDAD',
-          'Total surface (m2)': 'Superficie total (m2)',
-          'MANUFACTURING WIDTH': 'ANCHO DE FABRICACIÓN',
-          'MANUFACTURING HEIGHT': 'ALTO DE FABRICACIÓN',
-          'DESIGN 1': 'DISEÑO 1',
-          'DESIGN 2': 'DISEÑO 2',
-          'COMMENT 1': 'COMENTARIO 1',
-          'COMMENT 2': 'COMENTARIO 2',
-          'Material': 'Material',
-          'Profile section': 'Sección de perfil',
-          'Body color': 'Color de cuerpo',
-          'Glass thikness': 'Espesor del vidrio',
-          'glass protection': 'Protección del vidrio',
-          'Film color': 'Color de película',
-          'Opaque/Clear glass': 'Vidrio opaco/transparente',
-          'Window Type': 'Tipo de ventana',
-          'Glass type': 'Tipo de vidrio',
-          'OPENING': 'APERTURA',
-          'Lock': 'Cerradura',
-          'UNIT PRICE USD/SQM': 'PRECIO UNITARIO USD/m²',
-          'PIECE BASE PRICE (USD)': 'PRECIO BASE POR PIEZA (USD)',
-          'piece Total (USD)': 'Total por pieza (USD)',
-          'Actions': 'Acciones'
-        };
-        
-        // Asignar traducción si existe, sino mantener la etiqueta original
-        translatedColumn.label = translations[column.label] || column.label;
-        
-        return translatedColumn;
-      });
-      
-      this.isTranslated = true;
-    } else {
-      // Volver a las etiquetas originales
-      this.columns = JSON.parse(JSON.stringify(this.originalLanguageColumns));
-      this.isTranslated = false;
-    }
   }  /**
    * Alternar diálogo de exportación con vista previa PDF
    */

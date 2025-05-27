@@ -11,16 +11,8 @@
       <app-search-bar 
         placeholder="Buscar productos..." 
         (searchChange)="searchTerm = $event">
-      </app-search-bar>      <div class="table-view-options">
-        <div class="tooltip-container">
-          <button class="btn-icon" 
-            [class.active]="isTranslated"
-            (click)="toggleTranslation()"
-            aria-label="Traducir contenido">
-            <i class="fas fa-language" aria-hidden="true"></i>
-            <span class="tooltip">{{ isTranslated ? 'Ver en idioma original' : 'Traducir al español' }}</span>
-          </button>
-        </div>
+      </app-search-bar>
+      <div class="table-view-options">
         <div class="tooltip-container">
           <button class="btn-icon" 
             (click)="showExcelModal = true"
@@ -55,13 +47,14 @@
         </div>
       </div>
     </div>
-  </div>  <div class="table-container">
+  </div>
+  <div class="table-container">
     <app-data-table
       [columns]="columns"
       [data]="productos"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
-      [idField]="isTranslated ? 'codigo' : 'codigo'"
+      [idField]="'codigo'"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
       summary="Listado de productos de cubicación">

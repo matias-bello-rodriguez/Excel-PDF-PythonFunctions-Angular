@@ -26,8 +26,8 @@ import { ProductService } from '../../services/product.service';
     SelectInputComponent,
     TextareaInputComponent
   ],
-  templateUrl: './product-add.component.html',
-  styleUrl: './product-add.component.scss'
+  templateUrl: './product-add-window.component.html',
+  styleUrl: './product-add-window.component.scss'
 })
 export class ProductAddComponent implements OnInit {
   pageTitle = 'Agregar Producto';

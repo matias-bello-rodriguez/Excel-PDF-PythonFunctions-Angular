@@ -12,6 +12,31 @@
   border-spacing: 0;
   font-size: var(--font-body);
   color: var(--text-primary);
+  
+  thead {
+    th {
+      background-color: rgba(0, 0, 0, 0.754);
+      // color: rgba(255, 255, 255, 0.984);
+      
+      .th-content {
+        color: rgba(255, 255, 255, 0.961);
+        
+        i {
+          color: white;
+        }
+      }
+      
+      &.sortable {
+        &:hover {
+          background-color: #333; // Un negro un poco más claro al hacer hover
+        }
+      }
+      
+      &.sorted {
+        background-color: #222; // Un tono diferente para la columna seleccionada
+      }
+    }
+  }
 }
 
 .data-table th,
@@ -279,6 +304,40 @@ tr.pinned .action-btn.pin i {
   }
   &:hover i {
     color: var(--carbon-success); // Verde
+  }
+}
+
+// Estilos para botones de tamaño de tabla
+.table-size-controls {
+  display: flex;
+  margin-left: auto;
+}
+
+.size-btn {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: var(--text-secondary);
+  
+  &:hover {
+    background-color: var(--carbon-gray-20);
+    color: var(--carbon-primary);
+  }
+  
+  &:focus {
+    outline: none;
+  }
+  
+  &.active {
+    color: var(--carbon-primary);
+    background-color: rgba(15, 98, 254, 0.1);
   }
 }
 

@@ -6,7 +6,7 @@ import { TakeoffListComponent } from './pages/takeoff-list/takeoff-list.componen
 import { TakeoffAddComponent } from './pages/takeoff-add/takeoff-add.component';
 import { CustomerListComponent } from './pages/customer-list/customer-list.component';
 import { ProductListComponent } from './pages/product-list/product-list.component';
-import { ProductAddComponent } from './pages/product-add/product-add.component';
+import { ProductAddComponent } from './pages/product-add/product-add-window.component';
 import { ProjectListComponent } from './pages/project-list/project-list.component';
 import { ProjectAddComponent } from './pages/project-add/project-add.component';
 import { ReportsComponent } from './pages/reports/reports.component';
