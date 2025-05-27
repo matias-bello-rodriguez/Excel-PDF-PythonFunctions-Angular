@@ -49,7 +49,7 @@
     }
 
     app-form-section {
-      background-color: #f9f9f9;
+      background-color: transparent;
       padding: var(--spacing-04);
       border-radius: 4px;
       margin-bottom: var(--spacing-05);
@@ -60,8 +60,12 @@
 
       // Nuevos estilos para las subsecciones
       .subsection {
-        background-color: #f0f0f0;
-        border-left: 3px solid var(--primary-color);
+        border-left: 2px solid #0069d9;
+        padding-left: var(--spacing-05);
+        border-left: 2px solid ;
+        padding: var(--spacing-03);
+        margin-bottom: var(--spacing-04);
+      }
         padding: var(--spacing-03);
         border-radius: 4px;
         margin-bottom: var(--spacing-04);
@@ -79,7 +83,6 @@
         margin-top: var(--spacing-04);
         
         .row-item {
-          background-color: #fff;
           padding: var(--spacing-03);
           border-radius: 4px;
           margin-bottom: var(--spacing-03);
@@ -133,12 +136,23 @@
         text-align: center;
         color: var(--gray-60);
         transition: all 0.3s ease;
-        cursor: pointer;
+        cursor: default; // Cambiado de 'pointer' a 'default'
         margin-bottom: var(--spacing-04);
+        outline: none; // Quitar outline por defecto del tabindex
         
-        &:hover, &.drag-over {
+        &:hover, &.drag-over, &:focus {
           border-color: var(--primary-color);
           background-color: rgba(var(--primary-color-rgb), 0.05);
+        }
+        
+        &:focus {
+          outline: 2px solid #007bff;
+          outline-offset: 2px;
+        }
+        
+        &:focus-visible {
+          outline: 2px solid #007bff;
+          outline-offset: 2px;
         }
         
         input[type="file"] {
@@ -157,6 +171,11 @@
           &:hover {
             background-color: var(--primary-color-dark);
           }
+        }
+        
+        p strong {
+          color: var(--primary-color);
+          font-weight: 600;
         }
       }
       
@@ -206,6 +225,11 @@
         border: 1px solid var(--gray-20);
         font-weight: 500;
         color: var(--gray-80);
+        text-align: center; /* Centrar el texto */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px; /* Altura mínima para consistencia */
       }
       
       .dimensions-grid {
@@ -213,12 +237,101 @@
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: var(--spacing-03);
       }
+
+      // Contenedor para campo centrado
+      .centered-field-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-top: var(--spacing-04);
+        
+        .calculation-description {
+          text-align: center;
+          color: var(--gray-70);
+          font-size: 0.95rem;
+          margin-bottom: var(--spacing-03);
+          padding: var(--spacing-02) var(--spacing-04);
+          background-color: rgba(var(--primary-color-rgb), 0.05);
+          border-radius: 4px;
+          border-left: 3px solid var(--primary-color);
+          
+          strong {
+            color: var(--primary-color);
+            font-weight: 700;
+          }
+        }
+        
+        app-form-field {
+          width: 100%;
+          max-width: 300px; // Mismo ancho que los otros campos
+        }
+      }
+
+      // Footer de sección
+      .section-footer {
+        margin-top: var(--spacing-02);
+        padding-top: var(--spacing-03);
+        border-top: 1px solid var(--gray-20);
+        
+        .calculation-description {
+          text-align: center;
+          color: var(--gray-70);
+          font-size: 0.95rem;
+          margin: 0;
+          padding: var(--spacing-02) var(--spacing-04);
+          background-color: rgba(var(--primary-color-rgb), 0.05);
+          border-radius: 4px;
+          
+          strong {
+            font-weight: 700;
+            
+            &:nth-of-type(1) {
+              color: var(--gray-70); // Número en color normal
+              font-weight: 700; // Con negrita
+            }
+            
+            &:nth-of-type(2) {
+              color: var(--gray-70); // Código de ventana en color normal
+              font-weight: 700; // Con negrita
+            }
+          }
+        }
+      }
     }
   }
 
   .form-container form.ng-invalid .submit-btn {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  // Estilos para centrar los botones del formulario
+  app-form-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-06);
+    padding-top: var(--spacing-04);
+    border-top: 1px solid var(--gray-20);
+  }
+
+
+// Estilo para campos de solo lectura
+.readonly-field {
+  background-color: #f5f5f5;
+  padding: var(--spacing-02) var(--spacing-03);
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  strong {
+    color: var(--gray-90);
+    font-size: 1rem;
+    font-weight: 600;
   }
 }
 
@@ -233,6 +346,9 @@
   
   // Ajustes responsivos para las nuevas secciones
   .product-add-container .form-container app-form-section {
+    
+    background-color: transparent;
+
     .dimensions-grid {
       grid-template-columns: 1fr 1fr;
     }
@@ -298,4 +414,129 @@
     visibility: visible;
     opacity: 1;
   }
+}
+
+// Estilos para el dropzone y la previsualización de la imagen
+.dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  padding: 30px;
+  text-align: center;
+  cursor: default; // Cambiado de 'pointer' a 'default'
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  
+  &:hover, &.drag-over {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: #007bff;
+  }
+  
+  .upload-btn {
+    display: inline-block;
+    background: #007bff;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-weight: 500;
+    cursor: pointer; // Asegurar que el botón tenga cursor pointer
+    
+    &:hover {
+      background: #0069d9; // Oscurecer al hacer hover
+    }
+  }
+}
+
+.image-preview-container {
+  margin-bottom: 20px;
+  
+  .image-preview-single {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    
+    img.fit-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .remove-img {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #dc3545;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 10; // Añadir z-index para asegurar que esté por encima
+      
+      &:hover {
+        background: #dc3545;
+        color: white;
+      }
+      
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.5);
+      }
+    }
+  }
+  
+  .image-name {
+    font-size: 0.9rem;
+    margin-top: 8px;
+    text-align: center;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .change-image-btn {
+    display: block;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 10px auto 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    
+    &:hover {
+      background: #5a6268;
+    }
+    
+    i {
+      margin-right: 5px;
+    }
+  }
+}
+
+// Estilo para asteriscos en campos requeridos
+::ng-deep app-form-field .field-label .required-marker {
+  color: var(--danger-color) !important;
+  font-weight: bold;
 }

@@ -1,0 +1,220 @@
+<div class="product-add-container">
+  <div class="page-header">
+    <h1 class="page-title">Ingreso de Producto - Ventana Múltiple</h1>
+  </div>
+  
+  <div class="form-container">
+    <!-- Mensajes de éxito o error -->
+    <div *ngIf="successMessage" class="alert-success">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert-danger">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+      <!-- 1. Información General -->
+      <app-form-section title="Información General" icon="fa-info-circle">
+        <div class="form-grid">
+          <app-form-field 
+            label="Código de Casa/Departamento" 
+            [required]="true" 
+            [errorMessage]="getFieldError('houseCode')" 
+            fieldId="houseCode">
+            <div class="readonly-field">
+              <strong>{{ productForm.get('houseCode')?.value || 'CASA-A1' }}</strong>
+            </div>
+            <input type="hidden" formControlName="houseCode">
+          </app-form-field>
+
+          <app-form-field 
+            label="Unidades" 
+            [required]="true" 
+            [errorMessage]="getFieldError('units')" 
+            fieldId="units">
+            <div class="readonly-field">
+              <strong>{{ productForm.get('units')?.value || '10' }}</strong>
+            </div>
+            <input type="hidden" formControlName="units">
+          </app-form-field>
+
+          <app-form-field 
+            label="Código de Ventana Múltiple" 
+            [required]="true" 
+            [errorMessage]="getFieldError('multipleWindowCode')" 
+            fieldId="multipleWindowCode">
+            <app-text-input
+              id="multipleWindowCode"
+              formControlName="multipleWindowCode"
+              placeholder="Ej: VM-001">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Cantidad de Ventanas Múltiples por vivienda" 
+            [required]="true" 
+            [errorMessage]="getFieldError('multipleWindowQuantity')" 
+            fieldId="multipleWindowQuantity">
+            <app-text-input
+              id="multipleWindowQuantity"
+              type="number"
+              formControlName="multipleWindowQuantity"
+              placeholder="Ej: 2">
+            </app-text-input>
+          </app-form-field>
+        </div>
+        
+        <!-- Footer con descripción del cálculo -->
+        <div class="section-footer">
+          <p class="calculation-description">
+            Vas a crear <strong>{{ (productForm.get('units')?.value || 0) * (productForm.get('multipleWindowQuantity')?.value || 0) }}</strong> ventanas múltiples con código <strong>{{ productForm.get('multipleWindowCode')?.value || 'Sin código' }}</strong>. 
+          </p>
+        </div>
+      </app-form-section>
+
+      <!-- 2. Diseño General -->
+      <app-form-section title="Diseño" icon="fa-palette">
+        <input type="file" 
+               #fileInput
+               accept="image/*" 
+               (change)="onFileSelected($event)"
+               style="display: none;">
+               
+        <div class="dropzone" 
+             (drop)="onDrop($event)" 
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (keydown)="onKeyDown($event)"
+             tabindex="0"
+             [class.drag-over]="isDragOver"
+             *ngIf="!uploadedImages || uploadedImages.length === 0"
+             #dropzoneElement>
+          <i class="fas fa-cloud-upload-alt fa-2x"></i>
+          <p>Arrastra una imagen aquí o presiona <strong>Ctrl+V</strong> para pegar desde el portapapeles</p>
+          <span class="upload-btn" (click)="triggerFileInput($event)">
+            Seleccionar imagen
+          </span>
+        </div>
+
+        <div *ngIf="uploadedImages && uploadedImages.length > 0" class="image-preview-container">
+          <div class="image-preview-single">
+            <img [src]="uploadedImages[0].url" [alt]="uploadedImages[0].name" class="fit-image">
+            <button type="button" class="remove-img" (click)="removeImage(0)" title="Eliminar imagen">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p class="image-name">{{ uploadedImages[0].name }}</p>
+          <button type="button" class="change-image-btn" (click)="triggerFileInput()">
+            <i class="fas fa-exchange-alt"></i>
+            Cambiar imagen
+          </button>
+        </div>
+      </app-form-section>
+
+      <!-- 3. Información de Ventanas Contenidas -->
+      <app-form-section title="Información de Ventanas Contenidas" icon="fa-th-large">
+        <div class="dynamic-rows">
+          <!-- Lista de módulos de ventana -->
+          <div *ngFor="let module of windowModules; let i = index" class="row-item module-item">
+            <button type="button" class="remove-btn" (click)="removeWindowModule(i)" title="Eliminar módulo">
+              <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="subsection">
+              <h4>Módulo de Ventana {{ getModuleLetter(i) }}</h4>
+              <div class="form-grid">
+                <!-- Código del módulo -->
+                <app-form-field 
+                  label="Código de Módulo" 
+                  [required]="true"
+                  fieldId="moduleCode{{i}}">
+                  <div class="readonly-field">
+                    <strong>{{ getModuleCode(i) }}</strong>
+                  </div>
+                </app-form-field>
+
+                <!-- Código de Casa/Departamento heredado -->
+                <app-form-field 
+                  label="Código de Casa/Departamento" 
+                  [required]="true"
+                  fieldId="moduleHouseCode{{i}}">
+                  <div class="readonly-field">
+                    <strong>{{ productForm.get('houseCode')?.value }}</strong>
+                  </div>
+                </app-form-field>
+
+                <!-- Unidades heredadas -->
+                <app-form-field 
+                  label="Unidades" 
+                  [required]="true"
+                  fieldId="moduleUnits{{i}}">
+                  <div class="readonly-field">
+                    <strong>{{ productForm.get('units')?.value }}</strong>
+                  </div>
+                </app-form-field>
+
+                <!-- Área de imagen del módulo -->
+                <div class="module-image-container span-full">
+                  <div class="module-dropzone" 
+                       *ngIf="!module.image"
+                       (click)="triggerModuleFileInput(i)"
+                       (drop)="onModuleDrop($event, i)" 
+                       (dragover)="onDragOver($event)"
+                       (dragleave)="onDragLeave($event)">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Haz clic para seleccionar una imagen o arrastra aquí</p>
+                  </div>
+                  
+                  <div *ngIf="module.image" class="module-image-preview">
+                    <img [src]="module.image.url" [alt]="module.image.name" class="fit-image">
+                    <button type="button" class="remove-img" (click)="removeModuleImage(i)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                    <p class="image-name">{{ module.image.name }}</p>
+                    <button type="button" class="change-image-btn" (click)="triggerModuleFileInput(i)">
+                      <i class="fas fa-exchange-alt"></i>
+                      Cambiar imagen
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Botón para editar propiedades -->
+                <div class="edit-properties-container span-full">
+                  <button type="button" class="edit-properties-btn" (click)="editModuleProperties(i)">
+                    <i class="fas fa-cog"></i>
+                    Añadir propiedades
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Botón para agregar nuevo módulo -->
+          <button type="button" class="add-row-btn" (click)="addWindowModule()">
+            <i class="fas fa-plus"></i>
+            Agregar Módulo de Ventana
+          </button>
+        </div>
+      </app-form-section>
+
+      <!-- Botones del formulario -->
+      <app-form-buttons
+        [isSubmitting]="isSubmitting"
+        [isSubmitDisabled]="productForm.invalid"
+        submitText="Guardar Producto"
+        cancelText="Cancelar"
+        (submitClick)="onSubmit()"
+        (cancelClick)="onCancel()">
+      </app-form-buttons>
+    </form>
+  </div>
+</div>
+
+<!-- Input file oculto para módulos -->
+<input type="file" 
+       #moduleFileInput
+       accept="image/*" 
+       (change)="onModuleFileSelected($event)"
+       style="display: none;">

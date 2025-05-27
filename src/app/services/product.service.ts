@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { catchError, throwError } from 'rxjs';
 
 export interface Product {
   id: string;
@@ -123,7 +125,9 @@ export class ProductService {
     }
   ];
 
-  constructor() { }
+  private apiUrl = 'http://localhost:3000/api'; // URL base de la API
+
+  constructor(private http: HttpClient) { }
 
   // Obtener todos los productos
   getProducts(): Observable<Product[]> {
@@ -261,5 +265,18 @@ export class ProductService {
       { value: 'none', label: 'Sin cerradura' }
     ];
     return of(lockOptions);
+  }
+
+  // Método para guardar ventana múltiple
+  saveMultipleWindow(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/products/multiple-window`, formData)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  private handleError(error: any) {
+    console.error('An error occurred:', error);
+    return throwError(() => error);
   }
 }

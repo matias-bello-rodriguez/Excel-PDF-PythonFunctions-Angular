@@ -1,6 +1,7 @@
 <div class="product-add-container">
   <div class="page-header">
-    <h1 class="page-title">Ingreso de Producto - Ventana </h1>
+    <h1 class="page-title" *ngIf="!isModuleEditing">Ingreso de Producto - Ventana</h1>
+    <h1 class="page-title" *ngIf="isModuleEditing">Ingreso de Módulo de Ventana - {{ moduleCode }}</h1>
   </div>
   
   <div class="form-container">
@@ -17,69 +18,82 @@
     <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
       <!-- 1. Información General - Nueva estructura -->
       <app-form-section title="Información General" icon="fa-info-circle">
-        <!-- Subsección: Información de la ubicación -->
-        <div class="subsection">
-          <h4>Información de la ubicación</h4>
-          <div class="form-grid">
-            <app-form-field 
-              label="Código de Casa/Departamento" 
-              [required]="true" 
-              [errorMessage]="getFieldError('houseCode')" 
-              fieldId="houseCode">
-              <app-text-input
-                id="houseCode"
-                formControlName="houseCode"
-                placeholder="Ej: CASA-A1">
-              </app-text-input>
-            </app-form-field>
+        <div class="form-grid">
+          <app-form-field 
+            label="Código de Casa/Departamento" 
+            [required]="true" 
+            [errorMessage]="getFieldError('houseCode')" 
+            fieldId="houseCode">
+            <div class="readonly-field">
+              <strong>{{ productForm.get('houseCode')?.value || 'CASA-A1' }}</strong>
+            </div>
+            <input type="hidden" formControlName="houseCode">
+          </app-form-field>          <app-form-field 
+            label="Unidades" 
+            [required]="true" 
+            [errorMessage]="getFieldError('units')" 
+            fieldId="units">
+            <div class="readonly-field">
+              <strong>{{ productForm.get('units')?.value || '10' }}</strong>
+            </div>
+            <input type="hidden" formControlName="units">
+          </app-form-field>
 
-            <app-form-field 
-              label="Unidades" 
-              [required]="true" 
-              [errorMessage]="getFieldError('units')" 
-              fieldId="units">
-              <app-text-input
-                id="units"
-                formControlName="units"
-                placeholder="Ej: 10">
-              </app-text-input>
-            </app-form-field>
-          </div>
+          <!-- Campos específicos para ventana individual (no módulo) -->
+          <app-form-field 
+            label="Código de Ventana" 
+            [required]="true" 
+            [errorMessage]="getFieldError('windowCode')" 
+            fieldId="windowCode"
+            *ngIf="!isModuleEditing">
+            <app-text-input
+              id="windowCode"
+              formControlName="windowCode"
+              placeholder="Ej: VEN-001">
+            </app-text-input>
+          </app-form-field>
+
+          <app-form-field 
+            label="Cantidad de ventanas por vivienda" 
+            [required]="true" 
+            [errorMessage]="getFieldError('windowQuantity')" 
+            fieldId="windowQuantity"
+            *ngIf="!isModuleEditing">
+            <app-text-input
+              id="windowQuantity"
+              type="number"
+              min="1"
+              formControlName="windowQuantity"
+              placeholder="Ej: 5">
+            </app-text-input>
+          </app-form-field>
+
+          <!-- Campo específico para módulo -->
+          <app-form-field 
+            label="Código de Módulo" 
+            [required]="true" 
+            [errorMessage]="getFieldError('moduleCode')" 
+            fieldId="moduleCode"
+            *ngIf="isModuleEditing">
+            <div class="readonly-field">
+              <strong>{{ productForm.get('moduleCode')?.value || moduleCode }}</strong>
+            </div>
+            <input type="hidden" formControlName="moduleCode">
+          </app-form-field>
         </div>
-
-        <!-- Subsección: Información general del producto -->
-        <div class="subsection">
-          <h4>Información general del producto</h4>
-          <div class="form-grid">
-            <app-form-field 
-              label="Código de Ventana" 
-              [required]="true" 
-              [errorMessage]="getFieldError('windowCode')" 
-              fieldId="windowCode">
-              <app-text-input
-                id="windowCode"
-                formControlName="windowCode"
-                placeholder="Ej: V-001">
-              </app-text-input>
-            </app-form-field>
-
-            <app-form-field 
-              label="Cantidad de ventanas por vivienda" 
-              [required]="true" 
-              [errorMessage]="getFieldError('windowQuantity')" 
-              fieldId="windowQuantity">
-              <app-text-input
-                id="windowQuantity"
-                type="number"
-                formControlName="windowQuantity"
-                placeholder="Ej: 5">
-              </app-text-input>
-            </app-form-field>
-          </div>
+          <!-- Footer con descripción del cálculo -->
+        <div class="section-footer" *ngIf="!isModuleEditing">
+          <p class="calculation-description">
+            Diseñando ventana para <strong>{{ productForm.get('units')?.value || '10' }}</strong> unidades.
+            Cantidad de ventanas por vivienda: <strong>{{ productForm.get('windowQuantity')?.value || 'No especificado' }}</strong>
+          </p>
         </div>
-      </app-form-section>
-
-      <!-- 2. Dimensiones y Fabricación - Separadas en subsecciones -->
+        <div class="section-footer" *ngIf="isModuleEditing">
+          <p class="calculation-description">
+            Diseñando módulo <strong>{{ moduleCode }}</strong> para <strong>{{ productForm.get('units')?.value || '10' }}</strong> unidades.
+          </p>
+        </div>
+      </app-form-section>      <!-- 2. Dimensiones y Fabricación - Separadas en subsecciones -->
       <app-form-section title="Dimensiones y Fabricación" icon="fa-ruler">
         <!-- Subsección: Dimensiones de Diseño -->
         <div class="subsection">
@@ -117,8 +131,8 @@
               label="Superficie total (m²)" 
               [required]="false" 
               fieldId="totalSurface">
-              <div class="calculated-value">
-                {{ productForm.get('totalSurface')?.value || '0.00' }} m²
+              <div class="readonly-field">
+                <strong>{{ productForm.get('totalSurface')?.value || '0.00' }} m²</strong>
               </div>
             </app-form-field>
           </div>
@@ -155,12 +169,9 @@
                 placeholder="Ej: 0.99">
               </app-text-input>
             </app-form-field>
-
-    
           </div>
         </div>
       </app-form-section>
-
 
       <!-- 3. Tipo de Apertura y Cerradura - Rediseñado -->
       <app-form-section title="Tipo de Apertura y Cerradura" icon="fa-tools">
@@ -453,34 +464,43 @@
 
       <!-- 6. Nueva sección "Diseño" con uploader avanzado -->
       <app-form-section title="Diseño" icon="fa-palette">
+        <!-- Input file oculto (fuera del ngIf) -->
+        <input type="file" 
+               #fileInput
+               accept="image/*" 
+               (change)="onFileSelected($event)"
+               style="display: none;">
+               
         <!-- Zona de arrastre para imágenes -->
         <div class="dropzone" 
-             (click)="onFileSelected($event)"
              (drop)="onDrop($event)" 
              (dragover)="onDragOver($event)"
              (dragleave)="onDragLeave($event)"
-             [class.drag-over]="isDragOver">
+             (keydown)="onKeyDown($event)"
+             tabindex="0"
+             [class.drag-over]="isDragOver"
+             *ngIf="!uploadedImages || uploadedImages.length === 0"
+             #dropzoneElement>
           <i class="fas fa-cloud-upload-alt fa-2x"></i>
-          <p>Arrastra imágenes aquí o haz clic para seleccionar</p>
-          <input type="file" 
-                 #fileInput
-                 multiple 
-                 accept="image/*" 
-                 (change)="onFileSelected($event)"
-                 style="display: none;">
-          <span class="upload-btn" (click)="fileInput.click()">
-            Seleccionar archivos
+          <p>Arrastra una imagen aquí o presiona <strong>Ctrl+V</strong> para pegar desde el portapapeles</p>
+          <span class="upload-btn" (click)="triggerFileInput($event)">
+            Seleccionar imagen
           </span>
         </div>
 
-        <!-- Preview de imágenes subidas -->
-        <div *ngIf="uploadedImages.length > 0" class="image-previews">
-          <div *ngFor="let image of uploadedImages; let i = index" class="image-preview">
-            <img [src]="image.url" [alt]="image.name">
-            <button type="button" class="remove-img" (click)="removeImage(i)" title="Eliminar imagen">
+        <!-- Preview de imagen subida -->
+        <div *ngIf="uploadedImages && uploadedImages.length > 0" class="image-preview-container">
+          <div class="image-preview-single">
+            <img [src]="uploadedImages[0].url" [alt]="uploadedImages[0].name" class="fit-image">
+            <button type="button" class="remove-img" (click)="removeImage(0)" title="Eliminar imagen">
               <i class="fas fa-times"></i>
             </button>
           </div>
+          <p class="image-name">{{ uploadedImages[0].name }}</p>
+          <button type="button" class="change-image-btn" (click)="triggerFileInput()">
+            <i class="fas fa-exchange-alt"></i>
+            Cambiar imagen
+          </button>
         </div>
 
         <!-- Campos adicionales de diseño -->
@@ -499,12 +519,9 @@
               </app-textarea-input>
             </app-form-field>
           </div>
-
-        
         </div>
       </app-form-section>
 
-    
       <app-form-buttons
         [isSubmitting]="isSubmitting"
         [isSubmitDisabled]="productForm.invalid"

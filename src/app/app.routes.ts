@@ -6,7 +6,8 @@ import { TakeoffListComponent } from './pages/takeoff-list/takeoff-list.componen
 import { TakeoffAddComponent } from './pages/takeoff-add/takeoff-add.component';
 import { CustomerListComponent } from './pages/customer-list/customer-list.component';
 import { ProductListComponent } from './pages/product-list/product-list.component';
-import { ProductAddComponent } from './pages/product-add/product-add-window.component';
+import { ProductAddWindowComponent } from './pages/product-add/product-add-window.component';
+import { ProductAddMultipleWindowComponent } from './pages/product-add-multiple-window/product-add-multiple-window.component';
 import { ProjectListComponent } from './pages/project-list/project-list.component';
 import { ProjectAddComponent } from './pages/project-add/project-add.component';
 import { ReportsComponent } from './pages/reports/reports.component';
@@ -16,21 +17,26 @@ export const routes: Routes = [
   {
     path: '',
     redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
   },
   // Ruta de login independiente (sin layout)
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
+    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
   },  // Rutas principales con layout (protegidas por auth guard)
   {
     path: '',
     component: MainLayoutComponent,
+    data: { scrollPositionRestoration: 'top' },  // Añadir esta línea
     children: [{ path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio', component: DashboardComponent },
       { path: 'clientes', component: CustomerListComponent },
       { path: 'productos', component: ProductListComponent },
-      { path: 'productos/agregar-producto', component: ProductAddComponent },
+      { path: 'productos/agregar-producto', component: ProductAddWindowComponent },
+      { path: 'productos/agregar-producto-multiple', component: ProductAddMultipleWindowComponent },
+      { path: 'productos/agregar-producto-multiple/:moduleId', component: ProductAddWindowComponent },
       { path: 'cubicaciones/productos/:cubicacionId', component: ProductListComponent }, // Ahora acepta parámetro de cubicación
       { path: 'cubicaciones/productos', component: ProductListComponent }, // Ruta sin parámetro (opcional, para compatibilidad)
       { path: 'proyectos', component: ProjectListComponent },
@@ -46,6 +52,7 @@ export const routes: Routes = [
   // Ruta para manejar rutas no encontradas
   {
     path: '**',
-    redirectTo: 'login'
+    redirectTo: 'login',
+    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
   }
 ];

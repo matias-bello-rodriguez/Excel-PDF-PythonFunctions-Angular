@@ -1,10 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { SidebarComponent } from '../../components/side-menu/sidebar.component';
 import { Title } from '@angular/platform-browser';
-import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -20,7 +19,7 @@ import { filter } from 'rxjs/operators';
         <div class="sidebar-col">
           <app-sidebar></app-sidebar>
         </div>
-        <main class="main-content">
+        <main class="main-content" #mainContent>
           <div class="content-container">
             <router-outlet></router-outlet>
           </div>
@@ -30,19 +29,27 @@ import { filter } from 'rxjs/operators';
   `,
   styleUrls: ['./main-layout.component.scss']
 })
-export class MainLayoutComponent {
-  constructor(private titleService: Title, private router: Router) {
-    // Actualizar el título basado en la ruta
+export class MainLayoutComponent implements AfterViewInit {
+  @ViewChild('mainContent') mainContentRef!: ElementRef;
+
+  constructor(private titleService: Title, private router: Router) {}
+  ngAfterViewInit() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
+      // Scroll tanto de la ventana como del contenedor
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (this.mainContentRef?.nativeElement) {
+        this.mainContentRef.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Título dinámico según ruta
       let title = 'Sistema de Cubicaciones | Kinetta';
       const currentRoute = this.router.url;
-        // Mapa de títulos según la ruta
+
       const titleMap: { [key: string]: string } = {
         '/takeoff-list': 'Gestión de Cubicaciones',
         '/reportes': 'Reportes y Análisis',
-        // Agregar más mapeos de ruta a título según sea necesario
       };
 
       if (titleMap[currentRoute]) {

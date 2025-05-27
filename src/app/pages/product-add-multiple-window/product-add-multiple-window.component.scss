@@ -1,0 +1,284 @@
+// Heredar estilos base del componente original
+.product-add-container {
+  padding: 0 var(--spacing-06) var(--spacing-06) var(--spacing-06);
+  max-width: 900px;
+  margin: 0 auto;
+  margin-top: -var(--spacing-04);
+  
+  .page-header {
+    margin-bottom: var(--spacing-05);
+    
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--gray-90);
+      margin: 0;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: var(--spacing-02);
+      display: inline-block;
+      margin-bottom: var(--spacing-04);
+    }
+  }
+}
+
+// Estilos específicos para módulos de ventana
+.module-item {
+  background-color: #f8f9fa;
+  border: 1px solid var(--gray-20);
+  border-radius: 8px;
+  padding: var(--spacing-04);
+  margin-bottom: var(--spacing-04);
+  position: relative;
+
+  .remove-btn {
+    position: absolute;
+    top: var(--spacing-03);
+    right: var(--spacing-03);
+    background: transparent;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    padding: var(--spacing-02);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--danger-color);
+      color: white;
+    }
+  }
+
+  .module-image-container {
+    margin: 1rem 0;
+    
+    .module-dropzone {
+      border: 2px dashed #ccc;
+      border-radius: 4px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      
+      &:hover, &.dragover {
+        border-color: #666;
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      
+      i {
+        font-size: 2rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+      }
+      
+      p {
+        margin: 0;
+        color: #666;
+      }
+    }
+    
+    .module-image-preview {
+      position: relative;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      
+      img.fit-image {
+        width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+      }
+      
+      .remove-img {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: rgba(255, 255, 255, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        &:hover {
+          background: rgba(255, 0, 0, 0.1);
+          color: red;
+        }
+      }
+      
+      .image-name {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #666;
+      }
+      
+      .change-image-btn {
+        background: none;
+        border: 1px solid #ddd;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        &:hover {
+          background-color: #f5f5f5;
+        }
+        
+        i {
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  .module-dropzone {
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: var(--gray-10);
+    }
+  }
+}
+
+// Estilos para el botón de editar propiedades
+.edit-properties-container {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-04);
+  
+  &.span-full {
+    grid-column: 1 / -1;
+  }
+}
+
+.edit-properties-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: var(--spacing-03) var(--spacing-05);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-02);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: (var(--primary-color), 10%);
+  }
+
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+// Estilos heredados para el dropzone
+.dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  padding: 30px;
+  text-align: center;
+  cursor: default;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  
+  &:hover, &.drag-over {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: var(--primary-color);
+  }
+  
+  .upload-btn {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    
+    &:hover {
+      background: (var(--primary-color), 10%);
+    }
+  }
+}
+
+// Estilos para la vista previa de imágenes
+.image-preview-container {
+  margin-bottom: 20px;
+  
+  .image-preview-single {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border: 1px solid var(--gray-20);
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    
+    img.fit-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .remove-img {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--danger-color);
+      transition: all 0.2s;
+      
+      &:hover {
+        background: var(--danger-color);
+        color: white;
+      }
+    }
+  }
+}
+
+// Estilos responsivos
+@media (max-width: 768px) {
+  .product-add-container {
+    padding: var(--spacing-04);
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .module-item {
+    padding: var(--spacing-03);
+  }
+}

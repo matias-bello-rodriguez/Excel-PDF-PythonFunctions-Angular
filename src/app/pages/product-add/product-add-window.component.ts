@@ -1,421 +1,426 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { combineLatest, startWith } from 'rxjs';
-import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
+// Importar todos los componentes de formulario personalizados
 import { FormFieldComponent } from '../../components/forms/form-field/form-field.component';
 import { FormSectionComponent } from '../../components/forms/form-section/form-section.component';
-import { FormButtonsComponent } from '../../components/forms/form-buttons/form-buttons.component';
 import { TextInputComponent } from '../../components/forms/text-input/text-input.component';
-import { SelectInputComponent } from '../../components/forms/select-input/select-input.component';
 import { TextareaInputComponent } from '../../components/forms/textarea-input/textarea-input.component';
+import { SelectInputComponent } from '../../components/forms/select-input/select-input.component';
+import { FormButtonsComponent } from '../../components/forms/form-buttons/form-buttons.component';
 
-import { ProductService } from '../../services/product.service';
+interface Profile {
+  category: string;
+  material: string;
+  color: string;
+  width: number;
+  height: number;
+}
+
+interface GlassConfiguration {
+  type: string;
+  protection?: string;
+  color?: string;
+  width: number;
+  height: number;
+  length?: number;
+}
+
+interface UploadedImage {
+  url: string;
+  name: string;
+  file: File;
+}
 
 @Component({
-  selector: 'app-product-add',
-  standalone: true,  imports: [
+  selector: 'app-product-add-window',
+  standalone: true,
+  imports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
     FormFieldComponent,
     FormSectionComponent,
-    FormButtonsComponent,
     TextInputComponent,
+    TextareaInputComponent,
     SelectInputComponent,
-    TextareaInputComponent
+    FormButtonsComponent
   ],
   templateUrl: './product-add-window.component.html',
-  styleUrl: './product-add-window.component.scss'
+  styleUrls: ['./product-add-window.component.scss']
 })
-export class ProductAddComponent implements OnInit {
-  pageTitle = 'Agregar Producto';
-  productForm!: FormGroup;
+export class ProductAddWindowComponent implements OnInit {
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('dropzoneElement') dropzoneElement!: ElementRef;
+
+  productForm: FormGroup;
   isSubmitting = false;
-  successMessage: string = '';
-  errorMessage: string = '';
-
-  // Arrays para opciones de select
-  windowTypeOptions: Array<{value: string, label: string}> = [];
-  materialOptions: Array<{value: string, label: string}> = [];
-  locationOptions: Array<{value: string, label: string}> = [];
-  glassTypeOptions: Array<{value: string, label: string}> = [];
-  opaqueGlassOptions: Array<{value: string, label: string}> = [];
-  openingOptions: Array<{value: string, label: string}> = [];
-  lockOptions: Array<{value: string, label: string}> = [];
-
-  // Nuevas opciones para los selectores rediseñados
-  openingTypeOptions = [
-    { value: 'fix', label: 'Fix' },
-    { value: 'sliding', label: 'Sliding' },
-    { value: 'casement', label: 'Casement' }
-  ];
-  
-  orientationOptions = [
-    { value: 'left', label: 'Izquierda' },
-    { value: 'right', label: 'Derecha' },
-    { value: 'both', label: 'Ambas' }
-  ];
-  
-  mechanismOptions = [
-    { value: 'sliding', label: 'Corredera' },
-    { value: 'hinged', label: 'Batiente' }
-  ];
-  
-  finishOptions = [
-    { value: 'standard', label: 'Estándar' },
-    { value: 'premium', label: 'Premium' }
-  ];
-  
-  lockSystemOptions = [
-    { value: 'assa-abloy', label: 'ASSA ABLOY' },
-    { value: 'multipoint', label: 'Multipunto' }
-  ];
-  
-  securityLevelOptions = [
-    { value: 'basic', label: 'Básico' },
-    { value: 'medium', label: 'Medio' },
-    { value: 'high', label: 'Alto' }
-  ];
-  
-  lockColorOptions = [
-    { value: 'white', label: 'Blanco' },
-    { value: 'black', label: 'Negro' },
-    { value: 'chrome', label: 'Cromado' }
-  ];
-  
-  profileCategoryOptions = [
-    { value: 'frame', label: 'Marco' },
-    { value: 'leaf', label: 'Hojas' },
-    { value: 'mullion', label: 'Montante' }
-  ];
-  
-  profileMaterialOptions = [
-    { value: 'pvc', label: 'PVC' },
-    { value: 'aluminum', label: 'Aluminio' },
-    { value: 'steel', label: 'Acero' }
-  ];
-  
-  glassTypeNewOptions = [
-    { value: 'tempered', label: 'Templado' },
-    { value: 'laminated', label: 'Laminado' },
-    { value: 'insulated', label: 'Insulado' }
-  ];
-
-  // Arrays para campos dinámicos
-  profiles: Array<{category: string, width: number, height: number, material: string, color: string}> = [];
-  glassConfigurations: Array<{type: string, width: number, height: number, length: number, protection: string, color: string}> = [];
-  
-  // Propiedades para el uploader
-  uploadedImages: Array<{name: string, url: string, file: File}> = [];
   isDragOver = false;
+  successMessage = '';
+  errorMessage = '';
+  isModuleEditing = false;
+  uploadedImages: UploadedImage[] = [];
+  
+  // Propiedades para módulo
+  moduleIndex: number = 0;
+  moduleCode: string = '';
+
+  // Arreglos para perfiles y configuraciones de vidrio
+  profiles: Profile[] = [];
+  glassConfigurations: GlassConfiguration[] = [];
+
+  // Opciones para los selectores
+  openingTypeOptions = [
+    { value: 'corrediza', label: 'Corrediza' },
+    { value: 'batiente', label: 'Batiente' },
+    { value: 'fija', label: 'Fija' },
+    { value: 'proyectante', label: 'Proyectante' },
+    { value: 'oscilobatiente', label: 'Oscilobatiente' }
+  ];
+
+  lockSystemOptions = [
+    { value: 'manilla', label: 'Manilla' },
+    { value: 'cremona', label: 'Cremona' },
+    { value: 'cierre_embutido', label: 'Cierre Embutido' },
+    { value: 'llave', label: 'Llave' }
+  ];
+
+  profileCategoryOptions = [
+    { value: 'marco', label: 'Marco' },
+    { value: 'hoja', label: 'Hoja' },
+    { value: 'travesano', label: 'Travesaño' },
+    { value: 'junquillo', label: 'Junquillo' }
+  ];
+
+  profileMaterialOptions = [
+    { value: 'aluminio', label: 'Aluminio' },
+    { value: 'pvc', label: 'PVC' },
+    { value: 'madera', label: 'Madera' }
+  ];
+
+  glassTypeNewOptions = [
+    { value: 'monolitico', label: 'Monolítico' },
+    { value: 'laminado', label: 'Laminado' },
+    { value: 'doble', label: 'Doble Vidriado Hermético (DVH)' },
+    { value: 'templado', label: 'Templado' }
+  ];
 
   constructor(
     private fb: FormBuilder,
-    private productService: ProductService,
-    private router: Router
-  ) {}
-
-  ngOnInit(): void {
-    this.initializeForm();
-    this.loadSelectOptions();
-  }  private initializeForm(): void {
-    this.productForm = this.fb.group({
-      // Información General
-      houseCode: ['', [Validators.required, Validators.minLength(2)]],
-      units: ['', [Validators.required, Validators.min(1)]],
-      windowCode: ['', [Validators.required, Validators.minLength(3)]],
-      windowQuantity: ['', [Validators.required, Validators.min(1)]],
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
+    this.productForm = this.fb.group({});
+  }  ngOnInit(): void {
+    // Verificar si estamos en modo edición de módulo
+    this.route.queryParams.subscribe(params => {
+      this.isModuleEditing = params['isModule'] === 'true';
       
-      // Dimensiones de Diseño
+      // Obtener valores desde los parámetros de la consulta
+      const houseCode = params['houseCode'] || 'CASA-A1';
+      const units = params['units'] || '10';
+      const moduleIndex = parseInt(params['moduleIndex']) || 0;
+      const windowCode = params['windowCode'] || '';
+      
+      this.moduleIndex = moduleIndex;
+      this.moduleCode = this.getModuleCode(windowCode, moduleIndex);
+      
+      this.initializeForm(houseCode, units);
+      
+      // Si estamos editando un módulo, recuperar la imagen del módulo desde sessionStorage
+      if (this.isModuleEditing) {
+        this.loadModuleImageFromStorage();
+      }
+    });
+
+    // Agregar una fila inicial de perfil y vidrio
+    this.addProfileRow();
+    this.addGlassConfiguration();
+  }
+
+  // Método para generar la letra del módulo (A, B, C, D, etc.)
+  getModuleLetter(index: number): string {
+    return String.fromCharCode(65 + index); // 65 es el código ASCII para 'A'
+  }
+  // Método para generar el código completo del módulo
+  getModuleCode(baseCode: string, index: number): string {
+    return baseCode ? `${baseCode}-${this.getModuleLetter(index)}` : '';
+  }
+  // Método para cargar la imagen del módulo desde sessionStorage
+  private loadModuleImageFromStorage(): void {
+    try {
+      const storedState = sessionStorage.getItem('multipleWindowState');
+      if (storedState) {
+        const state = JSON.parse(storedState);
+        if (state.modules && state.modules[this.moduleIndex] && state.modules[this.moduleIndex].image) {
+          const moduleImage = state.modules[this.moduleIndex].image;
+          // Cargar la imagen del módulo en el componente de ventana individual
+          this.uploadedImages = [{
+            url: moduleImage.url,
+            name: moduleImage.name,
+            file: moduleImage.file
+          }];
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar la imagen del módulo desde sessionStorage:', error);
+    }
+  }
+
+  // Método para actualizar el estado del módulo en sessionStorage
+  private updateModuleStateInStorage(): void {
+    try {
+      const storedState = sessionStorage.getItem('multipleWindowState');
+      if (storedState) {
+        const state = JSON.parse(storedState);
+        if (state.modules && state.modules[this.moduleIndex]) {
+          // Marcar el módulo como configurado
+          state.modules[this.moduleIndex].isConfigured = true;
+          
+          // Actualizar la imagen si se cambió
+          if (this.uploadedImages.length > 0) {
+            state.modules[this.moduleIndex].image = {
+              url: this.uploadedImages[0].url,
+              name: this.uploadedImages[0].name,
+              file: this.uploadedImages[0].file
+            };
+          }
+          
+          // Guardar el estado actualizado
+          sessionStorage.setItem('multipleWindowState', JSON.stringify(state));
+        }
+      }
+    } catch (error) {
+      console.error('Error al actualizar el estado del módulo en sessionStorage:', error);
+    }
+  }
+  private initializeForm(houseCode: string = 'CASA-A1', units: string = '10'): void {
+    const baseControls = {
+      houseCode: [{value: houseCode, disabled: false}],
+      units: [{value: units, disabled: false}],
+      moduleCode: [{value: this.moduleCode, disabled: true}],
+      // windowCode y windowQuantity solo son requeridos cuando NO estamos editando un módulo
+      windowCode: ['', this.isModuleEditing ? [] : [Validators.required, Validators.pattern('[A-Za-z0-9-]+')]],
+      windowQuantity: ['', this.isModuleEditing ? [] : [Validators.required, Validators.min(1)]],
+      
+      // Dimensiones de diseño
       designWidth: ['', [Validators.required, Validators.min(0.1)]],
       designHeight: ['', [Validators.required, Validators.min(0.1)]],
       totalSurface: [{value: '', disabled: true}],
       
-      // Dimensiones de Manufactura
+      // Dimensiones de manufactura
       manufacturingWidth: ['', [Validators.required, Validators.min(0.1)]],
       manufacturingHeight: ['', [Validators.required, Validators.min(0.1)]],
       
-      // Tipo de Apertura y Cerradura
+      // Aperturas
       apertura1: ['', Validators.required],
       apertura2: [''],
       apertura3: [''],
+      
+      // Cerraduras
       cerradura1: ['', Validators.required],
       cerradura2: [''],
       cerradura3: [''],
       
-      // Campos antiguos mantener para compatibilidad si es necesario
-      openingType: ['', Validators.required],
-      orientation: ['', Validators.required],
-      mechanism: ['', Validators.required],
-      finish: ['', Validators.required],
-      lockSystem: ['', Validators.required],
-      securityLevel: ['', Validators.required],
-      lockColor: ['', Validators.required],
-      
-      // Tipo y Material
-      windowType: ['', Validators.required],
-      material: ['', Validators.required],
-      profileSection: ['', Validators.required],
-      bodyColor: ['', Validators.required],
-      
-      // Dimensiones adicionales (ESTOS SON LOS CAMPOS QUE FALTAN)
-      width: ['', [Validators.required, Validators.min(1)]],
-      height: ['', [Validators.required, Validators.min(1)]],
-      depth: [''],
-      area: [{value: '', disabled: true}],
-      
-      // Especificaciones del Vidrio
-      glassType: ['', Validators.required],
-      glassThickness: ['', [Validators.required, Validators.min(1)]],
-      opaqueGlass: [''],
-      dvh: [''],
-      
-      // Funcionalidad
-      opening: ['', Validators.required],
-      lock: ['', Validators.required],
-      mosquitoNet: [''],
-      rollerShutter: [''],
-      
-      // Diseño y Acabados
-      frameColor: [''],
-      leafColor: [''],
-      design: [''],
-      laminate: [''],
-      
-      // Nuevos campos de Diseño
-      description: [''],
-      technicalNotes: [''],
-      
-      // Otros campos existentes
-      location: ['', Validators.required],
-      comments: ['']
-    });
-
-    // Inicializar arrays dinámicos
-    this.addProfileRow();
-    this.addGlassConfiguration();
-    
-    // Configurar cálculos automáticos
-    this.setupSurfaceCalculation();
-    this.setupAreaCalculation();
-  }private loadSelectOptions(): void {
-    // Cargar todas las opciones en paralelo usando forkJoin
-    forkJoin({
-      windowTypes: this.productService.getWindowTypeOptions(),
-      materials: this.productService.getMaterialOptions(),
-      locations: this.productService.getLocationOptions(),
-      glassTypes: this.productService.getGlassTypeOptions(),
-      opaqueGlass: this.productService.getOpaqueGlassOptions(),
-      openings: this.productService.getOpeningOptions(),
-      locks: this.productService.getLockOptions()
-    }).subscribe({
-      next: (options) => {
-        this.windowTypeOptions = options.windowTypes;
-        this.materialOptions = options.materials;
-        this.locationOptions = options.locations;
-        this.glassTypeOptions = options.glassTypes;
-        this.opaqueGlassOptions = options.opaqueGlass;
-        this.openingOptions = options.openings;
-        this.lockOptions = options.locks;
-      },
-      error: (error) => {
-        console.error('Error al cargar opciones:', error);
-        this.errorMessage = 'Error al cargar las opciones del formulario';
-      }
-    });
-  }
-
-  onSubmit(): void {
-    if (this.productForm.valid && !this.isSubmitting) {
-      this.isSubmitting = true;
-        const formData = this.productForm.value;
-      
-      // Convertir valores numéricos
-      const productData = {
-        ...formData,
-        units: formData.units ? parseInt(formData.units) : 0,
-        width: parseFloat(formData.width),
-        height: parseFloat(formData.height),
-        manufacturingWidth: formData.manufacturingWidth ? parseFloat(formData.manufacturingWidth) : undefined,
-        manufacturingHeight: formData.manufacturingHeight ? parseFloat(formData.manufacturingHeight) : undefined,
-        quantity: parseInt(formData.quantity),
-        unitPrice: formData.unitPrice ? parseFloat(formData.unitPrice) : 0
-      };
-
-      this.productService.createProduct(productData).subscribe({
-        next: (product) => {
-          console.log('Producto creado exitosamente:', product);
-          this.router.navigate(['/products']);
-        },
-        error: (error) => {
-          console.error('Error al crear producto:', error);
-          this.isSubmitting = false;
-        }
-      });
-    } else {
-      // Marcar todos los campos como tocados para mostrar errores
-      Object.keys(this.productForm.controls).forEach(key => {
-        this.productForm.get(key)?.markAsTouched();
-      });
-    }
-  }
-
-  onCancel(): void {
-    this.router.navigate(['/products']);
-  }
-
-  // Getter para facilitar el acceso a los controles del formulario
-  get f() {
-    return this.productForm.controls;
-  }
-
-  // Métodos para validación
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.productForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
-  }
-  // Método para obtener mensajes de error
-  getErrorMessage(controlName: string): string {
-    const control = this.productForm.get(controlName);
-    if (control?.hasError('required')) {
-      return 'Este campo es obligatorio';
-    }
-    if (control?.hasError('maxlength')) {
-      const maxLength = control.getError('maxlength').requiredLength;
-      return `No debe exceder los ${maxLength} caracteres`;
-    }
-    if (control?.hasError('min')) {
-      return `Valor mínimo: ${control.getError('min').min}`;
-    }
-    if (control?.hasError('max')) {
-      return `Valor máximo: ${control.getError('max').max}`;
-    }
-    return '';
-  }
-  // Mantener el método getFieldError para compatibilidad
-  getFieldError(fieldName: string): string {
-    return this.getErrorMessage(fieldName);
-  }
-
-  // Métodos para campos dinámicos
-  addProfileRow(): void {
-    const newProfile = {
-      category: '',
-      width: 0,
-      height: 0,
-      material: '',
-      color: ''
+      // Descripción
+      description: ['']
     };
 
-    this.profiles.push(newProfile);
+    this.productForm = this.fb.group(baseControls);
+
+    // Suscribirse a cambios en dimensiones para calcular superficie
+    this.productForm.get('designWidth')?.valueChanges.subscribe(() => this.calculateSurface());
+    this.productForm.get('designHeight')?.valueChanges.subscribe(() => this.calculateSurface());
+  }
+
+  // Métodos para manejo de perfiles
+  addProfileRow(): void {
+    this.profiles.push({
+      category: '',
+      material: '',
+      color: '',
+      width: 0,
+      height: 0
+    });
   }
 
   removeProfileRow(index: number): void {
-    this.profiles.splice(index, 1);
+    if (this.profiles.length > 1) {
+      this.profiles.splice(index, 1);
+    }
   }
 
+  // Métodos para manejo de configuraciones de vidrio
   addGlassConfiguration(): void {
-    const newGlass = {
+    this.glassConfigurations.push({
       type: '',
+      protection: '',
+      color: '',
       width: 0,
       height: 0,
-      length: 0,
-      protection: '',
-      color: ''
-    };
-    this.glassConfigurations.push(newGlass);
+      length: 0
+    });
   }
 
   removeGlassConfiguration(index: number): void {
-    this.glassConfigurations.splice(index, 1);
-  }
-
-  // Configurar cálculo automático de superficie total
-  setupSurfaceCalculation(): void {
-    const designWidthControl = this.productForm.get('designWidth');
-    const designHeightControl = this.productForm.get('designHeight');
-    const totalSurfaceControl = this.productForm.get('totalSurface');
-
-    if (designWidthControl && designHeightControl && totalSurfaceControl) {
-      combineLatest([
-        designWidthControl.valueChanges.pipe(startWith(designWidthControl.value)),
-        designHeightControl.valueChanges.pipe(startWith(designHeightControl.value))
-      ]).subscribe(([width, height]) => {
-        if (width && height && !isNaN(width) && !isNaN(height)) {
-          const surface = width * height;
-          totalSurfaceControl.setValue(surface.toFixed(2));
-        } else {
-          totalSurfaceControl.setValue('');
-        }
-      });
+    if (this.glassConfigurations.length > 1) {
+      this.glassConfigurations.splice(index, 1);
     }
   }
 
-  // Configurar cálculo automático de área
-  setupAreaCalculation(): void {
-    const widthControl = this.productForm.get('width');
-    const heightControl = this.productForm.get('height');
-    const areaControl = this.productForm.get('area');
-
-    if (widthControl && heightControl && areaControl) {
-      combineLatest([
-        widthControl.valueChanges.pipe(startWith(widthControl.value)),
-        heightControl.valueChanges.pipe(startWith(heightControl.value))
-      ]).subscribe(([width, height]) => {
-        if (width && height && !isNaN(width) && !isNaN(height)) {
-          const area = (width * height) / 1000000; // Convertir mm² a m²
-          areaControl.setValue(area.toFixed(2));
-        } else {
-          areaControl.setValue('');
-        }
-      });
+  // Manejo de imágenes
+  triggerFileInput(event?: Event): void {
+    if (event) {
+      event.preventDefault();
     }
+    this.fileInput.nativeElement.click();
   }
 
-  // Métodos para manejo de archivos
-  onFileSelected(event: any): void {
-    const files = event.target.files;
-    this.handleFiles(files);
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) {
+      this.handleFile(input.files[0]);
+    }
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
+    this.isDragOver = false;
     const files = event.dataTransfer?.files;
-    if (files) {
-      this.handleFiles(files);
+    if (files?.length) {
+      this.handleFile(files[0]);
     }
   }
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
+    this.isDragOver = true;
   }
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
+    this.isDragOver = false;
   }
 
-  private handleFiles(files: FileList): void {
-    Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-          if (e.target?.result) {
-            this.uploadedImages.push({
-              name: file.name,
-              url: e.target.result as string,
-              file: file
+  onKeyDown(event: KeyboardEvent): void {
+    if (event.ctrlKey && event.key === 'v') {
+      // Manejar pegado desde el portapapeles
+      navigator.clipboard.read().then(items => {
+        for (const item of items) {
+          if (item.types.includes('image/png') || item.types.includes('image/jpeg')) {
+            item.getType(item.types[0]).then(blob => {
+              const file = new File([blob], 'pasted-image.png', { type: blob.type });
+              this.handleFile(file);
             });
           }
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+        }
+      }).catch(err => {
+        console.error('Error al acceder al portapapeles:', err);
+      });
+    }
+  }
+
+  private handleFile(file: File): void {
+    if (!file.type.startsWith('image/')) {
+      this.errorMessage = 'Por favor, selecciona una imagen válida.';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.uploadedImages = [{
+        url: reader.result as string,
+        name: file.name,
+        file: file
+      }];
+    };
+    reader.readAsDataURL(file);
   }
 
   removeImage(index: number): void {
     this.uploadedImages.splice(index, 1);
+  }
+
+  // Cálculos y validaciones
+  private calculateSurface(): void {
+    const width = this.productForm.get('designWidth')?.value || 0;
+    const height = this.productForm.get('designHeight')?.value || 0;
+    const surface = width * height;
+    this.productForm.patchValue({
+      totalSurface: surface.toFixed(2)
+    });
+  }
+
+  getFieldError(fieldName: string): string {
+    const control = this.productForm.get(fieldName);
+    if (control?.errors && control.touched) {
+      if (control.errors['required']) {
+        return 'Este campo es requerido';
+      }
+      if (control.errors['min']) {
+        return 'El valor debe ser mayor que 0';
+      }
+      if (control.errors['pattern']) {
+        return 'Formato inválido';
+      }
+    }
+    return '';
+  }
+  // Métodos de acción del formulario
+  async onSubmit(): Promise<void> {
+    if (this.productForm.invalid) {
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    try {
+      // Crear objeto con todos los datos
+      const formData = {
+        ...this.productForm.value,
+        profiles: this.profiles,
+        glassConfigurations: this.glassConfigurations,
+        images: this.uploadedImages
+      };
+
+      // TODO: Implementar lógica de guardado
+      console.log('Datos a guardar:', formData);
+      
+      this.successMessage = 'Producto guardado exitosamente';
+      
+      if (this.isModuleEditing) {
+        // Actualizar el estado del módulo en sessionStorage
+        this.updateModuleStateInStorage();
+        
+        // Volver a la vista de ventana múltiple
+        this.router.navigate(['/productos/agregar-producto-multiple']);
+      } else {
+        // Limpiar el formulario para un nuevo producto
+        this.productForm.reset();
+        this.profiles = [];
+        this.glassConfigurations = [];
+        this.uploadedImages = [];
+        this.addProfileRow();
+        this.addGlassConfiguration();
+      }
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      this.errorMessage = 'Error al guardar el producto. Por favor, intenta nuevamente.';
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+  onCancel(): void {
+    if (this.isModuleEditing) {
+      this.router.navigate(['/productos/agregar-producto-multiple']);
+    } else {
+      this.router.navigate(['/productos']);
+    }
   }
 }

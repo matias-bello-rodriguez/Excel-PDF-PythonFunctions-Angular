@@ -1,13 +1,8 @@
 .form-section {
   margin-bottom: var(--spacing-06);
-  border-left: 4px solid var(--gray-20);
+  border-left: 4px solid #0069d9;
   padding-left: var(--spacing-04);
   transition: background-color 0.2s, border-left-color 0.2s;
-}
-
-.form-section:hover {
-  background-color: var(--gray-10);
-  border-left-color: var(--primary-color);
 }
 
 .section-title {
