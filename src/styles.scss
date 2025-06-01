@@ -117,3 +117,28 @@ body {
     padding: 0.75rem;
   }
 }
+
+/* Estilos para los snackbars */
+.error-snackbar {
+  background: var(--danger-color);
+  color: white;
+  .mat-simple-snackbar-action {
+    color: white;
+  }
+}
+
+.success-snackbar {
+  background: var(--success-color);
+  color: white;
+  .mat-simple-snackbar-action {
+    color: white;
+  }
+}
+
+.warning-snackbar {
+  background: var(--warning-color);
+  color: black;
+  .mat-simple-snackbar-action {
+    color: black;
+  }
+}

@@ -67,9 +67,7 @@
           <span class="checkbox-custom"></span>
           <span class="checkbox-text">Recordar mis datos</span>
         </label>
-      </div>
-
-      <!-- Submit button -->
+      </div>      <!-- Submit button -->
       <button
         type="submit"
         class="login-button"
@@ -82,6 +80,12 @@
           Autenticando...
         </span>
       </button>
+
+      <!-- Error message -->
+      <div class="login-error" *ngIf="loginError">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ loginError }}
+      </div>
 
       <!-- Additional links -->
       <div class="form-footer">

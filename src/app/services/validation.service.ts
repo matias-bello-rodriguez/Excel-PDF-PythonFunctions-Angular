@@ -109,17 +109,17 @@ export class ValidationService {
   /**
    * Valida un email usando servicio externo
    */
-  validateEmail(email: string): Observable<EmailValidationResponse> {
-    if (!this.isValidEmailFormat(email)) {
+  validateEmail(email_contacto: string): Observable<EmailValidationResponse> {
+    if (!this.isValidEmailFormat(email_contacto)) {
       return of({ valid: false, exists: false, domain: '' });
     }
 
-    const domain = email.split('@')[1];
+    const domain = email_contacto.split('@')[1];
     
     // Para efectos de demostración, implementamos validación básica
     // En producción, se usaría un servicio como Hunter.io o similar
     return of({
-      valid: this.isValidEmailFormat(email),
+      valid: this.isValidEmailFormat(email_contacto),
       exists: this.isCommonEmailDomain(domain),
       domain: domain
     });

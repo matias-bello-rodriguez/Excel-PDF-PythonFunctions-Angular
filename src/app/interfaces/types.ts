@@ -1,0 +1,15 @@
+export type FileType = 'imagen' | 'documento' | 'plano' | 'otros';
+export type EntityType = 'proyecto' | 'producto' | 'cliente' | 'cubicacion';
+export type HouseType = 'casa' | 'departamento' | 'local' | 'oficina';
+export type HouseStatus = 'pendiente' | 'en_construccion' | 'terminada';
+export type CatalogMaterialType = 'vidrio' | 'aluminio' | 'accesorios' | 'otros';
+export type MeasurementUnit = 'pieza' | 'metro' | 'metro_cuadrado' | 'kilogramo';
+export type ClientType = 'empresa' | 'persona';
+export type ClientStatus = 'activo' | 'inactivo' | 'bloqueado';
+export type CubicationStatus = 'borrador' | 'pendiente' | 'aprobada' | 'rechazada';
+export type ProjectMarket = 'residencial' | 'comercial' | 'industrial';
+export type ProductType = 'ventana' | 'puerta' | 'mampara' | 'otro';
+export type GlassType = 'transparente' | 'opaco' | 'reflectivo';
+export type ContactType = 'supervisor' | 'arquitecto' | 'cliente' | 'otro';
+export type ProjectStatus = 'planificacion' | 'en_curso' | 'terminado' | 'cancelado';
+export type UserRole = 'admin' | 'manager' | 'cubicador' | 'vendedor';

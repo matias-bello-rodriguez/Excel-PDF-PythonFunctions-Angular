@@ -650,7 +650,6 @@ body {
 
 /* Contenedor principal de la tabla */
 .table-container {
-  overflow-x: auto;
   width: 100%;
   border-radius: 0 0 4px 4px;
 }
@@ -820,11 +819,11 @@ body {
       }
 
       &:nth-child(odd) {
-        background-color: #f4f4f4;
+        background-color: var(--carbon-gray-10);
       }
       
       &:nth-child(even) {
-        background-color: #fff;
+        background-color: white;
       }
 
       &:hover {
@@ -878,98 +877,49 @@ body {
 /* Celdas de acciones */
 .actions-col {
   text-align: center;
-  width: 100px;
-}
-
-.actions-cell {
-  text-align: center;
   vertical-align: middle;
   width: 150px; /* Ancho fijo para la columna de acciones */
   padding: var(--spacing-04) 0; /* Ajustar padding horizontal a 0 para centrar mejor */
 }
 
-.actions-container {
+.actions-column {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--spacing-03);
-  width: 100%;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
-.action-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
+button.mat-icon-button {
   width: 32px;
   height: 32px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  position: relative;
-  margin: 0 auto; /* Centrar horizontalmente */
-
-  &:hover {
-    background-color: var(--carbon-gray-10);
-  }
-
-  &.delete:hover {
-    color: var(--carbon-danger);
-  }
-
-  &:not(.delete, .pin):hover {
-    color: var(--carbon-primary); // Color azul de Carbon Design System
-  }
-
-  &.pin {
-    &.pinned {
-      color: #F0AD4E; // Color naranja cuando está fijado
-      background-color: rgba(240, 173, 78, 0.1);
-    }
-
-    &:hover {
-      color: #FFC107; // Color amarillo en hover
-    }
-  }
-
-  i {
-    font-size: 15px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-  }
+  line-height: 32px;
 }
 
-/* Estilos específicos para el botón de eliminar fila */
-.remove-btn {
-  background: none;
-  border: none;
-  color: var(--carbon-gray-60); /* Gris oscuro por defecto */
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  display: flex;
+button.mat-icon-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* Para la tabla personalizada (si no usas app-data-table) */
+.actions-column .btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
-  position: absolute;
-  top: var(--spacing-02);
-  right: var(--spacing-02);
-
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
   &:hover {
-    color: var(--carbon-primary); /* Azul en hover */
-    background-color: rgba(15, 98, 254, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
   }
-
-  i {
-    font-size: 14px;
-    line-height: 1;
+  
+  i, mat-icon {
+    font-size: 18px;
   }
 }
 
@@ -1231,37 +1181,6 @@ body {
 
   &:active {
     transform: translateY(0);
-  }
-}
-
-/* Estilos para botones de añadir (verde) */
-.add-row-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-03);
-  padding: var(--spacing-03) var(--spacing-05);
-  background-color: var(--carbon-success); /* Verde */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: var(--font-body);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: var(--spacing-04);
-
-  &:hover {
-    background-color: #155d2c; /* Verde más oscuro en hover */
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  i {
-    font-size: 0.875rem;
   }
 }
 
@@ -1676,644 +1595,13 @@ body {
   }
 }
 
-/* Estilos para las pestañas */
-.modal-tabs {
-  display: flex;
-  padding: 0.5rem 1.5rem 0;
-  border-bottom: 1px solid #e9ecef;
-  background: #f8f9fa;
-  gap: 0.5rem;
-}
-
-.tab-button {
-  padding: 0.75rem 1.25rem;
-  border: none;
-  background: none;
-  color: #495057;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  transition: all 0.2s ease;
-  border-radius: 4px 4px 0 0;
-  
-  i {
-    font-size: 1rem;
-    color: #198038;
-  }
-  
-  &:hover:not(:disabled) {
-    color: #155d2c;
-    background: rgba(25, 128, 56, 0.05);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  &.active {
-    color: #155d2c;
-    font-weight: 600;
-    background: white;
-    border: 1px solid #e9ecef;
-    border-bottom: none;
-    margin-bottom: -1px;
-    
-    i {
-      color: #155d2c;
-    }
-  }
-}
-
-/* Contenido de las pestañas */
-
-/* Estilos para la pestaña de Upload */
-.upload-area {
-  border: 2px dashed #e9ecef;
-  border-radius: 8px;
-  padding: 3rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: #f8f9fa;
-
-  &:hover, &.drag-over {
-    border-color: #198038;
-    background: rgba(25, 128, 56, 0.05);
-  }
-
-  h4 {
-    margin: 1rem 0;
-    color: #212529;
-    font-weight: 500;
-  }
-
-  p {
-    color: #6c757d;
-    margin-bottom: 1rem;
-  }
-
-  .file-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding: 0.5rem;
-    background: white;
-    border-radius: 4px;
-    border: 1px solid #e9ecef;
-
-    i {
-      color: #198038;
-    }
-
-    .remove-file {
-      border: none;
-      background: none;
-      color: #dc3545;
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 4px;
-
-      &:hover {
-        background: rgba(220, 53, 69, 0.1);
-      }
-    }
-  }
-}
-
-/* Estilos para la pestaña de Vista Previa - Estilo Excel */
-.preview-table-container {
-  margin-top: 1rem;
-  overflow: auto;
-  border: 2px solid #d0d7de;
-  border-radius: 0;
-  max-height: 25rem;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.preview-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-family: 'Segoe UI', Calibri, sans-serif;
-  font-size: 11px;
-  min-width: 60rem;
-  background: white;
-
-  // Estilo para las celdas de encabezado de columnas (A, B, C...)
-  th {
-    border: 1px solid #d0d7de;
-    border-top: 0;
-    background: #f2f2f2;
-    color: #333;
-    font-weight: 400;
-    text-align: center;
-    padding: 4px 6px;
-    height: 20px;
-    min-width: 80px;
-    font-size: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    user-select: none;
-    
-    // Bordes internos para separar celdas
-    &:not(:last-child) {
-      border-right: 1px solid #d0d7de;
-    }
-    
-    &.row-header {
-      background: #f2f2f2;
-      border-right: 2px solid #d0d7de;
-      min-width: 40px;
-      width: 40px;
-      max-width: 40px;
-      font-weight: 400;
-      color: #666;
-      z-index: 11;
-      position: sticky;
-      left: 0;
-    }
-  }
-
-  // Fila de encabezados de datos (nombres de columnas del Excel)
-  thead tr:nth-child(2) th {
-    background: #217346;
-    color: white;
-    font-weight: 500;
-    font-size: 11px;
-    text-align: left;
-    padding: 6px 8px;
-    height: 24px;
-    
-    &.row-header {
-      background: #f2f2f2;
-      color: #666;
-      border-right: 2px solid #d0d7de;
-    }
-  }
-
-  // Celdas de datos
-  td {
-    border: 1px solid #d0d7de;
-    padding: 2px 6px;
-    height: 20px;
-    background: white;
-    font-size: 11px;
-    line-height: 1.2;
-    vertical-align: middle;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-    
-    &.row-header {
-      background: #f2f2f2;
-      border-right: 2px solid #d0d7de;
-      text-align: center;
-      font-weight: 400;
-      color: #666;
-      min-width: 40px;
-      width: 40px;
-      max-width: 40px;
-      position: sticky;
-      left: 0;
-      z-index: 2;
-    }
-
-    // Estilos según tipo de dato
-    &[data-type="number"] {
-      text-align: right;
-      font-feature-settings: "tnum";
-    }
-    
-    &[data-type="date"] {
-      text-align: center;
-    }
-    
-    &[data-type="text"] {
-      text-align: left;
-    }
-  }
-
-  // Efecto hover para filas
-  tbody tr:hover td {
-    background: #e8f4fd;
-    
-    &.row-header {
-      background: #dde8f0;
-    }
-  }
-
-  // Selección de celda activa (simular Excel)
-  tbody tr:hover td:hover {
-    outline: 2px solid #0078d4;
-    outline-offset: -1px;
-    background: white;
-    z-index: 3;
-    position: relative;
-  }
-
-  // Zebra striping sutil como Excel
-  tbody tr:nth-child(odd) td:not(.row-header) {
-    background: #fdfdfd;
-  }
-
-  tbody tr:nth-child(even) td:not(.row-header) {
-    background: white;
-  }
-
-  // Bordes especiales para simular Excel
-  tbody tr:first-child td {
-    border-top: 1px solid #d0d7de;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: 2px solid #d0d7de;
-  }
-
-  td:last-child,
-  th:last-child {
-    border-right: 2px solid #d0d7de;
-  }
-}
-
-
-/* Estilos para la pestaña de Selección de Columnas */
-.columns-section {
-  .columns-header {
-    margin-bottom: 1.5rem;
-
-    h4 {
-      margin-bottom: 0.5rem;
-      color: #212529;
-    }
-
-    p {
-      color: #6c757d;
-    }
-  }
-}
-
-.column-mapping {
-  display: grid;
-  gap: 1rem;
-
-  .mapping-row {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 1rem;
-    align-items: center;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-
-    .system-column {
-      label {
-        font-weight: 500;
-        color: #212529;
-      }
-    }
-  }
-}
-
-.loading-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 2rem;
-  color: #6c757d;
-
-  i {
-    font-size: 1.25rem;
-  }
-}
-
-/* Footer del modal */
-.modal-footer {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  padding: 1.5rem 2rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  flex-shrink: 0;
-  margin-top: auto;
-  .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 8rem;
-    margin: 0 0.5rem;
-
-    &.btn-secondary {
-      background: #6c757d;
-      border: 1px solid #6c757d;
-      color: white;
-
-      &:hover {
-        background: #5a6268;
-        border-color: #545b62;
-      }
-    }
-
-    &.btn-primary {
-      background: #198038;
-      border: 1px solid #198038;
-      color: white;
-
-      &:hover {
-        background: #155d2c;
-        border-color: #155d2c;
-      }
-
-      &:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-      }
-    }
-  }
-}
-
-/* Estilos para el modal de importación de Excel */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(2px);
-}
-
-.modal {
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
-  width: 95vw;
-  max-width: 80rem;
-  height: 90vh;
-  max-height: 50rem;
-  overflow: hidden;
-  animation: modalFadeIn 0.3s ease-out;
-  display: flex;
-  flex-direction: column;
-}
-
-@keyframes modalFadeIn {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
   }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--carbon-gray-20);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  position: relative;
-}
-
-.modal-title-container {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  justify-content: center;
-  width: 100%;
-  text-align: center;
-}
-
-.excel-icon {
-  width: 28px;
-  height: 28px;
-}
-
-.pdf-icon {
-  width: 28px;
-  height: 28px;
-  filter: brightness(0) saturate(100%) invert(0%); /* Color negro */
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: var(--font-heading-04);
-  font-weight: var(--font-weight-semibold);
-  color: var(--carbon-gray-100);
-}
-
-.close-btn-wrapper {
-  position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-}
-
-.close-btn.custom-close {
-  background: #888;
-  border: 1.5px solid #888;
-  color: #fff;
-  border-radius: 50px;
-  padding: 6px 16px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--font-label);
-  font-weight: 600;
-  transition: border 0.2s, color 0.2s, background 0.2s;
-  cursor: pointer;
-
-  i {
-    color: #fff;
-    font-size: 16px;
-  }
-
-  span {
-    color: #fff;
-  }
-
-  &:hover {
-    border: 1.5px solid #1976d2;
-    background: #1976d2;
-    color: #fff;
-  }
-}
-
-.modal-body {
-  padding: 2rem;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.upload-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.upload-area {
-  border: 2px dashed var(--carbon-gray-20);
-  border-radius: 0.75rem;
-  padding: 4rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  min-height: 20rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  &:hover {
-    border-color: var(--carbon-primary);
-    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 98, 254, 0.1);
-  }
-
-  &.drag-over {
-    background: linear-gradient(135deg, #e8f5e8, #d4edda);
-    border-color: #198038;
-    border-style: solid;
-    transform: scale(1.02);
-  }
-
-  .excel-logo {
-    width: 6rem;
-    height: 6rem;
-    margin-bottom: 2rem;
-    opacity: 0.8;
-  }
-
-  h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: var(--font-heading-04);
-    font-weight: var(--font-weight-semibold);
-    color: var(--carbon-gray-100);
-  }
-
-  p {
-    margin: 0 0 1.5rem 0;
-    color: var(--carbon-gray-60);
-    font-size: var(--font-body);
-  }
-
-  .file-formats {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .file-formats span {
-    background: var(--carbon-gray-10);
-    color: var(--carbon-gray-60);
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: var(--font-caption);
-    font-weight: var(--font-weight-medium);
-    border: 1px solid var(--carbon-gray-20);
-  }
-
-  .selected-file {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: var(--carbon-gray-10);
-    border-radius: 8px;
-    border: 1px solid var(--carbon-gray-20);
-
-    i {
-      color: #217346;
-      font-size: 1.5rem;
-    }
-
-    span {
-      flex: 1;
-      font-weight: var(--font-weight-medium);
-      color: var(--carbon-gray-100);
-    }
-
-    .remove-file {
-      background: none;
-      border: none;
-      color: var(--carbon-gray-60);
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background-color: rgba(218, 30, 40, 0.1);
-        color: var(--carbon-danger);
-      }
-    }
-  }
-}
-
-/* Estilos para notificación de éxito
-.success-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: #28a745;
-  color: white;
-  padding: 15px 20px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 1050;
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-.success-notification i {
-  font-size: 1.2rem;
-}
-
-.success-notification p {
-  margin: 0;
-}
-
-.success-notification .close-btn {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.3s;
-  margin-left: 10px;
-}
-
-.success-notification .close-btn:hover {
-  opacity: 1;
 }
 
 @keyframes slideIn {
@@ -2326,49 +1614,4 @@ body {
     opacity: 1;
   }
 }
-*/
 
-/* Vista previa PDF sin iframe */
-.pdf-preview-info {
-  text-align: center;
-  max-width: 400px;
-  
-  h4 {
-    color: var(--carbon-gray-100);
-    font-weight: var(--font-weight-semibold);
-    margin-bottom: var(--spacing-05);
-  }
-  
-  p {
-    line-height: var(--line-height-base);
-    margin-bottom: var(--spacing-06);
-  }
-}
-
-.pdf-actions {
-  display: flex;
-  gap: var(--spacing-05);
-  justify-content: center;
-  
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--carbon-primary);
-    color: var(--carbon-primary);
-    padding: var(--spacing-04) var(--spacing-06);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-03);
-    
-    &:hover {
-      background: var(--carbon-primary);
-      color: white;
-    }
-    
-    i {
-      font-size: 0.875rem;
-    }
-  }
-}

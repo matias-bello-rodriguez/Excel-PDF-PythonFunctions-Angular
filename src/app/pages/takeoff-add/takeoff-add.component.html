@@ -1,111 +1,75 @@
 <div class="takeoff-add-container">
   <div class="page-header">
-    <h1 class="page-title">Agregar Nueva Cubicación</h1>
+    <h1 class="page-title">{{ isEditMode ? 'Editar Cubicación' : 'Agregar Nueva Cubicación' }}</h1>
   </div>
   <div class="form-container">
-    <!-- Mensajes de éxito o error -->
-    <div *ngIf="successMessage" class="alert-success">
-      <i class="fas fa-check-circle"></i>
-      {{ successMessage }}
+    <h1 class="form-title">{{ isEditMode ? 'Editar Cubicación' : 'Nueva Cubicación' }}</h1>
+    
+    <!-- Spinner de carga -->
+    <div *ngIf="isLoading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando datos...</p>
     </div>
-    <div *ngIf="errorMessage" class="alert-danger">
-      <i class="fas fa-exclamation-circle"></i>
-      {{ errorMessage }}
+
+    <!-- Mensajes de éxito o error -->
+    <div *ngIf="successMessage" class="success-message">
+      <span>{{ successMessage }}</span>
     </div>
     
-    <form [formGroup]="takeoffForm" (ngSubmit)="onSubmit()">
-      <!-- Sección de Información General -->
-      <app-form-section title="Información General" icon="fa-info-circle">
-        <div class="form-grid">
-          <app-form-field 
-            label="Nombre" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('nombre')" 
-            fieldId="nombre">
-            <app-text-input 
-              formControlName="nombre" 
-              id="nombre" 
-              placeholder="Ingrese nombre de la cubicación">
-            </app-text-input>
-          </app-form-field>
+    <div *ngIf="errorMessage" class="error-message">
+      <span>{{ errorMessage }}</span>
+    </div>
 
-          <app-form-field 
-            label="Proyecto" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('proyecto')" 
-            fieldId="proyecto">
-            <app-select-input 
-              formControlName="proyecto" 
-              id="proyecto"
-              [options]="proyectoOptions">
-            </app-select-input>
+    <!-- Formulario -->
+    <form [formGroup]="takeoffForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
+      <app-form-section title="Información general">
+        <div class="form-row">
+          <app-form-field label="Código" [required]="true" [errorMessage]="getErrorMessage('codigo')">
+            <app-text-input formControlName="codigo" placeholder="Ej. CUB-001"></app-text-input>
           </app-form-field>
-
-          <div class="span-2">
-            <app-form-field 
-              label="Descripción" 
-              [errorMessage]="getErrorMessage('descripcion')" 
-              fieldId="descripcion">
-              <app-textarea-input 
-                formControlName="descripcion" 
-                id="descripcion" 
-                placeholder="Ingrese una descripción" 
-                [rows]="3"
-                [maxLength]="500">
-              </app-textarea-input>
-            </app-form-field>
-          </div>
-        </div>
-      </app-form-section>      <!-- Sección de Detalles -->
-      <app-form-section title="Detalles" icon="fa-clipboard-list">
-        <div class="form-grid form-grid--3">
-          <app-form-field 
-            label="Fecha" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('fecha')" 
-            fieldId="fecha">
-            <app-date-input 
-              formControlName="fecha" 
-              id="fecha">
-            </app-date-input>
-          </app-form-field>
-
-          <app-form-field 
-            label="Estado" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('estado')" 
-            fieldId="estado">
-            <app-select-input 
-              formControlName="estado" 
-              id="estado"
-              [options]="estadoOptions">
-            </app-select-input>
-          </app-form-field>
-
-          <app-form-field 
-            label="Monto" 
-            [required]="true" 
-            [errorMessage]="getErrorMessage('monto')" 
-            fieldId="monto">
-            <app-text-input 
-              formControlName="monto" 
-              id="monto"
-              placeholder="$0"
-              type="text">
-            </app-text-input>
+          
+          <app-form-field label="Nombre" [required]="true" [errorMessage]="getErrorMessage('nombre')">
+            <app-text-input formControlName="nombre" placeholder="Nombre de la cubicación"></app-text-input>
           </app-form-field>
         </div>
-      </app-form-section>      <!-- Botones del formulario -->
-      <div class="form-actions">
-        <app-form-buttons
-          [isSubmitting]="isSubmitting"
-          [isSubmitDisabled]="takeoffForm.invalid && takeoffForm.touched"
-          [submitText]="'Guardar cubicación'"
-          (submitClick)="onSubmit()"
-          (cancelClick)="onCancel()"
-          [alignment]="'center'">
-        </app-form-buttons>
-      </div>
+        
+        <div class="form-row">
+          <app-form-field label="Proyecto" [required]="true" [errorMessage]="getErrorMessage('proyecto_id')">
+            <app-select-input formControlName="proyecto_id" [options]="proyectoOptions"></app-select-input>
+          </app-form-field>
+          
+          <app-form-field label="Fecha" [required]="true" [errorMessage]="getErrorMessage('fecha')">
+            <app-date-input formControlName="fecha"></app-date-input>
+          </app-form-field>
+        </div>
+        
+        <div class="form-row">
+          <app-form-field label="Estado" [required]="true" [errorMessage]="getErrorMessage('estado')">
+            <app-select-input formControlName="estado" [options]="estadoOptions"></app-select-input>
+          </app-form-field>
+          
+          <app-form-field label="Monto Total" [required]="true" [errorMessage]="getErrorMessage('monto_total')">
+            <app-text-input formControlName="monto_total" placeholder="0.00" type="number"></app-text-input>
+          </app-form-field>
+        </div>
+        
+        <app-form-field label="Descripción" [errorMessage]="getErrorMessage('descripcion')">
+          <app-textarea-input formControlName="descripcion" placeholder="Descripción de la cubicación" [rows]="3"></app-textarea-input>
+        </app-form-field>
+      </app-form-section>
+      
+      <!-- Botones del formulario -->
+      <app-form-buttons 
+        [isSubmitDisabled]="takeoffForm.invalid || isSubmitting"
+        [isSubmitting]="isSubmitting"
+        [cancelText]="isEditMode ? 'Actualizar' : 'Guardar'"
+        (cancel)="onCancel()">
+      </app-form-buttons>
     </form>
   </div>
 </div>
+
+<!-- En takeoff-list.component.html, dentro del ngSwitchCase para la columna 'proyecto' -->
+<ng-container *ngSwitchCase="'proyecto'">
+  {{ cubicacion?.Proyecto || 'Sin Proyecto' }}
+</ng-container>

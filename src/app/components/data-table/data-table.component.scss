@@ -3,7 +3,9 @@
   border-radius: 4px;
   box-shadow: var(--shadow-sm);
   background-color: white;
+  overflow-x: auto; // Añade desplazamiento horizontal
   margin-bottom: var(--spacing-06);
+  -webkit-overflow-scrolling: touch; // Mejora el desplazamiento suave en dispositivos táctiles
 }
 
 .data-table {
@@ -170,8 +172,9 @@ tbody tr:nth-child(even) {
 // Celdas de acciones
 .actions-cell {
   width: 1%;
-  white-space: nowrap;
-}
+  display: flex;
+
+  align-items: center;}
 
 .actions-container {
   display: flex;

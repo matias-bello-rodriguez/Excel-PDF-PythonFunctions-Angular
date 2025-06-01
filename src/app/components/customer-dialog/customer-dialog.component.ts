@@ -73,16 +73,18 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
         // Modo creación
         this.customerForm.reset();
         this.rutValid = false;
+        this.resetErrorMessages();
       }
     }
   }
+
   private initForm(): void {
     this.customerForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
+      nombre_empresa: ['', [Validators.required, Validators.minLength(2)]],
       rut: ['', [Validators.required, this.rutValidator]],
       direccion: [''],
-      telefono: [''],
-      email: ['', [Validators.email]]
+      telefono_contacto: [''],
+      email_contacto: ['', [Validators.email]]
     });
 
     // Listeners para validaciones en tiempo real
@@ -94,7 +96,7 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
       }
     });
 
-    this.customerForm.get('email')?.valueChanges.subscribe(value => {
+    this.customerForm.get('email_contacto')?.valueChanges.subscribe(value => {
       if (value && this.isValidEmailFormat(value)) {
         this.validateEmailWithAPI(value);
       } else {
@@ -150,9 +152,9 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
     this.rutValidating = false;
   }
 
-  private validateEmailWithAPI(email: string): void {
+  private validateEmailWithAPI(email_contacto: string): void {
     this.emailValidating = true;
-    this.validationService.validateEmail(email).subscribe({
+    this.validationService.validateEmail(email_contacto).subscribe({
       next: (response: EmailValidationResponse) => {
         this.emailValid = response.valid;
         this.emailExists = response.exists;
@@ -160,7 +162,7 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
       },
       error: () => {
         this.emailValidating = false;
-        this.emailValid = this.isValidEmailFormat(email);
+        this.emailValid = this.isValidEmailFormat(email_contacto);
       }
     });
   }
@@ -194,9 +196,9 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
     this.addressValidating = false;
   }
 
-  private isValidEmailFormat(email: string): boolean {
+  private isValidEmailFormat(email_contacto: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(email_contacto);
   }
 
   static isValidRut(rut: string): boolean {
@@ -245,8 +247,9 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
     }
   }
 
+  // Modificar el método formatPhone para usar el nuevo nombre del campo
   formatPhone(): void {
-    const phoneControl = this.customerForm.get('telefono');
+    const phoneControl = this.customerForm.get('telefono_contacto');
     if (!phoneControl?.value) return;
 
     let phone = phoneControl.value.replace(/\D/g, '');
@@ -263,6 +266,13 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
     }
   }
 
+  // Agregar método para resetear mensajes de error
+  private resetErrorMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  // Modificar el método getErrorMessage para usar los nuevos nombres de campos
   getErrorMessage(fieldName: string): string {
     const control = this.customerForm.get(fieldName);
     if (!control?.errors || !control.touched) return '';
@@ -285,11 +295,11 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
 
   private getFieldLabel(fieldName: string): string {
     const labels: { [key: string]: string } = {
-      nombre: 'Nombre',
+      nombre_empresa: 'Nombre',
       rut: 'RUT',
       direccion: 'Dirección',
-      telefono: 'Teléfono',
-      email: 'Email'
+      telefono_contacto: 'Teléfono',
+      email_contacto: 'Email'
     };
     return labels[fieldName] || fieldName;
   }
@@ -298,24 +308,55 @@ export class CustomerDialogComponent implements OnInit, OnChanges {
     this.close.emit();
   }
 
+  // Modificar el método saveCustomer para manejar errores
   saveCustomer(): void {
     if (this.customerForm.valid) {
       this.isLoading = true;
+      this.resetErrorMessages();
+      
       const formData = this.customerForm.value;
       
-      // Simular guardado
+      this.save.emit(formData);
+      
+      // Simulamos que el guardado toma tiempo
       setTimeout(() => {
-        this.save.emit(formData);
         this.isLoading = false;
-        this.closeDialog();
+        // En un caso real, este manejo se haría después de recibir la respuesta del servidor
       }, 500);
     } else {
       // Marcar todos los campos como touched para mostrar errores
       Object.keys(this.customerForm.controls).forEach(key => {
         this.customerForm.get(key)?.markAsTouched();
       });
+      
+      this.errorMessage = 'Por favor, complete todos los campos requeridos correctamente.';
     }
   }
+
+  // Método para manejar errores del servidor
+  handleServerError(error: any): void {
+    this.isLoading = false;
+    
+    if (error && error.code === 'PGRST116' && error.message.includes('rows returned')) {
+      this.errorMessage = 'No se encontró ningún cliente con el RUT especificado.';
+    } else {
+      this.errorMessage = 'Ocurrió un error al procesar la solicitud. Por favor, inténtelo nuevamente.';
+    }
+    
+    console.error('Error en operación de cliente:', error);
+  }
+
+  // Método para mostrar notificación de éxito
+  showSuccess(message: string): void {
+    this.successMessage = message;
+    this.errorMessage = '';
+    
+    // Opcionalmente, limpiar el mensaje después de un tiempo
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 5000);
+  }
+
   searchAddress(): void {
     const direccionControl = this.customerForm.get('direccion');
     const currentAddress = direccionControl?.value;

@@ -35,19 +35,24 @@
             <ng-container [ngSwitch]="column.key">
               <!-- Columna de acciones -->
               <ng-container *ngSwitchCase="'actions'">
-                <div class="actions-container">
+                <div class="actions-cell">
+                  <!-- Botón de edición -->
                   <div class="tooltip-container">
                     <button class="action-btn" [attr.aria-label]="'Editar ítem ' + item[idField]" (click)="onEdit(item[idField], $event)">
                       <i class="fas fa-edit" aria-hidden="true"></i>
                       <span class="tooltip">Editar</span>
                     </button>
                   </div>
+                  
+                  <!-- Botón de eliminación -->
                   <div class="tooltip-container">
                     <button class="action-btn delete" [attr.aria-label]="'Eliminar ítem ' + item[idField]" (click)="onDelete(item[idField], $event)">
                       <i class="fas fa-trash-alt" aria-hidden="true"></i>
                       <span class="tooltip">Eliminar</span>
                     </button>
                   </div>
+                  
+                  <!-- Botón de fijar/desfijar -->
                   <div class="tooltip-container">
                     <button class="action-btn pin" [attr.aria-label]="(isPinned(item[idField]) ? 'Desfijar ' : 'Fijar ') + 'ítem ' + item[idField]" 
                             (click)="onTogglePin(item[idField], $event)"
@@ -56,12 +61,15 @@
                       <span class="tooltip">{{ isPinned(item[idField]) ? 'Desfijar' : 'Fijar' }}</span>
                     </button>
                   </div>
-                  <!-- Acción ver detalle productos solo si existe la columna proyecto (cubicaciones) -->
-                  <div class="tooltip-container" *ngIf="hasProyectoColumn">
-                    <button class="action-btn view-detail-btn" [attr.aria-label]="'Ver detalle productos de ' + item[idField]" (click)="viewDetail.emit(item[idField]); $event.stopPropagation();">
+                  
+                  <!-- Botón unificado para ver productos -->
+                  <div class="tooltip-container" *ngIf="isCubicacion || hasProyectoColumn">
+                    <button class="action-btn view-detail-btn" 
+                            [attr.aria-label]="'Ver productos de ' + item[idField]" 
+                            (click)="$event.stopPropagation(); onVerProductos(item[idField])">
                       <i class="fas fa-plus" aria-hidden="true"></i>
                       <i class="fas fa-search" aria-hidden="true" style="margin-left:2px;"></i>
-                      <span class="tooltip">Ver detalle productos</span>
+                      <span class="tooltip">Ver productos</span>
                     </button>
                   </div>
                 </div>

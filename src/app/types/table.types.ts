@@ -2,18 +2,23 @@
 export interface TableColumn {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'actions';
+  type: 'text' | 'date' | 'number' | 'actions' | 'boolean' | 'currency' | 'enum';
   sortable?: boolean;
   draggable?: boolean;
   visible?: boolean;
+  enumValues?: string[];
+
 }
 
 export interface TableData {
-  [key: string]: any;
-}
+  id?: string; // Propiedad opcional para el ID
+  actions?: string; // Propiedad opcional para acciones
+  [key: string]: any; // Permitir cualquier otra propiedad adicional
 
+}
 export interface TableFilter {
-  type: 'text' | 'date' | 'number';
+  type: 'text' | 'date' | 'number' | 'boolean' | 'enum'; // Eliminar 'currency'
+  label: string; // Propiedad requerida
   value?: string;
   from?: string | number | null;
   to?: string | number | null;

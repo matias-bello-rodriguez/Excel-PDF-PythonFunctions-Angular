@@ -1,0 +1,109 @@
+<div class="page-header">
+  <app-page-title title="Productos de Cubicación"></app-page-title>
+  <div class="header-actions">
+    <button mat-icon-button color="primary" (click)="loadProductos()" matTooltip="Recargar datos">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button mat-icon-button color="primary" (click)="volver()" matTooltip="Volver a cubicaciones">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  </div>
+</div>
+
+<!-- Mostrar spinner de carga -->
+<div *ngIf="isLoading" class="loading-container">
+  <mat-spinner diameter="40"></mat-spinner>
+  <p>Cargando productos...</p>
+</div>
+
+<!-- Mostrar error de conexión -->
+<div *ngIf="connectionError" class="error-container">
+  <mat-icon>error</mat-icon>
+  <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+  <button mat-raised-button color="primary" (click)="loadProductos()">Reintentar</button>
+</div>
+
+<!-- Mostrar datos cuando no está cargando y no hay error -->
+<div class="card" *ngIf="!isLoading && !connectionError">
+  <div class="table-toolbar">
+    <div class="table-actions">
+      <app-search-bar placeholder="Buscar productos..." (searchChange)="applyFilter($event)"></app-search-bar>
+    </div>
+  </div>
+  
+  <!-- Mensaje si no hay productos -->
+  <div *ngIf="productos.length === 0" class="no-data-message">
+    <mat-icon>info</mat-icon>
+    <p>No hay productos asociados a esta cubicación.</p>
+  </div>
+
+  <!-- Tabla de productos -->
+  <div *ngIf="productos.length > 0" class="table-container">
+    <table mat-table [dataSource]="dataSource" class="productos-table" matSort>
+      
+      <!-- Código Column -->
+      <ng-container matColumnDef="codigo">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Código</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.codigo }}</td>
+      </ng-container>
+      
+      <!-- Nombre Column -->
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.nombre }}</td>
+      </ng-container>
+      
+      <!-- Tipo Column -->
+      <ng-container matColumnDef="tipo_producto">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.tipo_producto }}</td>
+      </ng-container>
+      
+      <!-- Cantidad Column -->
+      <ng-container matColumnDef="cantidad">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Cantidad</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.cantidad }}</td>
+      </ng-container>
+
+      <!-- Superficie Total Column -->
+      <ng-container matColumnDef="superficie_total">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Superficie Total</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.superficie_total || 'N/A' }}</td>
+      </ng-container>
+
+      <!-- Precio Unitario Column -->
+      <ng-container matColumnDef="precio_unitario">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio Unitario</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.precio_unitario | currency:'CLP':'symbol':'1.0-0' }}</td>
+      </ng-container>
+
+      <!-- Precio Total Column -->
+      <ng-container matColumnDef="precio_total">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio Total</th>
+        <td mat-cell *matCellDef="let producto">{{ producto.precio_total | currency:'CLP':'symbol':'1.0-0' }}</td>
+      </ng-container>
+
+      <!-- Acciones Column -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let producto">
+          <button mat-icon-button (click)="verDetalle(producto)" matTooltip="Ver detalle">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button (click)="editarProducto(producto)" matTooltip="Editar producto">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="verDetalle(row)"></tr>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" 
+                 showFirstLastButtons 
+                 aria-label="Seleccionar página de productos">
+  </mat-paginator>
+</div>

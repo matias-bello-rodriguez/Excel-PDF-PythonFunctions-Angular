@@ -11,6 +11,7 @@ import { ProductAddMultipleWindowComponent } from './pages/product-add-multiple-
 import { ProjectListComponent } from './pages/project-list/project-list.component';
 import { ProjectAddComponent } from './pages/project-add/project-add.component';
 import { ReportsComponent } from './pages/reports/reports.component';
+import { TakeoffProductListComponent } from './pages/takeoff-product-list/takeoff-product-list.component';
 
 export const routes: Routes = [
   // Redirección inicial a login
@@ -36,9 +37,9 @@ export const routes: Routes = [
       { path: 'productos', component: ProductListComponent },
       { path: 'productos/agregar-producto', component: ProductAddWindowComponent },
       { path: 'productos/agregar-producto-multiple', component: ProductAddMultipleWindowComponent },
-      { path: 'productos/agregar-producto-multiple/:moduleId', component: ProductAddWindowComponent },
-      { path: 'cubicaciones/productos/:cubicacionId', component: ProductListComponent }, // Ahora acepta parámetro de cubicación
+      { path: 'productos/agregar-producto-multiple/:moduleId', component: ProductAddWindowComponent },      { path: 'cubicaciones/productos/:codigo', component: ProductListComponent }, // Ahora acepta parámetro de cubicación
       { path: 'cubicaciones/productos', component: ProductListComponent }, // Ruta sin parámetro (opcional, para compatibilidad)
+      { path: 'cubicaciones/productos/:id', component: TakeoffProductListComponent }, // Lista de productos por cubicación
       { path: 'proyectos', component: ProjectListComponent },
       { path: 'proyectos/agregar-proyecto', component: ProjectAddComponent },
       { path: 'cubicaciones', component: TakeoffListComponent },

@@ -1,5 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http'; // Añade esto
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'; 
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { PageTitleComponent } from '../../components/page-title/page-title.component';
 import { AddButtonComponent } from '../../components/add-button/add-button.component';
 import { SearchBarComponent } from '../../components/search-bar/search-bar.component';
@@ -8,13 +12,24 @@ import { TablePaginationComponent } from '../../components/table-pagination/tabl
 import { FilterDialogComponent } from '../../components/filter-dialog/filter-dialog.component';
 import { ColumnDialogComponent } from '../../components/column-dialog/column-dialog.component';
 import { CustomerDialogComponent } from '../../components/customer-dialog/customer-dialog.component';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
 import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/table.types';
+import { ClienteService } from '../../services/cliente.service';
+import { ErrorService } from '../../services/error.service';
+import { Cliente } from '../../interfaces/entities';
+import { ClientStatus } from '../../interfaces/types';
+import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-customer-list',
   standalone: true,
   imports: [
     CommonModule,
+    HttpClientModule, // Añade esto
+    MatProgressSpinnerModule, // Añade esto
+    MatIconModule, // Añade esto para mat-icon
+    MatButtonModule, // Añade esto para mat-raised-button
     PageTitleComponent,
     AddButtonComponent,
     SearchBarComponent,
@@ -22,20 +37,34 @@ import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/tab
     TablePaginationComponent,
     FilterDialogComponent,
     ColumnDialogComponent,
-    CustomerDialogComponent
+    CustomerDialogComponent,
+    ConfirmDialogComponent
   ],
   templateUrl: './customer-list.component.html',
   styleUrl: './customer-list.component.scss'
 })
-export class CustomerListComponent {
+export class CustomerListComponent implements OnInit {
+onEditCustomer($event: string) {
+    this.editar($event);
+
+}
+
+  onDeleteCustomer($event: string) {
+    this.eliminar($event);
+  }
+
+  onPinCustomer($event: string) {
+    this.togglePin($event);
+  }
+  
   pageTitle: string = 'Gestión de Clientes';
   searchTerm: string = '';
   columns: TableColumn[] = [
-    { key: 'id', label: 'Código', type: 'text', sortable: true, draggable: false, visible: true },
-    { key: 'nombre', label: 'Nombre', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'codigo', label: 'Código', type: 'text', sortable: true, draggable: false, visible: true },
+    { key: 'nombre_empresa', label: 'Nombre', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'rut', label: 'RUT', type: 'text', sortable: true, draggable: true, visible: true },
-    { key: 'email', label: 'Email', type: 'text', sortable: true, draggable: true, visible: true },
-    { key: 'telefono', label: 'Teléfono', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'email_contacto', label: 'Email', type: 'text', sortable: true, draggable: true, visible: true },
+    { key: 'telefono_contacto', label: 'Teléfono', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'direccion', label: 'Dirección', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'estado', label: 'Estado', type: 'text', sortable: true, draggable: true, visible: true },
     { key: 'actions', label: 'Acciones', type: 'actions', sortable: false, draggable: false, visible: true }
@@ -53,90 +82,83 @@ export class CustomerListComponent {
   itemsPerPage = 10;
   totalItems = 0;
   columnTypes: { [key: string]: 'text' | 'date' | 'number' } = {
-    id: 'text',
-    nombre: 'text',
+    codigo: 'text',
+    nombre_empresa: 'text',
     rut: 'text',
-    email: 'text',
-    telefono: 'text',
+    email_contacto: 'text',
+    telefono_contacto: 'text',
     direccion: 'text',
     estado: 'text',
     actions: 'text'
   };
   uniqueValues: { [key: string]: string[] } = {};
   columnLabels: { [key: string]: string } = {
-    id: 'Código',
-    nombre: 'Nombre',
+    codigo: 'Código',
+    nombre_empresa: 'Nombre',
     rut: 'RUT',
-    email: 'Email',
-    telefono: 'Teléfono',
+    email_contacto: 'Email',
+    telefono_contacto: 'Teléfono',
     direccion: 'Dirección',
     estado: 'Estado',
     actions: 'Acciones'
   };
-  filters: { [key: string]: { type: 'text' | 'date' | 'number'; value?: string; from?: string | number | null; to?: string | number | null; }; } = {};
-  clientes: Array<{
-    id: string;
-    nombre: string;
-    rut: string;
-    email: string;
-    telefono: string;
-    direccion: string;
-    estado: string;
-    [key: string]: string;
-  }> = [
-    {
-      id: 'CLI-2024-001',
-      nombre: 'Constructora Andes',
-      rut: '76.123.456-7',
-      email: 'contacto@andes.cl',
-      telefono: '+56 9 1234 5678',
-      direccion: 'Av. Providencia 1234, Santiago',
-      estado: 'activo'
-    },
-    {
-      id: 'CLI-2024-002',
-      nombre: 'Inmobiliaria Sur',
-      rut: '77.987.654-3',
-      email: 'info@sur.cl',
-      telefono: '+56 9 8765 4321',
-      direccion: 'Calle O’Higgins 456, Concepción',
-      estado: 'activo'
-    },
-    {
-      id: 'CLI-2024-003',
-      nombre: 'Grupo Norte',
-      rut: '78.456.789-0',
-      email: 'ventas@norte.cl',
-      telefono: '+56 9 1122 3344',
-      direccion: 'Av. Brasil 789, Antofagasta',
-      estado: 'inactivo'
-    }
-  ];  originalData: any[] = [];
-  data: any[] = [];
+filters: {
+  [key: string]: {
+    type: 'text' | 'date' | 'number' | 'boolean' | 'enum'; // Quitar 'currency'
+    label: string; // Añadir esta propiedad obligatoria
+    value?: string;
+    from?: string | number | null;
+    to?: string | number | null;
+  };
+} = {};  clientes: Cliente[] = [];  
+  originalData: Cliente[] = [];
+  data: Cliente[] = [];
   showFilterMenu = false;
   showColumnMenu = false;
   showCustomerDialog = false;
-  editingCustomer: any = null;
-  originalClientes = [...this.clientes];
+  editingCustomer: Cliente | null = null;
+  originalClientes: Cliente[] = [];
   hasActiveFilters = false;
   pinnedItems: Set<string> = new Set();
+  isLoading = true;
+  connectionError = false; // Asegúrate de añadir esta propiedad
+  loadingMessage: string = '';
 
-  // --- PINNING Y ORDEN ORIGINAL ---
-  // Guarda la posición original de cada cliente por id
-  private originalIndexMap: { [id: string]: number } = {};
+  constructor(
+    public clienteService: ClienteService,
+    public errorService: ErrorService,
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
 
-  constructor() {
+  async retryConnection() {
+    this.connectionError = false;
+    await this.ngOnInit();
+  }
+
+  async ngOnInit() {
+  this.isLoading = true;
+  this.connectionError = false;
+  try {
+    // Obtiene todos los clientes de la base de datos
+    this.clientes = await this.clienteService.getAll();
+    this.originalClientes = [...this.clientes];
+    this.originalData = [...this.clientes];
+    
+    // Actualiza la configuración de paginación
     this.totalItems = this.clientes.length;
     this.paginationConfig.totalItems = this.totalItems;
+    
+    // Inicializa filtros y valores únicos basados en los datos reales
     this.initializeFilters();
     this.updateUniqueValues();
-    // Guardar el índice original de cada cliente
-    this.clientes.forEach((c, i) => this.originalIndexMap[c.id] = i);
+  } catch (error) {
+    this.connectionError = true;
+    this.errorService.handle(error, 'Cargando lista de clientes');
+  } finally {
+    this.isLoading = false;
   }
-
-  ngOnInit() {
-    this.originalData = [...this.data];
-  }
+}
 
   getColumnLabel(colId: string): string {
     return this.columnLabels[colId] || colId;
@@ -153,36 +175,62 @@ export class CustomerListComponent {
     this.applySearch();
   }
 
-  applySearch(): void {
-    if (!this.searchTerm.trim()) {
-      this.resetSearch();
-      return;
+  async applySearch(): Promise<void> {
+    this.isLoading = true;
+    try {
+      if (!this.searchTerm.trim()) {
+        await this.resetSearch();
+        return;
+      }
+      
+      // Usa el servicio de cliente para búsquedas en la base de datos
+      this.clientes = await this.clienteService.search(this.searchTerm, false);
+      
+      // Aplica ordenamiento de filas fijadas
+      this.reorderClientes();
+      
+      // Actualiza paginación
+      this.currentPage = 1;
+      this.paginationConfig.currentPage = 1;
+      this.totalItems = this.clientes.length;
+      this.paginationConfig.totalItems = this.totalItems;
+    } catch (error) {
+      this.errorService.handle(error, 'Buscando clientes');
+    } finally {
+      this.isLoading = false;
     }
-    const searchTerm = this.searchTerm.toLowerCase().trim();
-    // Solo buscar en no fijados
-    const filtered = this.originalClientes.filter(item => {
-      if (this.pinnedItems.has(item.id)) return false;
-      return Object.keys(item).some(key => {
-        if (key !== 'actions') {
-          const value = String(item[key]).toLowerCase();
-          return value.includes(searchTerm);
-        }
-        return false;
-      });
-    });
-    // Los fijados siempre arriba
-    const pinned = this.originalClientes.filter(item => this.pinnedItems.has(item.id));
-    this.clientes = [...pinned, ...filtered];
-    this.currentPage = 1;
-    this.paginationConfig.currentPage = 1;
-    this.totalItems = this.clientes.length;
-    this.paginationConfig.totalItems = this.totalItems;
   }
 
-  resetSearch(): void {
-    this.clientes = [...this.originalClientes];
-    this.applyFilters();
+  async resetSearch(): Promise<void> {
+  if (this.searchTerm.trim() === '' && !this.hasActiveFilters) {
+    // No hay nada que resetear
+    return;
   }
+  
+  this.isLoading = true;
+  this.loadingMessage = 'Cargando proyectos...';
+  
+  try {
+    this.searchTerm = '';
+    
+    // Si no tenemos los datos originales, cargarlos
+    if (!this.originalClientes || this.originalClientes.length === 0) {
+      this.originalClientes = await this.clienteService.getAll();
+    }
+    
+    // Restaurar desde los datos originales
+    this.clientes = [...this.originalClientes];
+    this.data = [...this.originalClientes];
+    
+    // Aplica cualquier filtro activo
+    await this.applyFilters();
+  } catch (error) {
+    this.errorService.handle(error, 'Cargando lista de clientes');
+  } finally {
+    this.isLoading = false;
+    this.loadingMessage = '';
+  }
+}
 
   // Métodos para diálogos
   toggleFilterDialog(): void {
@@ -194,33 +242,42 @@ export class CustomerListComponent {
   }
 
   private initializeFilters() {
-    for (const column of this.columnOrder) {
-      if (column !== 'actions') {
-        this.filters[column] = {
-          type: this.columnTypes[column],
-          value: '',
-        };
-        if (this.columnTypes[column] === 'date' || this.columnTypes[column] === 'number') {
-          this.filters[column].from = null;
-          this.filters[column].to = null;
-        }
+  for (const column of this.columnOrder) {
+    if (column !== 'actions') {
+      this.filters[column] = {
+        type: this.columnTypes[column],
+        label: this.columnLabels[column] || column, // Usar la etiqueta de columna o el ID
+        value: '',
+      };
+      if (
+        this.columnTypes[column] === 'date' ||
+        this.columnTypes[column] === 'number'
+      ) {
+        this.filters[column].from = null;
+        this.filters[column].to = null;
       }
     }
   }
+}
 
   private updateUniqueValues() {
     this.columnOrder.forEach(column => {
       if (this.columnTypes[column] === 'text' && column !== 'actions') {
-        const values = new Set(this.clientes.map(item => item[column]));
+        // Extrae valores únicos de los datos reales
+        const values = new Set(
+          this.clientes
+            .map(item => item[column as keyof Cliente] as string)
+            .filter(val => val !== null && val !== undefined)
+        );
         this.uniqueValues[column] = Array.from(values).sort();
       }
     });
   }
 
-  resetFilters() {
+  async resetFilters() {
     this.initializeFilters();
     this.hasActiveFilters = false;
-    this.clientes = [...this.originalClientes];
+    await this.resetSearch();
     this.showFilterMenu = false;
   }
 
@@ -228,7 +285,7 @@ export class CustomerListComponent {
     this.showFilterMenu = false;
   }
 
-  clearFilters(): void {
+  async clearFilters(): Promise<void> {
     Object.keys(this.filters).forEach(column => {
       if (this.filters[column]) {
         this.filters[column].value = '';
@@ -239,99 +296,153 @@ export class CustomerListComponent {
       }
     });
     this.hasActiveFilters = false;
-    // Los fijados siempre arriba, el resto en orden original
-    const pinned = this.originalClientes.filter(item => this.pinnedItems.has(item.id));
-    const unpinned = this.originalClientes.filter(item => !this.pinnedItems.has(item.id));
-    this.clientes = [...pinned, ...unpinned];
-    this.totalItems = this.clientes.length;
-    this.paginationConfig.totalItems = this.totalItems;
-    this.currentPage = 1;
-    this.paginationConfig.currentPage = 1;
+    await this.resetSearch();
   }
 
   // --- FILTROS: filas fijadas son inmunes ---
-  applyFilters(newFilters?: { [key: string]: TableFilter }): void {
-    if (newFilters) {
-      this.filters = newFilters;
-    }
-    // Filtrar solo los no fijados
-    let filteredData = this.originalClientes.filter(item => !this.pinnedItems.has(item.id));
-    for (const col in this.filters) {
-      const filter = this.filters[col];
-      if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
-      if ((filter.type === 'date' || filter.type === 'number') && filter.from == null && filter.to == null) continue;
-      switch (filter.type) {
-        case 'text':
-          filteredData = filteredData.filter(item =>
-            filter.value ? String(item[col]).toLowerCase().includes(filter.value.toLowerCase()) : true
-          );
-          break;
-        case 'date':
-          break;
-        case 'number':
-          break;
+  async applyFilters(newFilters?: { [key: string]: TableFilter }): Promise<void> {
+    this.isLoading = true;
+    try {
+      if (newFilters) {
+        this.filters = newFilters;
       }
+      
+      // Obtener todos los clientes de nuevo para filtrar
+      let clientes = await this.clienteService.getAll();
+      
+      // Filtrar según los criterios
+      for (const col in this.filters) {
+        const filter = this.filters[col];
+        if (filter.type === 'text' && (!filter.value || filter.value === '')) continue;
+        if ((filter.type === 'date' || filter.type === 'number') && filter.from == null && filter.to == null) continue;
+        
+        switch (filter.type) {
+          case 'text':
+            clientes = clientes.filter(item =>
+              filter.value ? String(item[col as keyof Cliente]).toLowerCase().includes(filter.value.toLowerCase()) : true
+            );
+            break;
+          case 'date':
+            // Implementar filtro de fechas si es necesario
+            break;
+          case 'number':
+            // Implementar filtro numérico si es necesario
+            break;
+        }
+      }
+      
+      // Mantener elementos fijados arriba
+      const pinned = this.originalClientes.filter(item => this.pinnedItems.has(item.id));
+      const unpinned = clientes.filter(item => !this.pinnedItems.has(item.id));
+      this.clientes = [...pinned, ...unpinned];
+      
+      this.totalItems = this.clientes.length;
+      this.paginationConfig.totalItems = this.totalItems;
+      this.currentPage = 1;
+      this.paginationConfig.currentPage = 1;
+    } catch (error) {
+      this.errorService.handle(error, 'Aplicando filtros');
+    } finally {
+      this.isLoading = false;
     }
-    // Los fijados siempre arriba, en orden original
-    const pinned = this.originalClientes.filter(item => this.pinnedItems.has(item.id));
-    this.clientes = [...pinned, ...filteredData];
-    this.totalItems = this.clientes.length;
-    this.currentPage = 1;
   }
 
   nuevoCliente() {
-    console.log('Creando nuevo cliente desde CustomerListComponent');
+    this.editingCustomer = null;
+    this.showCustomerDialog = true;
   }
+  
   editar(id: string) {
-    console.log(`Editando cliente ${id} desde CustomerListComponent`);
+    const cliente = this.clientes.find(c => c.id === id);
+    if (cliente) {
+      this.editingCustomer = { ...cliente };
+      this.showCustomerDialog = true;
+    }
   }
-  eliminar(id: string) {
-    console.log(`Eliminando cliente ${id} desde CustomerListComponent`);
+  
+  async eliminar(id: string) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar desactivación',
+        message: '¿Está seguro que desea desactivar este cliente?',
+        confirmText: 'Desactivar',
+        cancelText: 'Cancelar'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        this.isLoading = true;
+        try {
+          const success = await this.clienteService.delete(id);
+          if (success) {
+            this.errorService.showSuccess('Cliente desactivado correctamente');
+            await this.resetSearch();
+          }
+        } catch (error) {
+          this.errorService.handle(error, 'Desactivando cliente');
+        } finally {
+          this.isLoading = false;
+        }
+      }
+    });
   }
 
   onRowClick(item: any): void {
-    console.log('Fila seleccionada:', item);
+    // Navegar a la vista detallada del cliente
+    this.router.navigate(['/clientes', item.id]);
   }
 
   onSortChange(sortConfig: SortConfig): void {
     this.sortConfig = sortConfig;
     this.sortColumn = sortConfig.column;
     this.sortDirection = sortConfig.direction;
-    this.applySort();
+    
+    // Aplicar ordenamiento sin volver a cargar datos
+    this.isLoading = true;
+    this.loadingMessage = 'Ordenando datos...';
+    
+    setTimeout(() => {
+      this.applySort();
+      this.isLoading = false;
+    }, 0);
   }
 
   applySort(): void {
-    // La ordenación se hace dentro del DataTable
-  }
-
-  onColumnReorder(columns: TableColumn[]): void {
-    this.columns = columns;
-    this.columnOrder = columns.map(col => col.key);
-  }
-
-  sortTable(column: string): void {
-    if (this.sortColumn === column) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortColumn = column;
-      this.sortDirection = 'asc';
-    }
+    if (!this.sortColumn) return;
+    
+    // Obtener elementos fijados y no fijados
     const pinnedItems = this.clientes.filter(item => this.pinnedItems.has(item.id));
     const unpinnedItems = this.clientes.filter(item => !this.pinnedItems.has(item.id));
-    const sortFn = (a: any, b: any) => {
-      const valA = a[column];
-      const valB = b[column];
+    
+    // Función de ordenación
+    const sortFn = (a: Cliente, b: Cliente) => {
+      const col = this.sortColumn as keyof Cliente;
+      const valA = a[col] ?? '';
+      const valB = b[col] ?? '';
+      
       let comparison = 0;
       if (valA > valB) {
         comparison = 1;
       } else if (valA < valB) {
         comparison = -1;
       }
+      
       return this.sortDirection === 'asc' ? comparison : comparison * -1;
     };
+    
+    // Ordenar cada grupo por separado
     pinnedItems.sort(sortFn);
     unpinnedItems.sort(sortFn);
+    
+    // Combinar grupos
     this.clientes = [...pinnedItems, ...unpinnedItems];
+  }
+
+  onColumnReorder(columns: TableColumn[]): void {
+    this.columns = columns;
+    this.columnOrder = columns.map(col => col.key);
   }
 
   getMaxDisplayed(): number {
@@ -341,6 +452,7 @@ export class CustomerListComponent {
   changePage(page: number) {
     if (page >= 1 && page <= this.getTotalPages()) {
       this.currentPage = page;
+      this.paginationConfig.currentPage = page;
     }
   }
 
@@ -373,95 +485,6 @@ export class CustomerListComponent {
     return pages;
   }
 
-  onDragStart(event: DragEvent, columnId: string) {
-    if (columnId === 'id' || columnId === 'actions') return;
-    this.draggedColumn = columnId;
-    if (event.dataTransfer) {
-      event.dataTransfer.setData('text/plain', columnId);
-    }
-  }
-
-  onDragOver(event: DragEvent, columnId: string) {
-    if (columnId === 'id' || columnId === 'actions' || !this.draggedColumn) return;
-    event.preventDefault();
-    const th = (event.target as HTMLElement).closest('th');
-    if (th) {
-      th.classList.add('drag-over');
-    }
-  }
-
-  onDragLeave(event: DragEvent) {
-    const th = (event.target as HTMLElement).closest('th');
-    if (th) {
-      th.classList.remove('drag-over');
-    }
-  }
-
-  onDrop(event: DragEvent, targetColumnId: string) {
-    event.preventDefault();
-    if (targetColumnId === 'id' || targetColumnId === 'actions' || !this.draggedColumn) return;
-    const th = (event.target as HTMLElement).closest('th');
-    if (th) {
-      th.classList.remove('drag-over');
-    }
-    const fromIndex = this.columnOrder.indexOf(this.draggedColumn);
-    const toIndex = this.columnOrder.indexOf(targetColumnId);
-    if (fromIndex !== -1 && toIndex !== -1) {
-      this.columnOrder = Array.from(this.columnOrder);
-      this.columnOrder.splice(fromIndex, 1);
-      this.columnOrder.splice(toIndex, 0, this.draggedColumn);
-    }
-    this.draggedColumn = null;
-  }
-
-  onDragEnd() {
-    this.draggedColumn = null;
-    document.querySelectorAll('th.drag-over').forEach(th => {
-      th.classList.remove('drag-over');
-    });
-  }
-
-  toggleFilterMenu() {
-    this.showFilterMenu = !this.showFilterMenu;
-  }
-
-  toggleColumnMenu() {
-    if (!this.showColumnMenu) {
-      this.tempColumnState = new Set(this.columnOrder);
-    }
-    this.showColumnMenu = !this.showColumnMenu;
-  }
-
-  closeColumnMenu(): void {
-    this.showColumnMenu = false;
-  }
-
-  applyColumnChanges(newColumns?: TableColumn[]): void {
-    if (newColumns) {
-      this.columns = newColumns;
-      this.columnOrder = newColumns.filter(col => col.visible !== false).map(col => col.key);
-    }
-    this.closeColumnMenu();
-  }
-
-  cancelColumnChanges(): void {
-    this.resetColumns();
-    this.closeColumnMenu();
-  }
-
-  isColumnSelected(columnId: string): boolean {
-    return this.tempColumnState.has(columnId);
-  }
-
-  toggleColumnSelection(columnId: string): void {
-    if (columnId === 'id') return;
-    if (this.tempColumnState.has(columnId)) {
-      this.tempColumnState.delete(columnId);
-    } else {
-      this.tempColumnState.add(columnId);
-    }
-  }
-
   isPinned(id: string): boolean {
     return this.pinnedItems.has(id);
   }
@@ -480,37 +503,9 @@ export class CustomerListComponent {
   // Reordena: fijados arriba (en orden original), luego no fijados (en orden original)
   private reorderClientes() {
     // Siempre usar el array originalClientes para el orden base
-    const pinned = this.originalClientes.filter(item => this.pinnedItems.has(item.id));
-    const unpinned = this.originalClientes.filter(item => !this.pinnedItems.has(item.id));
+    const pinned = this.clientes.filter(item => this.pinnedItems.has(item.id));
+    const unpinned = this.clientes.filter(item => !this.pinnedItems.has(item.id));
     this.clientes = [...pinned, ...unpinned];
-  }
-
-  isColumnVisible(columnId: string): boolean {
-    return this.columnOrder.includes(columnId);
-  }
-
-  toggleColumn(columnId: string) {
-    if (columnId === 'id') return;
-    const index = this.columnOrder.indexOf(columnId);
-    if (index === -1) {
-      this.columnOrder.push(columnId);
-    } else {
-      this.columnOrder.splice(index, 1);
-    }
-  }
-  resetColumns() {
-    this.columnOrder = [...this.defaultColumnOrder];
-  }
-
-  // Métodos para el diálogo de cliente
-  onAddCustomer(): void {
-    this.editingCustomer = null;
-    this.showCustomerDialog = true;
-  }
-
-  onEditCustomer(customer: any): void {
-    this.editingCustomer = { ...customer };
-    this.showCustomerDialog = true;
   }
 
   closeCustomerDialog(): void {
@@ -518,40 +513,84 @@ export class CustomerListComponent {
     this.editingCustomer = null;
   }
 
-  saveCustomer(customerData: any): void {
-    if (this.editingCustomer) {
-      // Editar cliente existente
-      const index = this.clientes.findIndex(c => c.id === this.editingCustomer.id);
-      if (index !== -1) {
-        this.clientes[index] = { ...this.editingCustomer, ...customerData };
-        this.originalClientes[index] = { ...this.clientes[index] };
+  async saveCustomer(customerData: Partial<Cliente>): Promise<void> {
+    this.isLoading = true;
+    try {
+      if (this.editingCustomer) {
+        // Actualizar cliente existente
+        const updatedCliente = await this.clienteService.update(this.editingCustomer.id, customerData);
+        if (updatedCliente) {
+          this.errorService.showSuccess('Cliente actualizado correctamente');
+          await this.resetSearch();
+        }
+      } else {
+        // Crear nuevo cliente
+        const newCliente = await this.clienteService.create(customerData);
+        if (newCliente) {
+          this.errorService.showSuccess('Cliente creado correctamente');
+          await this.resetSearch();
+        }
       }
-    } else {
-      // Agregar nuevo cliente
-      const newCustomer = {
-        id: this.generateCustomerId(),
-        ...customerData,
-        estado: 'activo'
-      };
-      this.clientes.unshift(newCustomer);
-      this.originalClientes.unshift(newCustomer);
+      this.closeCustomerDialog();
+    } catch (error) {
+      this.errorService.handle(error, this.editingCustomer ? 'Actualizando cliente' : 'Creando cliente');
+    } finally {
+      this.isLoading = false;
     }
-
-    // Actualizar datos y cerrar diálogo
-    this.updateData();
-    this.closeCustomerDialog();
   }
 
-  private generateCustomerId(): string {
-    const year = new Date().getFullYear();
-    const count = this.clientes.length + 1;
-    return `CLI-${year}-${count.toString().padStart(3, '0')}`;
+  // Add this method to handle customer addition
+  onAddCustomer() {
+    this.editingCustomer = null;
+    this.showCustomerDialog = true;
   }
 
-  private updateData(): void {
-    this.totalItems = this.clientes.length;
-    this.paginationConfig.totalItems = this.totalItems;
-    this.updateUniqueValues();
-    this.applySearch();
+  closeColumnMenu(): void {
+    this.showColumnMenu = false;
   }
+
+  applyColumnChanges(columns: TableColumn[]): void {
+    this.columns = columns;
+    this.columnOrder = columns.map(col => col.key);
+    this.defaultColumnOrder = [...this.columnOrder];
+    this.tempColumnState.clear();
+    this.showColumnMenu = false;
+  } 
+
+  cancelColumnChanges() {
+    this.columns = JSON.parse(JSON.stringify(this.defaultColumns));
+    this.columnOrder = this.columns.map(col => col.key);
+    this.showColumnMenu = false;
+  }
+
+  onColumnVisibilityChange(column: TableColumn): void {
+    if (column.visible) {
+      this.tempColumnState.delete(column.key);
+    } else {
+      this.tempColumnState.add(column.key);
+    }
+  }
+
+
+  onEditColumn(column: TableColumn): void {
+    const dialogRef = this.dialog.open(ColumnDialogComponent, {
+      width: '400px',
+      data: { column }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const updatedColumn = result as TableColumn;
+        const index = this.columns.findIndex(col => col.key === updatedColumn.key);
+        if (index !== -1) {
+          this.columns[index] = updatedColumn;
+          this.onColumnVisibilityChange(updatedColumn);
+        }
+      }
+    });
+  }
+
+
 }
+
+

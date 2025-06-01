@@ -14,6 +14,8 @@ import matchekbox from '@fortawesome/free-solid-svg-icons/faCheckSquare';
   styleUrl: './data-table.component.scss',
   templateUrl: './data-table.component.html'
 })
+
+
 export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   @Input() columns: TableColumn[] = [];
   @Input() data: TableData[] = [];
@@ -23,6 +25,7 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   @Input() pinnedItems: Set<string> = new Set();
   @Input() idField: string = 'id';
   @Input() activeFilters: boolean = false;
+  @Input() isCubicacion: boolean = false; // Nueva propiedad
 
   @Output() rowClick = new EventEmitter<TableData>();
   @Output() sortChange = new EventEmitter<SortConfig>();
@@ -32,6 +35,7 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   @Output() columnReorder = new EventEmitter<TableColumn[]>();
   @Output() columnVisibilityChange = new EventEmitter<TableColumn[]>();
   @Output() viewDetail = new EventEmitter<string>();
+  @Output() verProductos = new EventEmitter<string>();
 
   // Drag and drop variables
   draggedColumn: string | null = null;
@@ -110,6 +114,10 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   
   onRowClick(item: TableData): void {
     this.rowClick.emit(item);
+  }
+  
+  onVerProductos(id: string): void {
+    this.verProductos.emit(id);
   }
   
   // --- Column visibility menu logic ---

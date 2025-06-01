@@ -1,46 +1,39 @@
 <div class="page-header">
-  <app-page-title [title]="pageTitle"></app-page-title>  <app-add-button 
-    label="AGREGAR PRODUCTO" 
-    icon="fa-plus"
-    (buttonClick)="nuevoProducto()">
-  </app-add-button>
+  <app-page-title [title]="pageTitle"></app-page-title>
+  <div class="header-actions">
+    <button mat-icon-button color="primary" (click)="refreshData" matTooltip="Recargar datos">
+    </button>
+      <app-add-button label="AGREGAR PRODUCTO" icon="fa-plus" (click)="nuevoProducto()"></app-add-button>
+  </div>
 </div>
-<div class="card">
+
+<!-- Mostrar spinner de carga -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando cubicaciones..</p>
+</div>
+
+<!-- Mostrar error de conexión -->
+<div *ngIf="connectionError" class="error-container">
+  <mat-icon>error</mat-icon>
+  <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+  <button mat-raised-button color="primary" (click)="retryConnection()">Reintentar</button>
+</div>
+
+<!-- Mostrar datos cuando no está cargando y no hay error -->
+<div class="card" *ngIf="!isLoading && !connectionError">
   <div class="table-toolbar">
     <div class="table-actions">
-      <app-search-bar 
-        placeholder="Buscar productos..." 
-        (searchChange)="searchTerm = $event">
-      </app-search-bar>
+      <app-search-bar placeholder="Buscar cubicaciones..." (searchChange)="searchTerm = $event"></app-search-bar>
       <div class="table-view-options">
         <div class="tooltip-container">
-          <button class="btn-icon" 
-            (click)="showExcelModal = true"
-            aria-label="Importar desde Excel">
-            <i class="fas fa-file-import" aria-hidden="true"></i>
-            <span class="tooltip">Importar desde Excel</span>
-          </button>
-        </div>
-        <div class="tooltip-container">
-          <button class="btn-icon" 
-            aria-label="Exportar lista"
-            (click)="toggleExportDialog()">
-            <i class="fas fa-file-export" aria-hidden="true"></i>
-            <span class="tooltip">Exportar</span>
-          </button>
-        </div>
-        <div class="tooltip-container">
-          <button class="btn-icon" 
-            (click)="toggleFilterDialog()" 
-            aria-label="Abrir menú de filtros">
+          <button class="btn-icon" (click)="showFilterMenu = !showFilterMenu" aria-label="Abrir menú de filtros">
             <i class="fas fa-filter" aria-hidden="true"></i>
             <span class="tooltip">Filtrar datos</span>
           </button>
         </div>
         <div class="tooltip-container">
-          <button class="btn-icon" 
-            (click)="toggleColumnDialog()" 
-            aria-label="Seleccionar columnas visibles">
+          <button class="btn-icon" (click)="showColumnMenu = !showColumnMenu" aria-label="Seleccionar columnas visibles">
             <i class="fas fa-columns" aria-hidden="true"></i>
             <span class="tooltip">Personalizar columnas</span>
           </button>
@@ -51,193 +44,75 @@
   <div class="table-container">
     <app-data-table
       [columns]="columns"
-      [data]="productos"
+      [data]="productosFormateados"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
-      [idField]="'codigo'"
+      [idField]="'id'"
+      [isCubicacion]="true"
+      (rowClick)="onRowClick($event)"
+      (sortChange)="onSortChange($event)"
+      (editItem)="editar($event)"
+      (deleteItem)="eliminar($event)"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
-      summary="Listado de productos de cubicación">
+      summary="Listado de cubicaciones con detalles">
     </app-data-table>
-  </div>  <app-table-pagination
+  </div>
+  <app-table-pagination
     [currentPage]="currentPage"
     [totalItems]="totalItems"
     [itemsPerPage]="itemsPerPage"
-    [pageSizeOptions]="[5, 10, 20, 50]"
-    (pageChange)="onPageChange($event)"
-    (pageSizeChange)="onPageSizeChange($event)">
+    [pageSizeOptions]="[5, 10, 20, 50]">
   </app-table-pagination>
   <app-filter-dialog
     [show]="showFilterMenu"
     [columns]="columns"
     [filters]="filters"
-    [uniqueValues]="uniqueValues ?? {}"
-    (close)="showFilterMenu = false"
+    [uniqueValues]="uniqueValues"
+    (close)="closeFilterMenu()"
     (apply)="applyFilters($event)"
     (clear)="clearFilters()">
-  </app-filter-dialog>
-  <app-column-dialog
+  </app-filter-dialog>  <app-column-dialog
     [show]="showColumnMenu"
     [columns]="columns"
     [defaultColumns]="defaultColumns"
-    (close)="showColumnMenu = false"
+    (close)="closeColumnMenu()"
     (apply)="applyColumnChanges($event)"
     (reset)="cancelColumnChanges()">
   </app-column-dialog>
-</div>
 
-<!-- Modal para importar desde Excel -->
-<div *ngIf="showExcelModal" class="modal-overlay" (click)="showExcelModal = false">
-  <div class="modal" (click)="$event.stopPropagation()" style="display: flex; flex-direction: column;">    
-    <div class="modal-header">
-      <div class="modal-title-container">
-        <img src="/icon-excel.svg" alt="Excel" class="excel-icon">
-        <h3>Importar Excel</h3>
-      </div>
-      <span class="close-btn-wrapper">
-        <button class="close-btn custom-close" type="button" (click)="showExcelModal = false" aria-label="Cerrar diálogo de importación">
-          <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cancelar</span>
-        </button>
-      </span>
+ <ng-template #loading>
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando cubicacion..</p>
     </div>
-      <!-- Navegación de pestañas -->
-    <div class="modal-tabs">
-      <button 
-        class="tab-button" 
-        [class.active]="activeTab === 'upload'"
-        (click)="activeTab = 'upload'">
-        <i class="fas fa-upload"></i>
-        Subir archivo
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="activeTab === 'preview'"
-        (click)="activeTab = 'preview'"
-        [disabled]="!selectedFile">
-        <i class="fas fa-table"></i>
-        Vista previa
-      </button>
-    </div>    <!-- Contenido de las pestañas -->
-    <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 0;">
-      <!-- Pestaña de Upload -->
-      <div class="upload-section" *ngIf="activeTab === 'upload'" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
-        <div class="upload-area" 
-             (click)="fileInput.click()"
-             (dragover)="onFileDragOver($event)"
-             (dragleave)="onFileDragLeave($event)"
-             (drop)="onFileDropped($event)"
-             style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 30rem;">
-          <img src="/logo-excel.svg" alt="Excel" class="excel-logo" style="width: 6rem; height: 6rem; margin-bottom: 2rem;">
-          <h4>Selecciona tu archivo de Excel</h4>
-          <p>Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
-          <input
-            #fileInput
-            type="file"
-            [hidden]="true"
-            (change)="onFileSelected($event)"
-            accept=".xlsx,.xls">
-          <div class="file-info" *ngIf="selectedFileName" style="margin-top: 2rem;">
-            <i class="fas fa-file-excel"></i>
-            <span>{{ selectedFileName }}</span>
-            <button class="remove-file" (click)="resetExcelModal(); $event.stopPropagation()">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-      </div>      <!-- Pestaña de Vista Previa -->
-      <div *ngIf="activeTab === 'preview'" style="height: 100%; flex: 1; overflow: auto; padding: 0;">
-        <div class="preview-table-container" *ngIf="excelHeaders.length > 0">
-          <table class="preview-table" style="min-width: 100%;">
-            <thead>
-              <!-- Fila de letras de columnas (A, B, C, etc.) -->
-              <tr>
-                <th class="row-header"></th>
-                <th *ngFor="let header of excelHeaders; let j = index">
-                  {{ getLetter(j) }}
-                </th>
-              </tr>
-              <!-- Fila de nombres de columnas del Excel -->
-              <tr>
-                <th class="row-header">#</th>
-                <th *ngFor="let header of excelHeaders">{{ header }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of excelPreviewData; let i = index">
-                <td class="row-header">{{ i + 1 }}</td>
-                <td *ngFor="let cell of row" [attr.data-type]="getCellType(cell)">
-                  {{ formatCell(cell) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="loading-preview" *ngIf="isLoadingPreview">
-          <div class="spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <span>Cargando datos del archivo...</span>
-          </div>
-        </div>
-      </div>
-    </div>
+  </ng-template>
 
-    <!-- Botones de acción -->
-    <div class="modal-footer">
-      <button 
-        class="btn btn-secondary" 
-        (click)="showExcelModal = false">
-        Cancelar
-      </button>
-      <button 
-        class="btn btn-primary"
-        [disabled]="!selectedFile"
-        (click)="activeTab === 'preview' ? importExcel() : nextStep()">
-        {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
-      </button>
-    </div>
+  <div *ngIf="connectionError" class="error-container">
+    <mat-icon>error</mat-icon>
+    <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+    <button mat-raised-button color="primary" (click)="retryConnection()">Reintentar</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando cubicaciones...</p>
   </div>
 </div>
 
-<!-- Modal de exportación de lista -->
-<div *ngIf="showExportModal" class="modal-overlay" (click)="toggleExportDialog()">
-  <div class="modal" (click)="$event.stopPropagation()" style="display: flex; flex-direction: column;">
-    <div class="modal-header">
-      <div class="modal-title-container">
-        <img src="/icon-pdf.png" alt="PDF" class="pdf-icon">
-        <h3>Exportar PDF</h3>
-      </div>
-      <span class="close-btn-wrapper">
-        <button class="close-btn custom-close" type="button" (click)="toggleExportDialog()" aria-label="Cerrar diálogo de exportación">
-          <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cancelar</span>
-        </button>
-      </span>
-    </div>    <div class="modal-body" style="flex:1; padding:2rem; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-      <div class="pdf-preview-info">
-        <i class="fas fa-file-pdf" style="font-size: 4rem; color: #d32f2f; margin-bottom: 1rem;"></i>
-        <h4 style="margin-bottom: 1rem;">Vista previa del PDF</h4>
-        <p style="text-align: center; color: #666; margin-bottom: 2rem;">
-          El PDF ha sido generado correctamente y está listo para descargar.
-          <br>
-          Contiene {{ productos.length }} productos en total.
-        </p>
-        <div class="pdf-actions">
-          <button class="btn btn-outline" (click)="openPdfPreview()" *ngIf="exportPreviewUrl">
-            <i class="fas fa-eye"></i>
-            Abrir vista previa
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="toggleExportDialog()">Cerrar</button>
-      <button class="btn btn-primary" (click)="downloadPdf()">
-        <i class="fas fa-download"></i>
-        Descargar PDF
-      </button>
-    </div>
+<!-- En takeoff-list.component.html, dentro del ngSwitchCase="'actions'" -->
+<ng-template #actionsTemplate let-row="row">
+  <div class="actions-column">
+    <button mat-icon-button (click)="$event.stopPropagation(); togglePin(row.id)" [matTooltip]="isPinned(row.id) ? 'Desfijar' : 'Fijar'">
+      <mat-icon>{{ isPinned(row.id) ? 'star' : 'star_border' }}</mat-icon>
+    </button>   
+    
+    <button mat-icon-button (click)="$event.stopPropagation(); editar(row.id)" title="Editar">
+      <mat-icon>edit</mat-icon>
+    </button>
+    
+    <button mat-icon-button (click)="$event.stopPropagation(); eliminar(row.id)" title="Eliminar">
+      <mat-icon>delete</mat-icon>
+    </button>
   </div>
-</div>
-
-
+</ng-template>

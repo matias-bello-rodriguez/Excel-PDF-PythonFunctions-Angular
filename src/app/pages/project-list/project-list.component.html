@@ -1,8 +1,22 @@
 <div class="page-header">
   <app-page-title [title]="pageTitle"></app-page-title>
-  <app-add-button label="AGREGAR PROYECTO" icon="fa-plus" (buttonClick)="nuevoProyecto()"></app-add-button>
+  <app-add-button label="AGREGAR PROYECTO" icon="fa-plus" (click)="nuevoProyecto()"></app-add-button>
 </div>
-<div class="card">
+
+<!-- Mostrar spinner de carga -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando proyectos...</p>
+</div>
+
+<!-- Mostrar error de conexión -->
+<div *ngIf="connectionError" class="error-container">
+  <mat-icon>error</mat-icon>
+  <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+</div>
+
+<!-- Mostrar datos cuando no está cargando y no hay error -->
+<div class="card" *ngIf="!isLoading && !connectionError">
   <div class="table-toolbar">
     <div class="table-actions">
       <app-search-bar placeholder="Buscar proyectos..." (searchChange)="searchTerm = $event"></app-search-bar>
@@ -28,14 +42,13 @@
       [data]="proyectos"
       [activeFilters]="hasActiveFilters"
       [pinnedItems]="pinnedItems"
-      [idField]="'id'"
-      (rowClick)="onRowClick($event)"
+      [idField]="'id'"      (rowClick)="onRowClick($event)"
       (sortChange)="onSortChange($event)"
-      (editItem)="editar($event)"
+      (editItem)="onEditProject($event)"
       (deleteItem)="eliminar($event)"
       (pinItem)="togglePin($event)"
       (columnReorder)="onColumnReorder($event)"
-      summary="Listado de proyectos con detalles">
+      summary="Listado de clientes con detalles">
     </app-data-table>
   </div>
   <app-table-pagination
@@ -52,8 +65,7 @@
     (close)="closeFilterMenu()"
     (apply)="applyFilters($event)"
     (clear)="clearFilters()">
-  </app-filter-dialog>
-  <app-column-dialog
+  </app-filter-dialog>  <app-column-dialog
     [show]="showColumnMenu"
     [columns]="columns"
     [defaultColumns]="defaultColumns"
@@ -61,4 +73,22 @@
     (apply)="applyColumnChanges($event)"
     (reset)="cancelColumnChanges()">
   </app-column-dialog>
+
+ <ng-template #loading>
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando clientes...</p>
+    </div>
+  </ng-template>
+
+  <div *ngIf="connectionError" class="error-container">
+    <mat-icon>error</mat-icon>  
+    <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+    <button mat-raised-button color="primary" (click)="retryConnection()">Reintentar</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando clientes...</p>
+  </div>
 </div>

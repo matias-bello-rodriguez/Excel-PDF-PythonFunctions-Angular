@@ -2,7 +2,22 @@
   <app-page-title [title]="pageTitle"></app-page-title>
   <app-add-button label="AGREGAR CLIENTE" icon="fa-plus" (click)="onAddCustomer()"></app-add-button>
 </div>
-<div class="card">
+
+<!-- Mostrar spinner de carga -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando clientes...</p>
+</div>
+
+<!-- Mostrar error de conexión -->
+<div *ngIf="connectionError" class="error-container">
+  <mat-icon>error</mat-icon>
+  <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+  <button mat-raised-button color="primary" (click)="retryConnection()">Reintentar</button>
+</div>
+
+<!-- Mostrar datos cuando no está cargando y no hay error -->
+<div class="card" *ngIf="!isLoading && !connectionError">
   <div class="table-toolbar">
     <div class="table-actions">
       <app-search-bar placeholder="Buscar clientes..." (searchChange)="searchTerm = $event"></app-search-bar>
@@ -67,4 +82,22 @@
     (close)="closeCustomerDialog()"
     (save)="saveCustomer($event)">
   </app-customer-dialog>
+
+  <ng-template #loading>
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando clientes...</p>
+    </div>
+  </ng-template>
+
+  <div *ngIf="connectionError" class="error-container">
+    <mat-icon>error</mat-icon>
+    <p>Error de conexión con la base de datos. Intente nuevamente.</p>
+    <button mat-raised-button color="primary" (click)="retryConnection()">Reintentar</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando clientes...</p>
+  </div>
 </div>
