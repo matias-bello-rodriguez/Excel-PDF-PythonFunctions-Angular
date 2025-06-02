@@ -27,7 +27,7 @@ import { CacheService } from '../../services/cache.service';
 import { Subscription } from 'rxjs';
 import { NavigationService } from '../../services/navigation.service';
 import { ProyectoService } from '../../services/proyecto.service';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { OfertaPdfComponent } from '../../components/oferta-pdf/oferta-pdf.component';
 
 // Definición de enumeraciones
 export enum GlassType {
@@ -61,6 +61,7 @@ export enum ProductType {
     TablePaginationComponent,
     FilterDialogComponent,
     ColumnDialogComponent,
+    OfertaPdfComponent, // Agregar el componente de oferta
   ],
   providers: [NavigationService],
   templateUrl: './product-list.component.html',
@@ -471,6 +472,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
   activeTab: 'upload' | 'preview' = 'upload';
   exportPreviewUrl: string = '';
   safeExportUrl: SafeResourceUrl = '';
+
+  // Variables para el modal de oferta
+  showOfertaModal = false;
+
   constructor(
     public productoService: ProductoService,
     public cubicacionService: CubicacionService,
@@ -659,6 +664,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
     if (this.refreshSubscription) {
       this.refreshSubscription.unsubscribe();
     }
+  }
+
+
+  onCloseModal() {
+    this.showProductoDialog = false;
   }
 
   // Método para cargar datos, similar al ngOnInit pero reutilizable
@@ -939,6 +949,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   toggleColumnDialog(): void {
     this.showColumnMenu = !this.showColumnMenu;
+  }
+
+  toggleOfertaModal() {
+    this.showOfertaModal = true;
   }
 
   // Método para inicializar filtros con la propiedad 'label'
@@ -1460,14 +1474,21 @@ handleImageError(event: Event): void {
     if (!this.showExportModal) {
       if (isPlatformBrowser(this.platformId)) {
         try {
+          // Generar el nombre del archivo
+          const fileName = this.cubicacionInfo 
+            ? `Listado_Productos_${this.cubicacionInfo.codigo}_${new Date().getTime()}`
+            : `Listado_Productos_${new Date().getTime()}`;
+            
+          // Generar PDF y obtener la URL
           const docDefinition = this.getDocDefinition();
-          const dataUrl = await this.pdfService.generatePdfDataUrl(docDefinition);
-          this.exportPreviewUrl = dataUrl;
-          this.safeExportUrl = this.sanitizer.bypassSecurityTrustResourceUrl(dataUrl);
-          this.showExportModal = true;
+          
+
         } catch (error) {
-          console.error('Error al generar PDF:', error);
+          console.error('Error al generar el PDF:', error);
+          this.errorService.handle(error, 'Generando vista previa de PDF');
         }
+      } else {
+        console.warn('La exportación no está disponible en el servidor.');
       }
     } else {
       this.showExportModal = false;
@@ -1482,10 +1503,27 @@ handleImageError(event: Event): void {
   async downloadPdf(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       try {
-        const docDefinition = this.getDocDefinition();
-        await this.pdfService.downloadPdf(docDefinition, 'listado-productos.pdf');
+        // Obtener el elemento HTML que contiene la tabla de productos
+        const element = document.querySelector('.productos-table');
+        if (!element) {
+          throw new Error('No se encontró el contenido para generar el PDF');
+        }
+
+        // Generar el nombre del archivo
+        const fileName = this.cubicacionInfo 
+          ? `Listado_Productos_${this.cubicacionInfo.codigo}_${new Date().getTime()}`
+          : `Listado_Productos_${new Date().getTime()}`;
+
+        // Llamar al método actualizado del servicio PDF
+        const success = await this.pdfService.generatePdf(element as HTMLElement, fileName);
+        
+        if (!success) {
+          throw new Error('Error al generar el PDF');
+        }
+
       } catch (error) {
         console.error('Error al descargar PDF:', error);
+        this.errorService.handle(error, 'Generando PDF');
       }
     }
   }
@@ -1502,14 +1540,13 @@ handleImageError(event: Event): void {
   /**
    * Obtener la definición del documento PDF
    */
-  private getDocDefinition(): TDocumentDefinitions {
+  private getDocDefinition(): any {
     const currentDate = new Date().toLocaleDateString('es-ES');
     
     return {
       pageSize: 'A4',
       pageMargins: [40, 60, 40, 60],
       content: [
-        // Encabezado con información de la empresa
         {
           columns: [
             {
@@ -1517,22 +1554,18 @@ handleImageError(event: Event): void {
               style: 'companyName'
             },
             {
-              text: `Fecha: ${currentDate}\nPágina: `,
+              text: `Fecha: ${currentDate}`,
               style: 'headerRight',
               alignment: 'right'
             }
           ],
           margin: [0, 0, 0, 20]
         },
-        
-        // Título del documento
         {
           text: 'LISTA DE PRODUCTOS - CUBICACIÓN',
           style: 'documentTitle',
           margin: [0, 0, 0, 20]
         },
-        
-        // Información del resumen
         {
           columns: [
             {
@@ -1547,15 +1580,12 @@ handleImageError(event: Event): void {
           ],
           margin: [0, 0, 0, 15]
         },
-        
-        // Tabla principal
         {
           style: 'tableStyle',
           table: {
             headerRows: 1,
             widths: [50, 80, 60, 40, 40, 40, 80, 60, 60, 60],
             body: [
-              // Encabezados de tabla
               [
                 { text: 'CÓDIGO', style: 'tableHeader' },
                 { text: 'UBICACIÓN', style: 'tableHeader' },
@@ -1568,9 +1598,7 @@ handleImageError(event: Event): void {
                 { text: 'PRECIO UNIT.', style: 'tableHeader' },
                 { text: 'TOTAL', style: 'tableHeader' }
               ],
-              
-              // Filas de datos
-              ...this.productos.map((producto) => [
+              ...this.productos.map(producto => [
                 { text: producto.codigo || '', style: 'tableCell' },
                 { text: producto.ubicacion || '', style: 'tableCell' },
                 { text: producto.tipo_producto || '', style: 'tableCell' },
@@ -1585,64 +1613,22 @@ handleImageError(event: Event): void {
             ]
           },
           layout: {
-            hLineWidth: function(i: number, node: any) {
+            hLineWidth: (i: number, node: any) => {
               return (i === 0 || i === 1 || i === node.table.body.length) ? 2 : 1;
             },
-            vLineWidth: function(i: number, node: any) {
+            vLineWidth: (i: number, node: any) => {
               return (i === 0 || i === node.table.widths.length) ? 2 : 1;
             },
-            hLineColor: function(i: number, node: any) {
+            hLineColor: (i: number, node: any) => {
               return (i === 0 || i === 1 || i === node.table.body.length) ? '#8B1C1C' : '#cccccc';
             },
-            vLineColor: function(i: number, node: any) {
+            vLineColor: (i: number, node: any) => {
               return (i === 0 || i === node.table.widths.length) ? '#8B1C1C' : '#cccccc';
             },
-            fillColor: function(i: number, node: any) {
+            fillColor: (i: number, node: any) => {
               return (i === 0) ? '#f8f9fa' : (i % 2 === 0) ? '#ffffff' : '#f8f9fa';
             }
           }
-        },
-        
-        // Separador
-        {
-          canvas: [
-            {
-              type: 'line',
-              x1: 0, y1: 10,
-              x2: 515, y2: 10,
-              lineWidth: 1,
-              lineColor: '#8B1C1C'
-            }
-          ],
-          margin: [0, 20, 0, 10]
-        },
-        
-        // Resumen final
-        {
-          columns: [
-            {
-              text: 'RESUMEN DEL PROYECTO',
-              style: 'summaryTitle'
-            },
-            {
-              table: {
-                widths: [120, 80],
-                body: [
-                  [
-                    { text: 'Superficie Total:', style: 'summaryLabel' },
-                    { text: `${this.productos.reduce((sum, p) => sum + (p.superficie_total || 0), 0).toFixed(2)} m²`, style: 'summaryValue' }
-                  ],
-                  [
-                    { text: 'Total General:', style: 'summaryLabelBold' },
-                    { text: `$${this.calculateTotal().toFixed(2)}`, style: 'summaryValueBold' }
-                  ]
-                ]
-              },
-              layout: 'noBorders',
-              alignment: 'right'
-            }
-          ],
-          margin: [0, 10, 0, 0]
         }
       ],
       styles: {
@@ -2157,8 +2143,8 @@ handleImageError(event: Event): void {
       'MANUFACTURING HEIGHT': 'ALTO MANUFACTURA',
       'DESIGN 1': 'DISEÑO 1',
       'DESIGN 2': 'DISEÑO 2',
-      'COMMENT 1': 'COMENTARIO 1',
-      'COMMENT 2': 'COMENTARIO 2',
+      'COMMENT  1': 'COMENTARIO 1',
+      'COMMENT  2': 'COMENTARIO 2',
       'Material': 'Material',
       'Profile section': 'Sección perfil',
       'Body color': 'Color estructura',

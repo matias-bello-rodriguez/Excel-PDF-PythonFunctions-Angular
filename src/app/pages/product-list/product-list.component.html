@@ -53,6 +53,14 @@
             <span class="tooltip">Exportar</span>
           </button>
         </div>
+        <div class="tooltip-container">
+          <button class="btn-icon" 
+            aria-label="Generar Oferta"
+            (click)="toggleOfertaModal()">
+            <i class="fas fa-file-contract" aria-hidden="true"></i>
+            <span class="tooltip">Generar Oferta</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -247,4 +255,45 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- Modal para generar oferta PDF -->
+<div *ngIf="showOfertaModal" class="modal-overlay" (click)="showOfertaModal = false">
+  <div class="modal" (click)="$event.stopPropagation()" style="display: flex; flex-direction: column; max-width: 800px;">    
+    <div class="modal-header">
+      <div class="modal-title-container">
+        <img src="/icon-pdf.png" alt="PDF" class="pdf-icon">
+        <h3>Generar Oferta</h3>
+      </div>
+      <span class="close-btn-wrapper">
+        <button class="close-btn custom-close" type="button" (click)="showOfertaModal = false" aria-label="Cerrar diálogo de oferta">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          <span>Cerrar</span>
+        </button>
+      </span>
+    </div>
+    
+    <div class="modal-body" style="flex: 1; overflow: auto; padding: 15px;">
+      <app-oferta-pdf 
+        [productos]="productos" 
+        [cubicacion]="cubicacionInfo"
+        [cliente]="cubicacionInfo">
+      </app-oferta-pdf>
+    </div>
+  </div>
+</div>
+
+<div id="contenido-pdf">
+  <!-- Tu contenido aquí -->
+</div>
+
+<div class="oferta-container">
+  <div class="modal-header">
+    <h2>Vista Previa de Oferta</h2>
+    <button class="close-btn" (click)="onCloseModal()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <!-- ...existing content... -->
 </div>

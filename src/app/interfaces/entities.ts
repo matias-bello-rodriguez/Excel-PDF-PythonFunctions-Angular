@@ -1,3 +1,4 @@
+import { C } from 'node_modules/@angular/cdk/portal-directives.d-BoG39gYN';
 import {
   FileType,
   EntityType,
@@ -162,6 +163,9 @@ export interface Producto {
   // Relaciones
   Cubicacion?: {
     codigo: string;
+    nombre?: string;
+    Proyecto?:Cubicacion['Proyecto'] | null;
+    
   };
 }
 
