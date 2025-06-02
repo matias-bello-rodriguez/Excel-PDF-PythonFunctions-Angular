@@ -1615,3 +1615,38 @@ button.mat-icon-button mat-icon {
   }
 }
 
+.product-thumbnail {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 20px; // Reducido significativamente
+  max-width: 24px; // Añadido un ancho máximo
+  height: 20px; // Altura fija más pequeña
+  overflow: hidden; // Evita que el contenido se desborde
+}
+
+.product-thumbnail {
+  width: 20px; // Reducido para ocupar menos espacio
+  height: 20px; // Reducido para ocupar menos espacio
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: none;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: scale(3);
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+}
+

@@ -2,7 +2,7 @@
 export interface TableColumn {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'actions' | 'boolean' | 'currency' | 'enum';
+  type: 'text' | 'date' | 'number' | 'actions' | 'boolean' | 'currency' | 'enum' | 'image' | 'link'; // Eliminar 'currency'
   sortable?: boolean;
   draggable?: boolean;
   visible?: boolean;

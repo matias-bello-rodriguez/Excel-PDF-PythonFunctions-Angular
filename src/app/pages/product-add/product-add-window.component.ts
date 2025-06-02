@@ -13,6 +13,15 @@ import { TextareaInputComponent } from '../../components/forms/textarea-input/te
 import { SelectInputComponent } from '../../components/forms/select-input/select-input.component';
 import { FormButtonsComponent } from '../../components/forms/form-buttons/form-buttons.component';
 
+// Importar servicios necesarios
+import { ProductoService } from '../../services/producto.service';
+import { CubicacionService } from '../../services/cubicacion.service';
+import { ErrorService } from '../../services/error.service';
+
+// Importar enumeraciones y tipos
+import { ProductType, GlassType } from '../../pages/product-list/product-list.component';
+import { Producto } from '../../interfaces/entities';
+
 interface Profile {
   category: string;
   material: string;
@@ -73,6 +82,12 @@ export class ProductAddWindowComponent implements OnInit {
   profiles: Profile[] = [];
   glassConfigurations: GlassConfiguration[] = [];
 
+  // Propiedades para edición
+  isEditing = false;
+  productId: string | null = null;
+  cubicacionId: string | null = null;
+  currentProduct: Producto | null = null;
+
   // Opciones para los selectores
   openingTypeOptions = [
     { value: 'corrediza', label: 'Corrediza' },
@@ -109,13 +124,39 @@ export class ProductAddWindowComponent implements OnInit {
     { value: 'templado', label: 'Templado' }
   ];
 
+  // Agregar enumeraciones para usar en el componente
+  productTypes = ProductType;
+  glassTypes = GlassType;
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private productoService: ProductoService,
+    private cubicacionService: CubicacionService,
+    private errorService: ErrorService
   ) {
     this.productForm = this.fb.group({});
-  }  ngOnInit(): void {
+  }
+
+  ngOnInit(): void {
+    // Verificar si estamos en modo edición de producto existente
+    this.route.params.subscribe(params => {
+      if (params['id']) {
+        this.isEditing = true;
+        this.productId = params['id'];
+        if (this.productId) {
+          this.loadProductData(this.productId);
+        }
+      } else {
+        // Verificar si tenemos un ID de cubicación desde los parámetros
+        this.cubicacionId = params['cubicacionId'] || null;
+        if (this.cubicacionId) {
+          this.loadCubicacionData(this.cubicacionId);
+        }
+      }
+    });
+    
     // Verificar si estamos en modo edición de módulo
     this.route.queryParams.subscribe(params => {
       this.isModuleEditing = params['isModule'] === 'true';
@@ -137,9 +178,81 @@ export class ProductAddWindowComponent implements OnInit {
       }
     });
 
-    // Agregar una fila inicial de perfil y vidrio
-    this.addProfileRow();
-    this.addGlassConfiguration();
+    // Agregar una fila inicial de perfil y vidrio si no estamos editando
+    if (!this.isEditing) {
+      this.addProfileRow();
+      this.addGlassConfiguration();
+    }
+  }
+  // Método para cargar datos de un producto existente
+  private async loadProductData(productId: string): Promise<void> {
+    try {
+      this.currentProduct = await this.productoService.getById(productId);
+      
+      if (!this.currentProduct) {
+        this.errorMessage = 'No se encontró el producto solicitado.';
+        return;
+      }
+      
+      // Inicializar el formulario con los datos del producto
+      this.initializeForm();
+      
+      // Actualizar el formulario con los datos existentes
+      this.productForm.patchValue({
+        windowCode: this.currentProduct.codigo || '',
+        windowQuantity: this.currentProduct.cantidad || 1,
+        designWidth: this.currentProduct.ancho_diseno || 0,
+        designHeight: this.currentProduct.alto_diseno || 0,
+        manufacturingWidth: this.currentProduct.ancho_manufactura || 0,
+        manufacturingHeight: this.currentProduct.alto_manufactura || 0,
+        apertura1: this.currentProduct.apertura_1 || '',
+        apertura2: this.currentProduct.apertura_2 || '',
+        apertura3: this.currentProduct.apertura_3 || '',
+        cerradura1: this.currentProduct.cerradura_1 || '',
+        cerradura2: this.currentProduct.cerradura_2 || '',
+        cerradura3: this.currentProduct.cerradura_3 || '',
+        description: this.currentProduct.descripcion || ''
+      });
+      
+      // Cargar la imagen si existe
+      if (this.currentProduct.imagen) {
+        this.uploadedImages = [{
+          url: this.currentProduct.imagen,
+          name: 'Imagen actual',
+          file: null as any // No tenemos el File original
+        }];
+      }
+      
+      // Recalcular superficie
+      this.calculateSurface();
+      
+      
+    
+      
+    } catch (error) {
+      this.errorService.handle(error, 'Cargando datos del producto');
+      this.errorMessage = 'Error al cargar los datos del producto. Por favor, intente nuevamente.';
+    }
+  }
+
+  // Método para cargar datos de una cubicación
+  private async loadCubicacionData(cubicacionId: string): Promise<void> {
+    try {
+      const cubicacion = await this.cubicacionService.getById(cubicacionId);
+      
+      if (cubicacion) {
+        // Actualizar el formulario con información de la cubicación
+        this.initializeForm();
+        
+        if (cubicacion.codigo) {
+          this.productForm.patchValue({
+            houseCode: cubicacion.codigo
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar datos de cubicación:', error);
+    }
   }
 
   // Método para generar la letra del módulo (A, B, C, D, etc.)
@@ -373,6 +486,10 @@ export class ProductAddWindowComponent implements OnInit {
   // Métodos de acción del formulario
   async onSubmit(): Promise<void> {
     if (this.productForm.invalid) {
+      // Marcar todos los campos como tocados para mostrar errores
+      Object.keys(this.productForm.controls).forEach(key => {
+        this.productForm.get(key)?.markAsTouched();
+      });
       return;
     }
 
@@ -381,37 +498,144 @@ export class ProductAddWindowComponent implements OnInit {
     this.errorMessage = '';
 
     try {
-      // Crear objeto con todos los datos
-      const formData = {
-        ...this.productForm.value,
-        profiles: this.profiles,
-        glassConfigurations: this.glassConfigurations,
-        images: this.uploadedImages
+      // Recopilar datos del formulario
+      const formValue = this.productForm.getRawValue();
+      
+      // Verificar si tenemos un cubicacionId
+      if (!this.cubicacionId) {
+        // Si no hay cubicación, mostrar error y detener el proceso
+        this.errorMessage = 'No se puede crear un producto sin una cubicación asociada. Por favor, seleccione una cubicación primero.';
+        this.isSubmitting = false;
+        return;
+      }
+      
+      // Obtener tipo de vidrio desde el primer elemento de glassConfigurations
+      let glassType: GlassType = GlassType.TRANSPARENTE; // Valor por defecto
+      if (this.glassConfigurations.length > 0 && this.glassConfigurations[0].type) {
+        // Intentar mapear el tipo de vidrio a la enumeración
+        switch(this.glassConfigurations[0].type) {
+          case 'opaco':
+            glassType = GlassType.OPACO;
+            break;
+          case 'mixto':
+            glassType = GlassType.MIXTO;
+            break;
+          default:
+            glassType = GlassType.TRANSPARENTE;
+        }
+      }
+      
+      // En lugar de guardar los detalles de perfiles y vidrios como columnas separadas,
+      // los guardaremos como parte de la descripción
+      const perfilesJson = JSON.stringify(this.profiles);
+      const vidriosJson = JSON.stringify(this.glassConfigurations);
+      
+      // Crear la descripción extendida que incluye la información de perfiles y vidrios
+      const descripcionExtendida = formValue.description ? 
+        `${formValue.description}\n\n===DATOS TÉCNICOS===\n` : 
+        "===DATOS TÉCNICOS===\n";
+      
+      // Crear objeto de producto para guardar
+      const productoData: Partial<Producto> = {
+        codigo: formValue.windowCode,
+        nombre: `Ventana ${formValue.windowCode}`,
+        tipo_producto: ProductType.VENTANA_SIMPLE as any,
+        categoria: 'ventanas',
+        ubicacion: '',
+        cantidad: formValue.windowQuantity,
+        ancho_diseno: formValue.designWidth,
+        alto_diseno: formValue.designHeight,
+        superficie_unitaria: parseFloat(formValue.totalSurface || '0'),
+        superficie_total: parseFloat(formValue.totalSurface || '0') * formValue.windowQuantity,
+        ancho_manufactura: formValue.manufacturingWidth,
+        alto_manufactura: formValue.manufacturingHeight,
+        material: this.profiles.length > 0 ? this.profiles[0].material : '',
+        seccion_perfil: this.profiles.length > 0 ? `${this.profiles[0].width}x${this.profiles[0].height}` : '',
+        color_estructura: this.profiles.length > 0 ? this.profiles[0].color : '',
+        espesor_vidrio: this.glassConfigurations.length > 0 ? this.glassConfigurations[0].width.toString() : '',
+        proteccion_vidrio: this.glassConfigurations.length > 0 ? this.glassConfigurations[0].protection || '' : '',
+        color_pelicula: this.glassConfigurations.length > 0 ? this.glassConfigurations[0].color || '' : '',
+        tipo_vidrio: glassType as any,
+        tipo_ventana: 'simple',
+        tipo_vidrio_detalle: '',
+        apertura_1: formValue.apertura1,
+        apertura_2: formValue.apertura2,
+        apertura_3: formValue.apertura3,
+        cerradura_1: formValue.cerradura1,
+        cerradura_2: formValue.cerradura2,
+        cerradura_3: formValue.cerradura3,
+        precio_unitario: 0,
+        precio_total: 0,
+        factor_instalacion: 1,
+        descripcion: `${descripcionExtendida}Perfiles: ${perfilesJson}\nVidrios: ${vidriosJson}`,
+        observaciones: `Configuración perfiles: ${perfilesJson.substring(0, 200)}...\nConfiguración vidrios: ${vidriosJson.substring(0, 200)}...`,
+        activo: true,
+        cubicacion_id: this.cubicacionId, // Siempre incluir cubicacion_id y asegurarse de que tiene valor
+        imagen: null
       };
 
-      // TODO: Implementar lógica de guardado
-      console.log('Datos a guardar:', formData);
+      // Guardar o actualizar el producto según el modo
+      let resultado: Producto | null;
       
-      this.successMessage = 'Producto guardado exitosamente';
+      if (this.isEditing && this.productId) {
+        // Modo actualización
+        // En caso de edición, obtener cubicacion_id del producto original
+        // si no tenemos uno ya establecido
+        if (!this.cubicacionId && this.currentProduct && this.currentProduct.cubicacion_id) {
+          productoData.cubicacion_id = this.currentProduct.cubicacion_id;
+        }
+        
+        resultado = await this.productoService.update(this.productId, productoData);
+        
+        // Si hay una nueva imagen, subirla
+        if (this.uploadedImages.length > 0 && this.uploadedImages[0].file) {
+          await this.productoService.uploadProductImage(this.productId, this.uploadedImages[0].file);
+        }
+        
+        this.successMessage = 'Producto actualizado exitosamente';
+      } else {
+        // Modo creación
+        resultado = await this.productoService.create(productoData);
+        
+        if (resultado && resultado.id && this.uploadedImages.length > 0 && this.uploadedImages[0].file) {
+          await this.productoService.uploadProductImage(resultado.id, this.uploadedImages[0].file);
+        }
+        
+        this.successMessage = 'Producto creado exitosamente';
+      }
+
+      if (!resultado) {
+        throw new Error('No se pudo guardar el producto');
+      }
       
       if (this.isModuleEditing) {
         // Actualizar el estado del módulo en sessionStorage
         this.updateModuleStateInStorage();
         
         // Volver a la vista de ventana múltiple
-        this.router.navigate(['/productos/agregar-producto-multiple']);
+        setTimeout(() => {
+          this.router.navigate(['/productos/agregar-producto-multiple']);
+        }, 1500);
       } else {
-        // Limpiar el formulario para un nuevo producto
-        this.productForm.reset();
-        this.profiles = [];
-        this.glassConfigurations = [];
-        this.uploadedImages = [];
-        this.addProfileRow();
-        this.addGlassConfiguration();
+        // Volver a la lista de productos o a la cubicación específica
+        setTimeout(() => {
+          if (this.cubicacionId) {
+            this.router.navigate(['/cubicaciones', this.cubicacionId, 'productos']);
+          } else {
+            this.router.navigate(['/productos']);
+          }
+        }, 1500);
       }
     } catch (error) {
-      console.error('Error al guardar:', error);
-      this.errorMessage = 'Error al guardar el producto. Por favor, intenta nuevamente.';
+      console.error('Error al guardar producto:', error);
+      
+      // Manejar específicamente el error de violación de not-null constraint
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23502') {
+        this.errorMessage = 'No se puede crear un producto sin una cubicación asociada. Por favor, seleccione una cubicación válida.';
+      } else {
+        this.errorService.handle(error, 'Guardando producto');
+        this.errorMessage = 'Error al guardar el producto. Por favor, intenta nuevamente.';
+      }
     } finally {
       this.isSubmitting = false;
     }

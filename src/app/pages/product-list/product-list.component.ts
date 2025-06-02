@@ -341,6 +341,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
       draggable: false,
       visible: true,
     },
+    {
+      key: 'imagen',
+      label: 'Img',
+      type: 'image',  // Asegúrate de que este valor sea 'image'
+      sortable: false,
+      draggable: true,
+      visible: true,
+    },
   ];
 
   defaultColumns: TableColumn[] = JSON.parse(JSON.stringify(this.columns));
@@ -357,7 +365,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   totalItems = 0;
   originalProductos: Producto[] = [];
   columnTypes: {
-    [key: string]: 'text' | 'date' | 'number' | 'boolean' | 'enum';
+    [key: string]: 'text' | 'date' | 'number' | 'boolean' | 'enum' | 'image';
   } = {
     cubicacion_id: 'text',
     codigo: 'text',
@@ -391,6 +399,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     fecha_creacion: 'date',
     fecha_actualizacion: 'date',
     actions: 'text',
+    imagen: 'image',
   };
 
   uniqueValues: { [key: string]: string[] } = {};
@@ -471,6 +480,21 @@ export class ProductListComponent implements OnInit, OnDestroy {
         // Cargar directamente con el ID
         this.loadData(true);
         this.loadCubicacionInfo();
+      } else {
+        // Si no hay ID de cubicación en la URL, verificar si está en el segmento de ruta
+        const urlSegments = window.location.pathname.split('/');
+        if (urlSegments.includes('cubicaciones') && urlSegments.includes('productos')) {
+          const possibleId = urlSegments[urlSegments.indexOf('cubicaciones') + 2];
+          if (possibleId && possibleId !== 'productos') {
+            this.cubicacionId = possibleId;
+            console.log('ID de cubicación recuperado de URL:', this.cubicacionId);
+            this.loadData(true);
+            this.loadCubicacionInfo();
+          } else {
+            console.log('No se encontró ID de cubicación en la URL');
+            this.pageTitle = 'Lista de productos';
+          }
+        }
       }
     });
   }
@@ -629,13 +653,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.connectionError = false;
 
     try {
-      // Cargar productos (por cubicación si hay un ID, o todos si no)
+      // Verificar si tenemos un ID de cubicación válido
       if (this.cubicacionId) {
+        console.log(`Cargando productos para cubicación ID: ${this.cubicacionId}`);
+        // Cargar productos específicos de la cubicación
         this.productos = await this.productoService.getProductosByCubicacionId(
           this.cubicacionId,
           forceRefresh
         );
+        console.log(`Se encontraron ${this.productos.length} productos para la cubicación`);
       } else {
+        console.log('Cargando todos los productos (sin filtro de cubicación)');
+        // Cargar todos los productos si no hay ID de cubicación
         this.productos = await this.productoService.getAll();
       }
 
@@ -685,52 +714,62 @@ export class ProductListComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Modificar el método formatearProductos para incluir la imagen
   formatearProductos(productos: Producto[]): any[] {
-    return productos.map((producto) => ({
-      id: producto.id,
-      cubicacion_id: producto.cubicacion_id || '',
-      codigo: producto.codigo || '',
-      nombre: producto.nombre || '',
-      tipo_producto: producto.tipo_producto || '',
-      categoria: producto.categoria || '',
-      ubicacion: producto.ubicacion || '',
-      cantidad: producto.cantidad || 0,
-      ancho_diseno: producto.ancho_diseno || 0,
-      alto_diseno: producto.alto_diseno || 0,
-      superficie_unitaria: producto.superficie_unitaria || 0,
-      superficie_total: producto.superficie_total || 0,
-      ancho_manufactura: producto.ancho_manufactura || 0,
-      alto_manufactura: producto.alto_manufactura || 0,
-      material: producto.material || '',
-      seccion_perfil: producto.seccion_perfil || '',
-      color_estructura: producto.color_estructura || '',
-      espesor_vidrio: producto.espesor_vidrio || '',
-      proteccion_vidrio: producto.proteccion_vidrio || '',
-      color_pelicula: producto.color_pelicula || '',
-      tipo_vidrio: producto.tipo_vidrio || '',
-      tipo_vidrio_detalle: producto.tipo_vidrio_detalle || '',
-      aperturas:
-        [producto.apertura_1, producto.apertura_2, producto.apertura_3]
-          .filter((a) => a && a.trim() !== '')
-          .join(' | ') || 'No definida',
-      cerraduras:
-        [producto.cerradura_1, producto.cerradura_2, producto.cerradura_3]
-          .filter((c) => c && c.trim() !== '')
-          .join(' | ') || 'No definida',
-      precio_unitario: producto.precio_unitario || 0,
-      precio_total: (producto.cantidad || 0) * (producto.precio_unitario || 0),
-      factor_instalacion: producto.factor_instalacion || 0,
-      descripcion: producto.descripcion || '',
-      observaciones: producto.observaciones || '',
-      activo: producto.activo || false,
-      fecha_creacion: producto.fecha_creacion
-        ? new Date(producto.fecha_creacion)
-        : null,
-      fecha_actualizacion: producto.fecha_actualizacion
-        ? new Date(producto.fecha_actualizacion)
-        : null,
-      producto_original: producto, // Guardamos el original para acceder a otros datos
-    }));
+    return productos.map((producto) => {
+      // Obtener la URL de la imagen usando el servicio
+      const imagenUrl = this.productoService.getProductImageSrc(producto);
+      
+      console.log('URL de imagen para producto', producto.id, ':', imagenUrl);
+      
+      return {
+        id: producto.id,
+        cubicacion_id: producto.cubicacion_id || '',
+        codigo: producto.codigo || '',
+        nombre: producto.nombre || '',
+        // Añadir la imagen del producto
+        imagen: imagenUrl,
+        tipo_producto: producto.tipo_producto || '',
+        categoria: producto.categoria || '',
+        ubicacion: producto.ubicacion || '',
+        cantidad: producto.cantidad || 0,
+        ancho_diseno: producto.ancho_diseno || 0,
+        alto_diseno: producto.alto_diseno || 0,
+        superficie_unitaria: producto.superficie_unitaria || 0,
+        superficie_total: producto.superficie_total || 0,
+        ancho_manufactura: producto.ancho_manufactura || 0,
+        alto_manufactura: producto.alto_manufactura || 0,
+        material: producto.material || '',
+        seccion_perfil: producto.seccion_perfil || '',
+        color_estructura: producto.color_estructura || '',
+        espesor_vidrio: producto.espesor_vidrio || '',
+        proteccion_vidrio: producto.proteccion_vidrio || '',
+        color_pelicula: producto.color_pelicula || '',
+        tipo_vidrio: producto.tipo_vidrio || '',
+        tipo_vidrio_detalle: producto.tipo_vidrio_detalle || '',
+        aperturas:
+          [producto.apertura_1, producto.apertura_2, producto.apertura_3]
+            .filter((a) => a && a.trim() !== '')
+            .join(' | ') || 'No definida',
+        cerraduras:
+          [producto.cerradura_1, producto.cerradura_2, producto.cerradura_3]
+            .filter((c) => c && c.trim() !== '')
+            .join(' | ') || 'No definida',
+        precio_unitario: producto.precio_unitario || 0,
+        precio_total: (producto.cantidad || 0) * (producto.precio_unitario || 0),
+        factor_instalacion: producto.factor_instalacion || 0,
+        descripcion: producto.descripcion || '',
+        observaciones: producto.observaciones || '',
+        activo: producto.activo || false,
+        fecha_creacion: producto.fecha_creacion
+          ? new Date(producto.fecha_creacion)
+          : null,
+        fecha_actualizacion: producto.fecha_actualizacion
+          ? new Date(producto.fecha_actualizacion)
+          : null,
+        producto_original: producto, // Guardamos el original para acceder a otros datos
+      };
+    });
   }
 
   formatearFecha(fecha: string | Date | null | undefined): string {
@@ -749,6 +788,27 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   getColumnLabel(colId: string): string {
     return this.columnLabels[colId] || colId;
+  }
+
+  /**
+   * Verifica y formatea correctamente las URLs de imágenes, incluyendo datos base64
+   */
+  formatImageUrl(imageUrl: string | null): string {
+    if (!imageUrl) return '';
+    
+    // Si ya es una URL completa o una ruta de archivo, devolverla directamente
+    if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Si es una cadena base64 sin el prefijo adecuado, añadirlo
+    if (imageUrl.startsWith('iVBOR') || imageUrl.includes('base64')) {
+      if (!imageUrl.startsWith('data:')) {
+        return `data:image/png;base64,${imageUrl}`;
+      }
+    }
+    
+    return imageUrl;
   }
 
   // Métodos para Search Bar
@@ -869,9 +929,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
   // Método para inicializar filtros con la propiedad 'label'
   private initializeFilters() {
     for (const column of this.columnOrder) {
-      if (column !== 'actions') {
+      // Excluir 'actions' y columnas de tipo 'image' ya que no son filtrables
+      if (column !== 'actions' && this.columnTypes[column] !== 'image') {
         this.filters[column] = {
-          type: this.columnTypes[column],
+          type: this.columnTypes[column] as 'text' | 'date' | 'number' | 'boolean' | 'enum',
           label: this.columnLabels[column] || column, // Añadir el label requerido
           value: '',
         };
@@ -1115,13 +1176,19 @@ export class ProductListComponent implements OnInit, OnDestroy {
   nuevoProducto() {
     this.editingProducto = null;
     if (this.cubicacionId) {
-      // Navegar a agregar producto con el ID de cubicación
+      // Navegar a agregar-ventana with el ID de cubicación
       this.navigationService.navigateWithRefresh([
-        '/productos/agregar',
+        '/productos/agregar-ventana',
         this.cubicacionId,
       ]);
     } else {
-      this.navigationService.navigateWithRefresh(['/productos/agregar']);
+      // Si no hay cubicación seleccionada, mostrar mensaje de error
+      this.errorService.showWarning('Debe seleccionar una cubicación antes de agregar un producto');
+      
+      // Opcional: redireccionar a la lista de cubicaciones para que seleccione una
+      setTimeout(() => {
+        this.router.navigate(['/cubicaciones']);
+      }, 2000);
     }
   }
 
@@ -1344,4 +1411,29 @@ export class ProductListComponent implements OnInit, OnDestroy {
   volverACubicaciones() {
     this.router.navigate(['/cubicaciones']);
   }
+
+  getProductImageSrc(producto: Producto): string {
+  if (!producto || !producto.imagen) return '';
+  
+  // Intentar recuperar del localStorage
+  const tempImage = localStorage.getItem(`temp_image_${producto.id}`);
+  if (tempImage) {
+    return this.formatImageUrl(tempImage);
+  }
+  
+  // Si no hay imagen temporal, devolver la URL normal
+  return this.formatImageUrl(producto.imagen);
+}
+
+handleImageError(event: Event): void {
+  const imgElement = event.target as HTMLImageElement;
+  console.warn('Error al cargar imagen:', imgElement.src);
+  
+  // Reemplazar con imagen por defecto
+  imgElement.src = 'assets/images/no-image.png';
+  imgElement.classList.add('image-error');
+  
+  // Mostrar un tooltip para indicar el error
+  imgElement.title = 'No se pudo cargar la imagen';
+}
 }

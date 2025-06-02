@@ -73,6 +73,7 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   getVisibleColumns(): TableColumn[] {
+    // Mantiene el orden original de las columnas y solo filtra las visibles
     return this.columns.filter(col => col.visible !== false);
   }
   
@@ -229,5 +230,28 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
     
     // Devolver primero los elementos fijados y luego los filtrados
     return [...pinnedRows, ...filteredRows];
+  }
+
+  /**
+   * Maneja errores al cargar imágenes
+   */
+  handleImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    imgElement.classList.add('image-error');
+    
+    // Opcionalmente, puedes establecer una imagen predeterminada
+    // imgElement.src = 'assets/images/no-image.png';
+  }
+
+  /**
+   * Maneja clics en la imagen
+   */
+  onImageClick(imageUrl: string, event: Event): void {
+    event.stopPropagation(); // Evitar activar el evento de fila
+    
+    // Abre la imagen en una pestaña nueva
+    if (imageUrl) {
+      window.open(imageUrl, '_blank');
+    }
   }
 }

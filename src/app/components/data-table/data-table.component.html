@@ -92,6 +92,19 @@
                 </span>
               </ng-container>
               
+              <!-- Nueva columna de imagen (corregida) -->
+              <ng-container *ngSwitchCase="'image'">
+                <div class="image-container">
+                  <img *ngIf="item[column.key]" 
+                       [src]="item[column.key]" 
+                       alt="" 
+                       class="product-thumbnail"
+                       (click)="onImageClick(item[column.key], $event)"
+                       (error)="handleImageError($event)">
+                  <span *ngIf="!item[column.key]" class="no-image">•</span>
+                </div>
+              </ng-container>
+              
               <!-- Contenido predeterminado -->
               <ng-container *ngSwitchDefault>
                 {{ item[column.key] }}

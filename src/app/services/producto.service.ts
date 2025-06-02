@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import { ErrorService } from './error.service';
 import { CacheService } from './cache.service';
 import { Producto } from '../interfaces/entities';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -104,6 +105,11 @@ export class ProductoService {
   // También vamos a invalidar la caché de productos cuando se cree, actualice o elimine un producto
   async create(producto: Partial<Producto>): Promise<Producto | null> {
     try {
+      // Validar que producto tenga cubicacion_id, ya que es NOT NULL en la base de datos
+      if (!producto.cubicacion_id) {
+        throw new Error('No se puede crear un producto sin especificar una cubicación');
+      }
+      
       const result = await this.supabase.create<Producto>(this.TABLE_NAME, producto);
       // Invalidar caché después de crear
       if (producto.cubicacion_id) {
@@ -271,82 +277,53 @@ export class ProductoService {
     }
   }
 
-  // Subir una imagen para un producto
+  /**
+   * Sube una imagen de producto y actualiza el producto con la URL de la imagen
+   */
   async uploadProductImage(productoId: string, file: File): Promise<boolean> {
     try {
-      // Primero comprobamos que el producto existe
+      // Primero verificar si el producto existe
       const producto = await this.getById(productoId);
       if (!producto) {
-        throw new Error('El producto no existe');
-      }
-
-      // Generamos una ruta única para la imagen
-      const extension = file.name.split('.').pop(); // Obtener la extensión del archivo
-      const path = `productos/${productoId}/${Date.now()}.${extension}`;
-      
-      // Si el producto ya tiene una imagen, eliminamos la anterior
-      if (producto.imagen) {
-        try {
-          // Extraer la ruta del storage de la URL completa
-          const currentPath = producto.imagen.split('/storage/v1/object/public/')[1];
-          if (currentPath && currentPath.startsWith('imagenes/')) {
-            const [bucket, ...remainingPath] = currentPath.split('/');
-            await this.supabase.deleteFile(bucket, remainingPath.join('/'));
-          }
-        } catch (error) {
-          console.warn('No se pudo eliminar la imagen anterior:', error);
-          // Continuamos aunque no se pueda eliminar la anterior
-        }
+        console.error('No se encontró el producto para subir la imagen');
+        return false;
       }
       
-      // Subimos la nueva imagen al bucket correcto "imagenes"
+      // Carpeta específica para este producto
+      const path = `productos/${productoId}`;
+      
+      // Intentar subir el archivo con reintentos incorporados
       const imageUrl = await this.supabase.uploadFile('imagenes', path, file);
       
-      // Actualizamos el producto con la URL de la imagen
-      await this.update(productoId, { imagen: imageUrl });
-      
-      // Invalidamos las cachés correspondientes
-      if (producto.cubicacion_id) {
-        this.cacheService.invalidateCache(`productos_cubicacion_${producto.cubicacion_id}`);
+      if (!imageUrl) {
+        console.error('No se pudo obtener la URL de la imagen subida');
+        return false;
       }
-      this.cacheService.invalidateCache(this.CACHE_KEY);
       
-      return true;
+      // Actualizar el producto con la URL de la imagen
+      const updated = await this.update(productoId, {
+        imagen: imageUrl
+      });
+      
+      return !!updated;
     } catch (error) {
+      console.error('Error al subir la imagen:', error);
       this.errorService.handle(error, 'Subiendo imagen de producto');
       return false;
     }
   }
-  
-  // Eliminar la imagen de un producto
-  async deleteProductImage(productoId: string): Promise<boolean> {
-    try {
-      // Obtenemos el producto para verificar si tiene imagen
-      const producto = await this.getById(productoId);
-      if (!producto || !producto.imagen) {
-        return false;
-      }
-      
-      // Extraer la ruta del storage de la URL completa
-      const path = producto.imagen.split('/storage/v1/object/public/')[1];
-      if (path) {
-        const [bucket, ...remainingPath] = path.split('/');
-        await this.supabase.deleteFile(bucket, remainingPath.join('/'));
-      }
-      
-      // Actualizar el producto para quitar la referencia a la imagen
-      await this.update(productoId, { imagen: null });
-      
-      // Invalidar cachés
-      if (producto.cubicacion_id) {
-        this.cacheService.invalidateCache(`productos_cubicacion_${producto.cubicacion_id}`);
-      }
-      this.cacheService.invalidateCache(this.CACHE_KEY);
-      
-      return true;
-    } catch (error) {
-      this.errorService.handle(error, 'Eliminando imagen de producto');
-      return false;
+
+  // Añadir método para obtener la imagen desde localStorage si existe
+  getProductImageSrc(producto: Producto): string {
+    if (!producto || !producto.imagen) return '';
+    
+    // Intentar recuperar del localStorage
+    const tempImage = localStorage.getItem(`temp_image_${producto.id}`);
+    if (tempImage) {
+      return tempImage;
     }
+    
+    // Si no hay imagen temporal, devolver la URL normal
+    return producto.imagen;
   }
 }

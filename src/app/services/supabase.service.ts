@@ -122,74 +122,40 @@ export class SupabaseService {
       console.error('Error al limpiar tokens:', error);
     }
   }
-  // Autenticación
-  signIn(email: string, password: string): Observable<AuthResponse> {
-    console.log('Intentando iniciar sesión para:', email);
+  /**
+ * Inicia sesión con correo electrónico y contraseña utilizando el método oficial de Supabase
+ */
+async signInWithEmail(email: string, password: string) {
+  try {
+    const { data, error } = await this.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    // Intentar limpiar almacenamiento primero para evitar problemas de token
-    this.clearAuthStorage();
+    if (error) throw error;
     
-    return from(this.supabase.auth.signInWithPassword({ email, password }))
-      .pipe(
-        tap(response => {
-          console.log('Respuesta de inicio de sesión:', response);
-          const user = response.data.user;
-          if (user) {
-            console.log('Usuario autenticado:', user.email);
-            this.userSubject.next(user);
-          }
-        }),
-        catchError((error: AuthError) => {
-          console.error('Error en inicio de sesión:', error);
-          
-          // Manejo específico de errores de navegador
-          if (error.message && (
-              error.message.includes('lock') || 
-              error.message.includes('timeout') || 
-              error.message.includes('Navigator') ||
-              error.message.includes('acquire') ||
-              error.message.includes('JWT')
-          )) {
-            console.log('Error de bloqueo/navegador detectado, limpiando almacenamiento...');
-            this.clearAuthStorage();
-            
-            // Intentar reconectar si es un error de navegador
-            if (error.message.includes('Navigator') || error.message.includes('lock')) {
-              this.reconnect().then(success => {
-                console.log('Reconexión después de error de navegador:', success ? 'exitosa' : 'fallida');
-              });
-            }
-          }
-          
-          // Si el error es de contraseña incorrecta, no es necesario limpiar
-          if (error.message && error.message.includes('Invalid login credentials')) {
-            console.log('Credenciales inválidas');
-          }
-          
-          return throwError(() => error);
-        })
-      );
+    return data;
+  } catch (error) {
+    console.error('Error en signInWithEmail:', error);
+    throw error;
   }
-  signOut(): Observable<any> {
-    console.log('Cerrando sesión...');
-    return from(this.supabase.auth.signOut())
-      .pipe(
-        tap(() => {
-          console.log('Sesión cerrada exitosamente');
-          this.userSubject.next(null);
-          this.clearAuthStorage();
-        }),
-        catchError((error: AuthError) => {
-          console.error('Error al cerrar sesión:', error);
-          // Incluso si hay error, limpiar el estado local
-          this.userSubject.next(null);
-          this.clearAuthStorage();
-          return throwError(() => error);
-        })
-      );
-  }
+}
 
-  // CRUD Genérico
+/**
+ * Cierra la sesión actual
+ */
+async signOut() {
+  try {
+    const { error } = await this.supabase.auth.signOut();
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error en signOut:', error);
+    return false;
+  }
+}
+
+// CRUD Genérico
   async getAll<T = any>(table: string): Promise<T[]> {
     console.log(`Obteniendo datos de tabla: ${table}`);
     try {
@@ -326,233 +292,332 @@ export class SupabaseService {
     }
   }
 
-  // Almacenamiento
-  async uploadFile(bucket: string, path: string, file: File): Promise<string> {
+  /**
+ * Sube un archivo al almacenamiento de Supabase
+ */
+async uploadFile(
+  bucket: string,
+  path: string,
+  file: File,
+  options: { contentType?: string, cacheControl?: string } = {}
+): Promise<string> {
+  try {
+    // Verificar si tenemos una sesión activa antes de intentar la carga
+    const session = await this.getSession();
+    
+    if (!session) {
+      console.warn('No hay sesión activa, intentando restablecer la sesión antes de subir');
+      // Intentar reconectar y obtener una nueva sesión
+      await this.reconnect();
+    }
+    
+    // Configurar opciones predeterminadas
+    const contentType = options.contentType || file.type;
+    const cacheControl = options.cacheControl || '3600';
+    
+    // Usar path y nombre de archivo para crear una ruta única con timestamp
+    const timestamp = new Date().getTime();
+    const filePath = `${path}/${timestamp}${this.getFileExtension(file.name)}`;
+    
+    // Subir el archivo
     const { data, error } = await this.supabase.storage
       .from(bucket)
-      .upload(path, file);
-
-    if (error) throw error;
-    if (!data) throw new Error('Error uploading file');
-
-    return `${environment.supabase.url}/storage/v1/object/public/${bucket}/${data.path}`;
-  }
-
-  async deleteFile(bucket: string, path: string): Promise<void> {
-    const { error } = await this.supabase.storage
-      .from(bucket)
-      .remove([path]);
-
-    if (error) throw error;
-  }
-
-  // Suscripciones en tiempo real
-  subscribeToChanges<T>(table: string, callback: (payload: any) => void) {
-    return this.supabase
-      .channel(`${table}_changes`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: table },
-        callback
-      )
-      .subscribe();
-  }
-
-  // Helpers
-  getCurrentUser(): User | null {
-    return this.userSubject.value;
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.userSubject.value;
-  }
-
-  getClient() {
-    return this.supabase;
-  }
-  
-  // Método para limpiar el almacenamiento de autenticación en caso de error
-  clearAuthStorage(): void {
-    console.log('Limpiando almacenamiento de autenticación...');
-    try {
-      // Limpiar localStorage
-      localStorage.removeItem('app-kinetta-auth');
-      localStorage.removeItem('supabase.auth.token');
+      .upload(filePath, file, {
+        cacheControl,
+        contentType,
+        upsert: true
+      });
+    
+    if (error) {
+      console.error('Error en la subida inicial:', error);
       
-      // Limpiar todas las claves relacionadas con supabase
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-            key.includes('supabase') || 
-            key.includes('sb-') || 
-            key.includes('-auth-token') ||
-            key.includes('kinetta') ||
-            key.includes('auth')
-        )) {
-          console.log('Eliminando clave:', key);
-          localStorage.removeItem(key);
-          // Reiniciar el índice para evitar problemas al modificar la colección
-          i--;
-        }
+      // Intentar una vez más con un pequeño retraso
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Segundo intento después de restablecer la sesión
+      await this.reconnect();
+      
+      const secondAttempt = await this.supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl,
+          contentType,
+          upsert: true
+        });
+      
+      if (secondAttempt.error) {
+        throw new Error(`Error en la subida (segundo intento): ${secondAttempt.error.message}`);
       }
       
-      // Intentar eliminar las cookies relacionadas con supabase
-      document.cookie.split(';').forEach(cookie => {
-        const [name] = cookie.trim().split('=');
-        if (name && (
-            name.includes('supabase') || 
-            name.includes('sb-') || 
-            name.includes('auth') ||
-            name.includes('kinetta')
-        )) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        }
-      });
-      
-      // Reiniciar estado de usuario
-      this.userSubject.next(null);
-    } catch (error) {
-      console.error('Error al limpiar almacenamiento:', error);
+      // Si el segundo intento tuvo éxito, actualizar data
+      return this.getFileUrl(bucket, secondAttempt.data.path);
     }
+    
+    // Si no hubo errores, devolver la URL del archivo
+    return this.getFileUrl(bucket, data.path);
+  } catch (error) {
+    console.error('Error en uploadFile:', error);
+    throw error;
   }
+}
 
-  // Método para intentar reconexión en caso de error
-  async reconnect(): Promise<boolean> {
-    console.log('Intentando reconexión con Supabase...');
-    try {
-      // Limpiar almacenamiento primero
-      this.clearAuthStorage();
-      
-      // Esperar un breve momento para asegurar que la limpieza se complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Reinicializar el cliente con opciones mejoradas
-      this.supabase = createClient(
-        environment.supabase.url,
-        environment.supabase.key,
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'app-kinetta-auth-' + Date.now(), // Usar un nombre de almacenamiento único
-            flowType: 'pkce', // Usar PKCE para mayor seguridad
-            storage: {
-              getItem: (key) => {
-                try {
-                  return localStorage.getItem(key);
-                } catch (error) {
-                  console.error('Error al obtener item:', error);
-                  return null;
-                }
-              },
-              setItem: (key, value) => {
-                try {
-                  localStorage.setItem(key, value);
-                } catch (error) {
-                  console.error('Error al guardar item:', error);
-                }
-              },
-              removeItem: (key) => {
-                try {
-                  localStorage.removeItem(key);
-                } catch (error) {
-                  console.error('Error al eliminar item:', error);
-                }
-              }
-            }
-          },
-          global: {
-            fetch: async (url, options) => {
+/**
+ * Obtiene la URL pública de un archivo
+ */
+getFileUrl(bucket: string, path: string): string {
+  const { data } = this.supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/**
+ * Obtiene la extensión de un archivo incluyendo el punto
+ */
+private getFileExtension(filename: string): string {
+  const lastDotIndex = filename.lastIndexOf('.');
+  return lastDotIndex === -1 ? '' : filename.substring(lastDotIndex);
+}
+
+/**
+ * Obtiene la sesión actual o null si no hay sesión
+ */
+async getSession() {
+  try {
+    const { data, error } = await this.supabase.auth.getSession();
+    if (error) {
+      console.error('Error obteniendo sesión:', error);
+      return null;
+    }
+    return data.session;
+  } catch (error) {
+    console.error('Error al obtener sesión:', error);
+    return null;
+  }
+}
+
+
+getPublicUrl(bucket: string, path: string): string {
+  const { data } = this.supabase.storage
+    .from(bucket)
+    .getPublicUrl(path);
+  
+  return data.publicUrl;
+}
+
+async deleteFile(bucket: string, path: string): Promise<void> {
+  const { error } = await this.supabase.storage
+    .from(bucket)
+    .remove([path]);
+
+  if (error) throw error;
+}
+
+// Suscripciones en tiempo real
+subscribeToChanges<T>(table: string, callback: (payload: any) => void) {
+  return this.supabase
+    .channel(`${table}_changes`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: table },
+      callback
+    )
+    .subscribe();
+}
+
+// Helpers
+getCurrentUser(): User | null {
+  return this.userSubject.value;
+}
+
+isAuthenticated(): boolean {
+  return !!this.userSubject.value;
+}
+
+getClient() {
+  return this.supabase;
+}
+  
+// Método para limpiar el almacenamiento de autenticación en caso de error
+clearAuthStorage(): void {
+  console.log('Limpiando almacenamiento de autenticación...');
+  try {
+    // Limpiar localStorage
+    localStorage.removeItem('app-kinetta-auth');
+    localStorage.removeItem('supabase.auth.token');
+    
+    // Limpiar todas las claves relacionadas con supabase
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+          key.includes('supabase') || 
+          key.includes('sb-') || 
+          key.includes('-auth-token') ||
+          key.includes('kinetta') ||
+          key.includes('auth')
+      )) {
+        console.log('Eliminando clave:', key);
+        localStorage.removeItem(key);
+        // Reiniciar el índice para evitar problemas al modificar la colección
+        i--;
+      }
+    }
+    
+    // Intentar eliminar las cookies relacionadas con supabase
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.trim().split('=');
+      if (name && (
+          name.includes('supabase') || 
+          name.includes('sb-') || 
+          name.includes('auth') ||
+          name.includes('kinetta')
+      )) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      }
+    });
+    
+    // Reiniciar estado de usuario
+    this.userSubject.next(null);
+  } catch (error) {
+    console.error('Error al limpiar almacenamiento:', error);
+  }
+}
+
+// Método para intentar reconexión en caso de error
+async reconnect(): Promise<boolean> {
+  console.log('Intentando reconexión con Supabase...');
+  try {
+    // Limpiar almacenamiento primero
+    this.clearAuthStorage();
+    
+    // Esperar un breve momento para asegurar que la limpieza se complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Reinicializar el cliente con opciones mejoradas
+    this.supabase = createClient(
+      environment.supabase.url,
+      environment.supabase.key,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'app-kinetta-auth-' + Date.now(), // Usar un nombre de almacenamiento único
+          flowType: 'pkce', // Usar PKCE para mayor seguridad
+          storage: {
+            getItem: (key) => {
               try {
-                return await fetch(url, options);
+                return localStorage.getItem(key);
               } catch (error) {
-                console.error('Error en fetch:', error);
-                throw error;
+                console.error('Error al obtener item:', error);
+                return null;
+              }
+            },
+            setItem: (key, value) => {
+              try {
+                localStorage.setItem(key, value);
+              } catch (error) {
+                console.error('Error al guardar item:', error);
+              }
+            },
+            removeItem: (key) => {
+              try {
+                localStorage.removeItem(key);
+              } catch (error) {
+                console.error('Error al eliminar item:', error);
               }
             }
           }
+        },
+        global: {
+          fetch: async (url, options) => {
+            try {
+              return await fetch(url, options);
+            } catch (error) {
+              console.error('Error en fetch:', error);
+              throw error;
+            }
+          }
         }
-      );
-      
-      console.log('Cliente Supabase reinicializado');
-      
-      // Verificar conexión
-      const { error } = await this.supabase.auth.getSession();
-      if (error) {
-        console.error('Error al verificar sesión después de reconectar:', error);
-        return false;
       }
-      
-      return true;
-    } catch (error) {
-      console.error('Error al reconectar:', error);
+    );
+    
+    console.log('Cliente Supabase reinicializado');
+    
+    // Verificar conexión
+    const { error } = await this.supabase.auth.getSession();
+    if (error) {
+      console.error('Error al verificar sesión después de reconectar:', error);
       return false;
     }
+    
+    return true;
+  } catch (error) {
+    console.error('Error al reconectar:', error);
+    return false;
   }
+}
 
-  // Método para renovar la sesión
-  async refreshSession(): Promise<boolean> {
-    console.log('Intentando renovar sesión...');
-    try {
-      // Primero comprobar si hay un token válido
-      const { data: sessionData } = await this.supabase.auth.getSession();
+// Método para renovar la sesión
+async refreshSession(): Promise<boolean> {
+  console.log('Intentando renovar sesión...');
+  try {
+    // Primero comprobar si hay un token válido
+    const { data: sessionData } = await this.supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      console.log('No hay sesión activa para renovar');
+      return false;
+    }
+    
+    const { data, error } = await this.supabase.auth.refreshSession();
+    
+    if (error) {
+      console.error('Error al renovar sesión:', error);
       
-      if (!sessionData.session) {
-        console.log('No hay sesión activa para renovar');
-        return false;
-      }
-      
-      const { data, error } = await this.supabase.auth.refreshSession();
-      
-      if (error) {
-        console.error('Error al renovar sesión:', error);
+      // Si es un error de navegador o token, intentar limpiar el almacenamiento
+      if (error.message && (
+          error.message.includes('lock') || 
+          error.message.includes('Navigator') || 
+          error.message.includes('timeout') ||
+          error.message.includes('JWT')
+      )) {
+        console.log('Error de bloqueo o token detectado, limpiando almacenamiento...');
+        this.clearAuthStorage();
         
-        // Si es un error de navegador o token, intentar limpiar el almacenamiento
-        if (error.message && (
-            error.message.includes('lock') || 
-            error.message.includes('Navigator') || 
-            error.message.includes('timeout') ||
-            error.message.includes('JWT')
-        )) {
-          console.log('Error de bloqueo o token detectado, limpiando almacenamiento...');
-          this.clearAuthStorage();
-          
-          // Esperar un momento antes de reintentar
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Reintentar una vez más después de limpiar
-          try {
-            const retryResult = await this.supabase.auth.refreshSession();
-            if (retryResult.error) {
-              console.error('Error persistente al renovar sesión:', retryResult.error);
-              return false;
-            }
-            
-            if (retryResult.data.session) {
-              console.log('Sesión renovada correctamente en segundo intento');
-              this.userSubject.next(retryResult.data.session.user);
-              return true;
-            }
-          } catch (retryError) {
-            console.error('Error en segundo intento de renovación:', retryError);
+        // Esperar un momento antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Reintentar una vez más después de limpiar
+        try {
+          const retryResult = await this.supabase.auth.refreshSession();
+          if (retryResult.error) {
+            console.error('Error persistente al renovar sesión:', retryResult.error);
             return false;
           }
+          
+          if (retryResult.data.session) {
+            console.log('Sesión renovada correctamente en segundo intento');
+            this.userSubject.next(retryResult.data.session.user);
+            return true;
+          }
+        } catch (retryError) {
+          console.error('Error en segundo intento de renovación:', retryError);
+          return false;
         }
-        
-        return false;
       }
       
-      if (data.session) {
-        console.log('Sesión renovada correctamente');
-        this.userSubject.next(data.session.user);
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error en refreshSession:', error);
       return false;
     }
+    
+    if (data.session) {
+      console.log('Sesión renovada correctamente');
+      this.userSubject.next(data.session.user);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error en refreshSession:', error);
+    return false;
   }
+}
 }

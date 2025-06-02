@@ -4,6 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { ErrorService } from '../../services/error.service';
+import { UsuarioService } from '../../services/usuario.service';
+import { AuthService } from '../../services/auth.service';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
@@ -40,7 +42,9 @@ export class LoginComponent {
     private fb: FormBuilder,
     private router: Router,
     private supabaseService: SupabaseService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private usuarioService: UsuarioService,
+    private authService: AuthService
   ) {
     // Intentar limpiar el almacenamiento de autenticación al iniciar
     this.supabaseService.clearAuthStorage();
@@ -88,46 +92,70 @@ export class LoginComponent {
   }
   
   private attemptLogin(email: string, password: string): void {
-    this.supabaseService.signIn(email, password).subscribe({
-      next: (response) => {
-        console.log('Login exitoso:', response);
+    // Primero intentar la autenticación con Supabase utilizando el método oficial
+    this.supabaseService.signInWithEmail(email, password)
+      .then(data => {
+        console.log('Autenticación Supabase exitosa', data);
+        
+        // Verificar el usuario en nuestra base de datos
+        this.usuarioService.getByEmail(email)
+          .then(usuario => {
+            if (!usuario) {
+              this.isLoading = false;
+              this.loginError = 'Usuario no encontrado en el sistema.';
+              return;
+            }
+
+            if (!usuario.activo) {
+              this.isLoading = false;
+              this.loginError = 'Su cuenta está desactivada. Por favor, contacte al administrador.';
+              // Cerrar la sesión en Supabase ya que el usuario está desactivado
+              this.supabaseService.signOut();
+              return;
+            }
+
+            console.log('Login exitoso:', usuario);
+            
+            // Actualizar último acceso ahora que tenemos una sesión válida
+            if (usuario.id) {
+              this.usuarioService.updateUltimoAcceso(usuario.id)
+                .catch(error => {
+                  console.warn('Error actualizando último acceso:', error);
+                  // No interrumpir el flujo de login por este error
+                });
+            }
+            
+            // Autenticación exitosa, guardar en el AuthService
+            this.authService.setAuthenticatedUser(usuario);
+            this.isLoading = false;
+            
+            // Redirigir al dashboard
+            this.router.navigate(['/inicio']);
+          })
+          .catch(error => {
+            console.error('Error obteniendo datos de usuario:', error);
+            this.isLoading = false;
+            this.loginError = 'Error al verificar datos de usuario.';
+            this.errorService.handle(error, 'Verificando usuario');
+          });
+      })
+      .catch(error => {
+        console.error('Error en autenticación Supabase:', error);
         this.isLoading = false;
         
-        // Guardar estado de autenticación
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', email);
-        
-        // Redirigir al dashboard
-        this.router.navigate(['/inicio']);
-      },
-      error: (error) => {
-        console.error('Error en login:', error);
-        this.isLoading = false;
-        
-        // Manejo de errores específicos
-        if (error.message && (
-            error.message.includes('lock') || 
-            error.message.includes('Navigator') ||
-            error.message.includes('acquire')
-        )) {
-          this.loginError = 'Error de bloqueo de navegador. Por favor, actualice la página e intente nuevamente.';
-          // Intentar limpiar el almacenamiento y reconectar
-          this.supabaseService.clearAuthStorage();
-          this.supabaseService.reconnect();
-        } else if (error.message && error.message.includes('Invalid login credentials')) {
+        // Manejar errores específicos de Supabase
+        if (error.message?.includes('Invalid login credentials')) {
           this.loginError = 'Credenciales inválidas. Por favor, verifique su correo y contraseña.';
-        } else if (error.message && error.message.includes('JWT')) {
-          this.loginError = 'Error de sesión. Por favor, actualice la página e intente nuevamente.';
-          this.supabaseService.clearAuthStorage();
-        } else if (error.message && error.message.includes('network')) {
-          this.loginError = 'Error de red. Por favor, verifique su conexión a internet.';
+        } else if (error.message?.includes('Email not confirmed')) {
+          this.loginError = 'Email no confirmado. Por favor, verifique su bandeja de entrada.';
+        } else if (error.message?.includes('rate limit')) {
+          this.loginError = 'Demasiados intentos fallidos. Por favor, inténtelo más tarde.';
         } else {
-          this.loginError = `Error de inicio de sesión: ${error.message || 'Desconocido'}`;
+          this.loginError = 'Error de inicio de sesión. Por favor, inténtelo de nuevo.';
         }
         
         this.errorService.handle(error, 'Inicio de sesión');
-      }
-    });
+      });
   }
 
   private markFormGroupTouched(): void {

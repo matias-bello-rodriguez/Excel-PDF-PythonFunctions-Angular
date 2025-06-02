@@ -97,8 +97,8 @@ export interface CubicacionDetalle {
 export interface Cubicacion {
   id: string;
   codigo: string;
-  nombre: string;
-  proyecto_id: string;
+  nombre?: string;
+  proyecto_id?: string;
   descripcion?: string;
   fecha_cubicacion: Date;
   estado?: CubicationStatus;
@@ -153,11 +153,16 @@ export interface Producto {
   activo?: boolean;
   fecha_creacion?: Date;
   fecha_actualizacion?: Date;
-  imagen:string | null;
-
+  imagen: string | null;
+  
+  // Campos para metadatos adicionales (serán guardados como JSON)
+  detalles_perfiles?: string;
+  detalles_vidrios?: string;
+  
+  // Relaciones
   Cubicacion?: {
     codigo: string;
-};
+  };
 }
 
 export interface ProyectoContacto {

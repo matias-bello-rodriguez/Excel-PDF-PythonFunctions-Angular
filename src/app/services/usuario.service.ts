@@ -76,6 +76,52 @@ export class UsuarioService {
     }
   }
 
+  async getByEmail(email: string): Promise<Usuario | null> {
+    try {
+      const usuarios = await this.supabase.customQuery<Usuario>(this.TABLE_NAME,
+        (query) => query
+          .select('*')
+          .eq('email', email)
+          .limit(1)
+      );
+      return usuarios.length > 0 ? usuarios[0] : null;
+    } catch (error) {
+      this.errorService.handle(error, 'Obteniendo usuario por email');
+      return null;
+    }
+  }
+
+  async verificarCredenciales(email: string, password: string): Promise<Usuario | null> {
+    try {
+      // Primero obtener el usuario por email
+      const usuario = await this.getByEmail(email);
+      
+      // Si no existe o no está activo, retornar null
+      if (!usuario || !usuario.activo) {
+        return null;
+      }
+      
+      // Verificar la contraseña (en un entorno real, esto debe hacerse en el backend)
+      if (usuario.password_hash !== password) {
+        return null;
+      }
+      
+      // Actualizar último acceso
+      if (usuario.id) {
+        await this.updateUltimoAcceso(usuario.id)
+          .catch(error => {
+            console.warn('Error actualizando último acceso:', error);
+            // No interrumpir el flujo por este error
+          });
+      }
+      
+      return usuario;
+    } catch (error) {
+      this.errorService.handle(error, 'Verificando credenciales');
+      return null;
+    }
+  }
+
   async updateUltimoAcceso(id: string): Promise<Usuario | null> {
     try {
       return await this.supabase.update<Usuario>(this.TABLE_NAME, id, {

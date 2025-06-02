@@ -12,6 +12,7 @@ import { ProjectListComponent } from './pages/project-list/project-list.componen
 import { ProjectAddComponent } from './pages/project-add/project-add.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { TakeoffProductListComponent } from './pages/takeoff-product-list/takeoff-product-list.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   // Redirección inicial a login
@@ -19,41 +20,86 @@ export const routes: Routes = [
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',
-    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
+    data: { scrollPositionRestoration: 'top' },
   },
   // Ruta de login independiente (sin layout)
   {
     path: 'login',
     component: LoginComponent,
-    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
-  },  // Rutas principales con layout (protegidas por auth guard)
+    data: { scrollPositionRestoration: 'top' },
+  }, 
+  // Rutas principales con layout (protegidas por auth guard a nivel de grupo)
   {
     path: '',
     component: MainLayoutComponent,
-    data: { scrollPositionRestoration: 'top' },  // Añadir esta línea
-    children: [{ path: '', redirectTo: 'inicio', pathMatch: 'full' },
+    canActivate: [AuthGuard], // Proteger todo el layout en lugar de rutas individuales
+    canActivateChild: [AuthGuard], // Proteger también las rutas hijas
+    data: { scrollPositionRestoration: 'top' },
+    children: [
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio', component: DashboardComponent },
-      { path: 'clientes', component: CustomerListComponent },
+      { 
+        path: 'clientes', 
+        component: CustomerListComponent,
+        data: { roles: ['ADMIN', 'MANAGER'] } // Ejemplo de restricción por rol
+      },
       { path: 'productos', component: ProductListComponent },
-      { path: 'productos/agregar-producto', component: ProductAddWindowComponent },
-      { path: 'productos/agregar-producto-multiple', component: ProductAddMultipleWindowComponent },
-      { path: 'productos/agregar-producto-multiple/:moduleId', component: ProductAddWindowComponent },      { path: 'cubicaciones/productos/:codigo', component: ProductListComponent }, // Ahora acepta parámetro de cubicación
-      { path: 'cubicaciones/productos', component: ProductListComponent }, // Ruta sin parámetro (opcional, para compatibilidad)
-      { path: 'cubicaciones/productos/:id', component: TakeoffProductListComponent }, // Lista de productos por cubicación
+      {
+        path: 'productos/agregar-ventana/:cubicacionId',
+        component: ProductAddWindowComponent,
+      },
+      {
+        path: 'productos/agregar-producto-multiple',
+        component: ProductAddMultipleWindowComponent,
+      },
+      {
+        path: 'productos/agregar-producto-multiple/:moduleId',
+        component: ProductAddWindowComponent,
+      },
+      {
+        path: 'cubicaciones/productos/:codigo',
+        component: ProductListComponent,
+      },
+      { path: 'cubicaciones/productos', component: ProductListComponent },
+      {
+        path: 'cubicaciones/productos/:id',
+        component: TakeoffProductListComponent,
+      },
       { path: 'proyectos', component: ProjectListComponent },
       { path: 'proyectos/agregar-proyecto', component: ProjectAddComponent },
       { path: 'cubicaciones', component: TakeoffListComponent },
-      { path: 'cubicaciones/ingresar-cubicacion', component: TakeoffAddComponent },
-      { path: 'take-offs', component: TakeoffListComponent }, // Manteniendo esta por si se usa en otro lado
-      { path: 'reportes', component: ReportsComponent },      { path: 'configuracion', component: TakeoffListComponent }, // Placeholder
-      { path: 'equipo', component: TakeoffListComponent }, // Placeholder
-      { path: 'ayuda', component: TakeoffListComponent } // Placeholder
-    ]
+      {
+        path: 'cubicaciones/ingresar-cubicacion',
+        component: TakeoffAddComponent,
+      },
+      { path: 'take-offs', component: TakeoffListComponent },
+      { 
+        path: 'reportes', 
+        component: ReportsComponent,
+        data: { roles: ['ADMIN', 'MANAGER'] } // Ejemplo de restricción por rol
+      },
+      { path: 'configuracion', component: TakeoffListComponent },
+      { path: 'equipo', component: TakeoffListComponent },
+      { path: 'ayuda', component: TakeoffListComponent },
+    ],
+  },
+  // Ruta para acceso denegado
+  {
+    path: 'acceso-denegado',
+    component: MainLayoutComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./pages/access-denied/access-denied.component')
+          .then(m => m.AccessDeniedComponent)
+      }
+    ],
+    data: { scrollPositionRestoration: 'top' },
   },
   // Ruta para manejar rutas no encontradas
   {
     path: '**',
-    redirectTo: 'login',
-    data: { scrollPositionRestoration: 'top' }  // Añadir esta línea
-  }
+    redirectTo: 'inicio',
+    data: { scrollPositionRestoration: 'top' },
+  },
 ];

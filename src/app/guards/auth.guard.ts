@@ -1,18 +1,51 @@
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { CanActivateFn } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { CanActivate, CanActivateChild, CanLoad, Route, UrlSegment, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const router = inject(Router);
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthGuard implements CanActivate, CanActivateChild, CanLoad {
   
-  // Por ahora, simulamos que no hay usuario autenticado
-  // En una implementación real, aquí verificarías el token de autenticación
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  constructor(private authService: AuthService, private router: Router) {}
   
-  if (!isAuthenticated) {
-    router.navigate(['/login']);
-    return false;
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): boolean {
+    return this.checkAuth(route);
   }
   
-  return true;
-};
+  canActivateChild(
+    childRoute: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): boolean {
+    return this.checkAuth(childRoute);
+  }
+  
+  canLoad(
+    route: Route,
+    segments: UrlSegment[]
+  ): boolean {
+    return this.checkAuth();
+  }
+  
+  private checkAuth(route?: ActivatedRouteSnapshot): boolean {
+    if (!this.authService.isAuthenticatedValue) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+    
+    // Verificar roles si están definidos en la ruta
+    if (route && route.data && route.data['roles']) {
+      const requiredRoles = route.data['roles'];
+      if (!this.authService.hasRole(requiredRoles)) {
+        // Redirigir a una página de acceso denegado o al inicio
+        this.router.navigate(['/acceso-denegado']);
+        return false;
+      }
+    }
+    
+    return true;
+  }
+}
