@@ -25,16 +25,15 @@
       </tr>
     </thead>
     <tbody>
-      <ng-container *ngIf="!loading && getFilteredData().length > 0">
-        <tr *ngFor="let item of getFilteredData(); let i = index" 
+      <ng-container *ngIf="!loading && getFilteredData().length > 0">        <tr *ngFor="let item of getFilteredData(); let i = index" 
             [attr.data-index]="i" 
             tabindex="0"
             (click)="onRowClick(item)"
-            [class.pinned]="isPinned(item[idField])">          <td *ngFor="let column of getVisibleColumns()" [ngClass]="{'actions-cell': column.key === 'actions'}">
+            [class.pinned]="isPinned(item[idField])">          <td *ngFor="let column of getVisibleColumns()" [ngClass]="{'actions-cell': column.key === 'actions', 'actions-with-image': column.key === 'actions' && hasImage(item)}">
             <ng-container [ngSwitch]="column.type || column.key">
               <!-- Columna de acciones -->
               <ng-container *ngSwitchCase="'actions'">
-                <div class="actions-cell">
+                <div class="actions-cell" [class.with-image]="hasImage(item)">
                   <!-- Botón de edición -->
                   <div class="tooltip-container">
                     <button class="action-btn" [attr.aria-label]="'Editar ítem ' + item[idField]" (click)="onEdit(item[idField], $event)">

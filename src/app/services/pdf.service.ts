@@ -1,63 +1,40 @@
 import { Injectable } from '@angular/core';
-import pdfMake from 'pdfmake/build/pdfmake';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
-
-declare const window: any;
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PdfService {
-  private pdfMakeInitialized = false;
+async generatePdf(htmlContent: HTMLElement, fileName: string = 'oferta') {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  const options = {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    scrollY: 0
+  };
 
-  constructor() {
-    this.initializePdfMake();
-  }  private async initializePdfMake(): Promise<void> {
-    if (typeof window !== 'undefined' && !this.pdfMakeInitialized) {
-      try {
-        window.pdfMake = pdfMake;
-        const fonts = await import('pdfmake/build/vfs_fonts');
-        // Acceder correctamente al vfs desde la importación
-        window.pdfMake.vfs = fonts.default.vfs || fonts.vfs;
-        
-        // Configurar las fuentes predeterminadas
-        window.pdfMake.fonts = {
-          Roboto: {
-            normal: 'Roboto-Regular.ttf',
-            bold: 'Roboto-Medium.ttf',
-            italics: 'Roboto-Italic.ttf',
-            bolditalics: 'Roboto-MediumItalic.ttf'
-          }
-        };
-        
-        this.pdfMakeInitialized = true;
-      } catch (error) {
-        console.error('Error loading pdfMake fonts:', error);
-      }
-    }
+  const canvas = await html2canvas(htmlContent, options);
+  const imgData = canvas.toDataURL('image/png');
+  
+  // Ajustar tamaño para mantener proporciones
+  const imgWidth = 190; // ancho máximo en mm (A4)
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+  // En el servicio PdfService
+  const remainingHeight = imgHeight - (doc.internal.pageSize.getHeight() - 20);
+  if (remainingHeight > 0) {
+    doc.addPage();
+    doc.addImage(imgData, 'PNG', 10, 10 - remainingHeight, imgWidth, imgHeight);
   }
-  async generatePdfDataUrl(content: TDocumentDefinitions): Promise<string> {
-    await this.initializePdfMake();
-    return new Promise((resolve, reject) => {
-      try {
-        const pdf = pdfMake.createPdf(content);
-        pdf.getDataUrl((dataUrl) => {
-          resolve(dataUrl);
-        });
-      } catch (error) {
-        console.error('Error generando PDF DataUrl:', error);
-        reject(error);
-      }
-    });
+  
+  doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+    doc.save(`${fileName}.pdf`);
   }
-  async downloadPdf(content: TDocumentDefinitions, filename: string): Promise<void> {
-    await this.initializePdfMake();
-    try {
-      const pdf = pdfMake.createPdf(content);
-      pdf.download(filename);
-    } catch (error) {
-      console.error('Error descargando PDF:', error);
-      throw error;
-    }
-  }
+
+
+  
+
 }

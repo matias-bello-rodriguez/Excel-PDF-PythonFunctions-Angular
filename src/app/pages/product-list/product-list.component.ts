@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -19,11 +20,14 @@ import { TableColumn, TableData, SortConfig, TableFilter } from '../../types/tab
 import { CubicacionService } from '../../services/cubicacion.service';
 import { ProductoService } from '../../services/producto.service';
 import { ErrorService } from '../../services/error.service';
+import { ExcelImportService } from '../../services/excel-import.service';
+import { PdfService } from '../../services/pdf.service';
 import { Cubicacion, Producto } from '../../interfaces/entities';
 import { CacheService } from '../../services/cache.service';
 import { Subscription } from 'rxjs';
 import { NavigationService } from '../../services/navigation.service';
 import { ProyectoService } from '../../services/proyecto.service';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 // Definición de enumeraciones
 export enum GlassType {
@@ -71,7 +75,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   // Variables para gestionar la cubicación
   cubicacionId: string | null = null;
   cubicacionCodigo: string | null = null;
-
+  editingProducto: Producto | null = null;
 
   cubicaciones: Cubicacion[] = [];
 
@@ -444,7 +448,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
   showFilterMenu = false;
   showColumnMenu = false;
   showProductoDialog = false;
-  editingProducto: Producto | null = null;
   hasActiveFilters = false;
   pinnedItems: Set<string> = new Set();
   isLoading = true;
@@ -457,6 +460,17 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private refreshSubscription: Subscription | null = null;
   supabase: any;
 
+  // Variables para Excel y exportación
+  showExcelModal = false;
+  showExportModal = false;
+  selectedFileName = '';
+  selectedFile: File | null = null;
+  excelHeaders: string[] = [];
+  excelPreviewData: any[][] = [];
+  isLoadingPreview = false;
+  activeTab: 'upload' | 'preview' = 'upload';
+  exportPreviewUrl: string = '';
+  safeExportUrl: SafeResourceUrl = '';
   constructor(
     public productoService: ProductoService,
     public cubicacionService: CubicacionService,
@@ -467,7 +481,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private cacheService: CacheService,
     private navigationService: NavigationService,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private excelService: ExcelImportService,
+    private pdfService: PdfService,
+    private sanitizer: DomSanitizer,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     // Obtener el ID de cubicación de los parámetros de la ruta
     this.route.paramMap.subscribe((params) => {
@@ -1433,4 +1451,832 @@ handleImageError(event: Event): void {
   // Mostrar un tooltip para indicar el error
   imgElement.title = 'No se pudo cargar la imagen';
 }
+
+// Métodos para Excel y exportación
+  /**
+   * Alternar diálogo de exportación con vista previa PDF
+   */
+  async toggleExportDialog(): Promise<void> {
+    if (!this.showExportModal) {
+      if (isPlatformBrowser(this.platformId)) {
+        try {
+          const docDefinition = this.getDocDefinition();
+          const dataUrl = await this.pdfService.generatePdfDataUrl(docDefinition);
+          this.exportPreviewUrl = dataUrl;
+          this.safeExportUrl = this.sanitizer.bypassSecurityTrustResourceUrl(dataUrl);
+          this.showExportModal = true;
+        } catch (error) {
+          console.error('Error al generar PDF:', error);
+        }
+      }
+    } else {
+      this.showExportModal = false;
+      this.exportPreviewUrl = '';
+      this.safeExportUrl = '';
+    }
+  }
+
+  /**
+   * Descargar el PDF generado
+   */
+  async downloadPdf(): Promise<void> {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        const docDefinition = this.getDocDefinition();
+        await this.pdfService.downloadPdf(docDefinition, 'listado-productos.pdf');
+      } catch (error) {
+        console.error('Error al descargar PDF:', error);
+      }
+    }
+  }
+
+  /**
+   * Abrir vista previa del PDF en una nueva pestaña
+   */
+  openPdfPreview(): void {
+    if (this.exportPreviewUrl && isPlatformBrowser(this.platformId)) {
+      window.open(this.exportPreviewUrl, '_blank');
+    }
+  }
+
+  /**
+   * Obtener la definición del documento PDF
+   */
+  private getDocDefinition(): TDocumentDefinitions {
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    
+    return {
+      pageSize: 'A4',
+      pageMargins: [40, 60, 40, 60],
+      content: [
+        // Encabezado con información de la empresa
+        {
+          columns: [
+            {
+              text: 'KINETTA',
+              style: 'companyName'
+            },
+            {
+              text: `Fecha: ${currentDate}\nPágina: `,
+              style: 'headerRight',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 0, 0, 20]
+        },
+        
+        // Título del documento
+        {
+          text: 'LISTA DE PRODUCTOS - CUBICACIÓN',
+          style: 'documentTitle',
+          margin: [0, 0, 0, 20]
+        },
+        
+        // Información del resumen
+        {
+          columns: [
+            {
+              text: `Total de productos: ${this.productos.length}`,
+              style: 'summaryInfo'
+            },
+            {
+              text: `Total superficie: ${this.productos.reduce((sum, p) => sum + (p.superficie_total || 0), 0).toFixed(2)} m²`,
+              style: 'summaryInfo',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 0, 0, 15]
+        },
+        
+        // Tabla principal
+        {
+          style: 'tableStyle',
+          table: {
+            headerRows: 1,
+            widths: [50, 80, 60, 40, 40, 40, 80, 60, 60, 60],
+            body: [
+              // Encabezados de tabla
+              [
+                { text: 'CÓDIGO', style: 'tableHeader' },
+                { text: 'UBICACIÓN', style: 'tableHeader' },
+                { text: 'TIPO VENTANA', style: 'tableHeader' },
+                { text: 'ANCHO', style: 'tableHeader' },
+                { text: 'ALTO', style: 'tableHeader' },
+                { text: 'CANT.', style: 'tableHeader' },
+                { text: 'MATERIAL', style: 'tableHeader' },
+                { text: 'SUP. TOTAL', style: 'tableHeader' },
+                { text: 'PRECIO UNIT.', style: 'tableHeader' },
+                { text: 'TOTAL', style: 'tableHeader' }
+              ],
+              
+              // Filas de datos
+              ...this.productos.map((producto) => [
+                { text: producto.codigo || '', style: 'tableCell' },
+                { text: producto.ubicacion || '', style: 'tableCell' },
+                { text: producto.tipo_producto || '', style: 'tableCell' },
+                { text: `${producto.ancho_diseno?.toFixed(2) || '0.00'}m`, style: 'tableCellCenter' },
+                { text: `${producto.alto_diseno?.toFixed(2) || '0.00'}m`, style: 'tableCellCenter' },
+                { text: producto.cantidad || '0', style: 'tableCellCenter' },
+                { text: producto.material || '', style: 'tableCell' },
+                { text: `${producto.superficie_total?.toFixed(2) || '0.00'} m²`, style: 'tableCellRight' },
+                { text: `$${producto.precio_unitario?.toFixed(2) || '0.00'}`, style: 'tableCellRight' },
+                { text: `$${producto.precio_total?.toFixed(2) || '0.00'}`, style: 'tableCellRightBold' }
+              ])
+            ]
+          },
+          layout: {
+            hLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === 1 || i === node.table.body.length) ? 2 : 1;
+            },
+            vLineWidth: function(i: number, node: any) {
+              return (i === 0 || i === node.table.widths.length) ? 2 : 1;
+            },
+            hLineColor: function(i: number, node: any) {
+              return (i === 0 || i === 1 || i === node.table.body.length) ? '#8B1C1C' : '#cccccc';
+            },
+            vLineColor: function(i: number, node: any) {
+              return (i === 0 || i === node.table.widths.length) ? '#8B1C1C' : '#cccccc';
+            },
+            fillColor: function(i: number, node: any) {
+              return (i === 0) ? '#f8f9fa' : (i % 2 === 0) ? '#ffffff' : '#f8f9fa';
+            }
+          }
+        },
+        
+        // Separador
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0, y1: 10,
+              x2: 515, y2: 10,
+              lineWidth: 1,
+              lineColor: '#8B1C1C'
+            }
+          ],
+          margin: [0, 20, 0, 10]
+        },
+        
+        // Resumen final
+        {
+          columns: [
+            {
+              text: 'RESUMEN DEL PROYECTO',
+              style: 'summaryTitle'
+            },
+            {
+              table: {
+                widths: [120, 80],
+                body: [
+                  [
+                    { text: 'Superficie Total:', style: 'summaryLabel' },
+                    { text: `${this.productos.reduce((sum, p) => sum + (p.superficie_total || 0), 0).toFixed(2)} m²`, style: 'summaryValue' }
+                  ],
+                  [
+                    { text: 'Total General:', style: 'summaryLabelBold' },
+                    { text: `$${this.calculateTotal().toFixed(2)}`, style: 'summaryValueBold' }
+                  ]
+                ]
+              },
+              layout: 'noBorders',
+              alignment: 'right'
+            }
+          ],
+          margin: [0, 10, 0, 0]
+        }
+      ],
+      styles: {
+        companyName: {
+          fontSize: 20,
+          bold: true,
+          color: '#8B1C1C'
+        },
+        headerRight: {
+          fontSize: 10,
+          color: '#666666'
+        },
+        documentTitle: {
+          fontSize: 16,
+          bold: true,
+          alignment: 'center',
+          color: '#333333'
+        },
+        summaryInfo: {
+          fontSize: 10,
+          color: '#666666'
+        },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          alignment: 'center',
+          color: '#ffffff',
+          fillColor: '#8B1C1C'
+        },
+        tableCell: {
+          fontSize: 8,
+          alignment: 'left'
+        },
+        tableCellCenter: {
+          fontSize: 8,
+          alignment: 'center'
+        },
+        tableCellRight: {
+          fontSize: 8,
+          alignment: 'right'
+        },
+        tableCellRightBold: {
+          fontSize: 8,
+          alignment: 'right',
+          bold: true,
+          color: '#8B1C1C'
+        },
+        summaryTitle: {
+          fontSize: 12,
+          bold: true,
+          color: '#8B1C1C'
+        },
+        summaryLabel: {
+          fontSize: 10,
+          alignment: 'right'
+        },
+        summaryValue: {
+          fontSize: 10,
+          alignment: 'right',
+          bold: true
+        },
+        summaryLabelBold: {
+          fontSize: 11,
+          alignment: 'right',
+          bold: true
+        },
+        summaryValueBold: {
+          fontSize: 12,
+          alignment: 'right',
+          bold: true,
+          color: '#8B1C1C'
+        }
+      },
+      defaultStyle: {
+        font: 'Roboto',
+        fontSize: 9
+      }
+    };
+  }
+
+  /**
+   * Calcular el total de precios
+   */
+  private calculateTotal(): number {
+    return this.productos.reduce((total, producto) => 
+      total + (producto.precio_total || 0), 0);
+  }
+
+  // Excel file handling methods
+  onFileDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropArea = event.currentTarget as HTMLElement;
+    dropArea.classList.add('drag-over');
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropArea = event.currentTarget as HTMLElement;
+    dropArea.classList.remove('drag-over');
+  }
+
+  onFileDropped(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropArea = event.currentTarget as HTMLElement;
+    dropArea.classList.remove('drag-over');
+
+    const file = event.dataTransfer?.files[0];
+    if (file && this.isValidExcelFile(file)) {
+      this.handleFileSelection(file);
+    }
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target?.files[0];
+    if (file && this.isValidExcelFile(file)) {
+      this.handleFileSelection(file);
+    }
+  }
+
+  private async handleFileSelection(file: File) {
+    this.selectedFile = file;
+    this.selectedFileName = file.name;
+    this.isLoadingPreview = true;
+
+    try {
+      const preview = await this.excelService.generatePreview(file);
+      this.excelHeaders = preview.headers;
+      this.excelPreviewData = preview.data;
+      console.log('Excel data loaded:', {
+        headers: this.excelHeaders,
+        preview: this.excelPreviewData
+      });
+      this.activeTab = 'preview';
+    } catch (error) {
+      console.error('Error al cargar el archivo:', error);
+    } finally {
+      this.isLoadingPreview = false;
+    }
+  }
+
+  isValidExcelFile(file: File): boolean {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    return allowedTypes.includes(file.type);
+  }
+
+  resetExcelModal(): void {
+    this.selectedFile = null;
+    this.selectedFileName = '';
+    this.excelPreviewData = [];
+    this.excelHeaders = [];
+    this.isLoadingPreview = false;
+    this.activeTab = 'upload';
+  }
+
+  nextStep(): void {
+    if (this.activeTab === 'upload' && this.selectedFile) {
+      this.activeTab = 'preview';
+    }
+  }
+
+  async importExcel(): Promise<void> {
+    if (!this.selectedFile) {
+      alert('Por favor, selecciona un archivo Excel');
+      return;
+    }
+
+    try {
+      // Crear mapeo automático basado en los headers del Excel
+      const automaticMapping = this.createAutomaticMapping();
+      
+      // Verificar que se pudo crear un mapeo mínimo
+      if (Object.keys(automaticMapping).length === 0) {
+        throw new Error('No se pudo crear un mapeo automático de columnas. Verifica que los encabezados del Excel coincidan con los campos del sistema.');
+      }
+      
+      // Mostrar el mapeo al usuario para debug
+      console.log('Usando el siguiente mapeo para importar:', automaticMapping);
+      
+      const importedData = await this.excelService.importExcel(
+        this.selectedFile,
+        automaticMapping
+      );
+      
+      // Verificar que se importaron datos
+      if (!importedData || !Array.isArray(importedData) || importedData.length === 0) {
+        throw new Error('No se pudieron importar datos del archivo Excel');
+      }
+      
+      console.log('Datos importados:', importedData);
+      
+      // Añadir identificador y cubicacion_id para cada producto
+      const productsWithIds = importedData.map((product, index) => {
+        if (!product.codigo) {
+          product.codigo = `PROD-${Date.now()}-${index}`;
+        }
+        
+        // Asignar cubicacion_id desde la URL si no existe
+        if (!product.cubicacion_id && this.cubicacionId) {
+          product.cubicacion_id = this.cubicacionId;
+        }
+        
+        return product;
+      });
+      
+      // Verificar que los datos importados tienen al menos algunas propiedades válidas
+      const validProducts = productsWithIds.filter(product => 
+        Object.keys(product).length > 1 // Al menos una propiedad además del código
+      );
+      
+      if (validProducts.length === 0) {
+        throw new Error('No se pudieron extraer productos válidos del archivo. Verifica que los encabezados del Excel coincidan con los campos esperados.');
+      }
+      
+      // Aquí deberías llamar a tu servicio para guardar los productos
+      // Por ejemplo: await this.productoService.importarProductos(validProducts, this.cubicacionId);
+      
+      // Por ahora, simplemente agregar a la lista local
+      this.productos = [...this.productos, ...validProducts];
+      
+      // Formatear los productos para la tabla
+      this.productosFormateados = this.formatearProductos(this.productos);
+      
+      // Cerrar el modal y resetear
+      this.showExcelModal = false;
+      this.resetExcelModal();
+      
+      // Mostrar notificación visual
+      this.showSuccessNotification(`Se han importado ${validProducts.length} productos correctamente.`);
+    } catch (error: any) {
+      console.error('Error al importar:', error);
+      
+      // Mostrar un mensaje de error detallado al usuario
+      let errorMessage = 'Ha ocurrido un error desconocido';
+      
+      if (error) {
+        if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else if (error.toString) {
+          errorMessage = error.toString();
+        }
+      }
+      
+      alert(`Error al importar: ${errorMessage}`);
+    }
+  }
+
+  private createAutomaticMapping(): { [key: string]: string } {
+    const mapping: { [key: string]: string } = {};
+    
+    // No hay headers para mapear
+    if (!this.excelHeaders || this.excelHeaders.length === 0) {
+      console.warn('No hay encabezados para mapear');
+      return mapping;
+    }
+    
+    // Mapeo específico para los campos del Excel proporcionados
+    const specificMappings: { [key: string]: string[] } = {
+      'codigo': ['WINDOW CODE', 'CODE', 'CÓDIGO', 'codigo'], // WINDOW CODE es prioritario para código
+      'ubicacion': ['Location', 'UBICACIÓN', 'ubicacion', 'UNITS'],
+      'ancho_diseno': ['Width (m)', 'Width', 'ANCHO', 'ancho'],
+      'alto_diseno': ['Height (m)', 'Height', 'ALTO', 'alto'],
+      'superficie_unitaria': ['Surface (m²)', 'Surface', 'SUPERFICIE', 'superficie'],
+      'cantidad': ['Quantity PER UNIT', 'Quantity', 'CANTIDAD', 'cantidad'],
+      'superficie_total': ['Total surface (m²)', 'Total surface', 'SUPERFICIE TOTAL', 'superficie_total'],
+      'ancho_manufactura': ['MANUFACTURING WIDTH', 'Manufacturing Width', 'ANCHO MANUFACTURA', 'ancho_manufactura'],
+      'alto_manufactura': ['MANUFACTURING HEIGHT', 'Manufacturing Height', 'ALTO MANUFACTURA', 'alto_manufactura'],
+      'material': ['Material', 'MATERIAL', 'material'],
+      'seccion_perfil': ['Profile section', 'Profile Section', 'SECCIÓN PERFIL', 'seccion_perfil'],
+      'color_estructura': ['Body color', 'Body Color', 'COLOR ESTRUCTURA', 'color_estructura'],
+      'espesor_vidrio': ['Glass thickness', 'Glass Thickness', 'ESPESOR VIDRIO', 'espesor_vidrio'],
+      'proteccion_vidrio': ['Glass protection', 'Glass Protection', 'PROTECCIÓN VIDRIO', 'proteccion_vidrio'],
+      'color_pelicula': ['Film color', 'Film Color', 'COLOR PELÍCULA', 'color_pelicula'],
+      'tipo_vidrio': ['Opaque/Clear glass', 'Glass type', 'Opaque', 'Clear', 'TIPO VIDRIO', 'tipo_vidrio'],
+      'tipo_producto': ['Window Type', 'TIPO PRODUCTO', 'tipo_producto'],
+      'apertura_1': ['OPENING', 'Opening', 'APERTURA', 'apertura'],
+      'cerradura_1': ['Lock', 'CERRADURA', 'cerradura'],
+      'descripcion': ['DESIGN 1', 'Design 1', 'DESCRIPCIÓN', 'descripcion'],
+      'observaciones': ['COMMENT 1', 'COMMENT 2', 'Comment', 'OBSERVACIONES', 'observaciones']
+      // ELIMINADO: 'cubicacion_id': ['HOUSE/TOWER (CODE)', 'House', 'Tower', 'CUBICACIÓN', 'cubicacion']
+    };
+    
+    // Objeto para rastrear qué columnas del sistema ya están mapeadas
+    const mappedSystemKeys = new Set<string>();
+    const usedExcelHeaders = new Set<string>();
+
+    // 1. Mapeo específico basado en las coincidencias exactas
+    Object.entries(specificMappings).forEach(([systemKey, possibleHeaders]) => {
+      if (mappedSystemKeys.has(systemKey)) return;
+      
+      for (const header of this.excelHeaders) {
+        if (!header || usedExcelHeaders.has(header)) continue;
+        
+        // Buscar coincidencia exacta o parcial
+        const normalizedHeader = header.toLowerCase().trim();
+        const matchFound = possibleHeaders.some(possible => 
+          normalizedHeader === possible.toLowerCase() ||
+          normalizedHeader.includes(possible.toLowerCase()) ||
+          possible.toLowerCase().includes(normalizedHeader)
+        );
+        
+        if (matchFound) {
+          mapping[systemKey] = header;
+          mappedSystemKeys.add(systemKey);
+          usedExcelHeaders.add(header);
+          console.log(`Mapeo específico: ${systemKey} -> ${header}`);
+          break;
+        }
+      }
+    });
+
+    // 2. Mapeo automático para columnas restantes usando los labels del sistema
+    const systemLabels = new Map(
+      this.columns
+        .filter(col => col.key !== 'actions' && col.key !== 'imagen' && !mappedSystemKeys.has(col.key))
+        .map(col => [col.label.toLowerCase().trim(), col.key])
+    );
+
+    // Buscar coincidencias exactas en labels
+    this.excelHeaders.forEach(header => {
+      if (!header || usedExcelHeaders.has(header)) return;
+      
+      const normalizedHeader = header.toLowerCase().trim();
+      const systemKey = systemLabels.get(normalizedHeader);
+      
+      if (systemKey && !mappedSystemKeys.has(systemKey)) {
+        mapping[systemKey] = header;
+        mappedSystemKeys.add(systemKey);
+        usedExcelHeaders.add(header);
+        console.log(`Mapeo por label: ${systemKey} -> ${header}`);
+      }
+    });
+    
+    // 3. Buscar coincidencias parciales para las columnas restantes
+    this.excelHeaders.forEach(header => {
+      if (!header || usedExcelHeaders.has(header)) return;
+      
+      const normalizedHeader = header.toLowerCase().trim();
+      
+      // Buscar coincidencias parciales para columnas no mapeadas
+      systemLabels.forEach((key, label) => {
+        if (!mappedSystemKeys.has(key) && !usedExcelHeaders.has(header)) {
+          // Verificar si el encabezado del Excel contiene la etiqueta del sistema o viceversa
+          if (normalizedHeader.includes(label) || label.includes(normalizedHeader)) {
+            mapping[key] = header;
+            mappedSystemKeys.add(key);
+            usedExcelHeaders.add(header);
+            console.log(`Mapeo parcial: ${key} -> ${header}`);
+          }
+        }
+      });
+    });
+
+    // Diagnóstico: Ver qué columnas no se pudieron mapear
+    const unmappedExcelHeaders = this.excelHeaders.filter(header => 
+      header && !usedExcelHeaders.has(header)
+    );
+    
+    const unmappedSystemColumns = Array.from(systemLabels.entries())
+      .filter(([_, key]) => !mappedSystemKeys.has(key))
+      .map(([label, key]) => ({ label, key }));
+    
+    if (unmappedExcelHeaders.length > 0) {
+      console.warn('Encabezados del Excel no mapeados:', unmappedExcelHeaders);
+    }
+    
+    if (unmappedSystemColumns.length > 0) {
+      console.warn('Columnas del sistema no mapeadas:', unmappedSystemColumns);
+    }
+
+    console.log('Mapeo final creado:', mapping);
+    console.log(`Total de mapeos: ${Object.keys(mapping).length}`);
+    
+    return mapping;
+  }
+
+  // Mostrar notificación de éxito
+  showSuccessNotification(message: string): void {
+    // Crear el elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = 'success-notification';
+    notification.innerHTML = `
+      <i class="fas fa-check-circle"></i>
+      <p>${message}</p>
+      <button class="close-btn">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Manejar el cierre
+    const closeBtn = notification.querySelector('.close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        document.body.removeChild(notification);
+      });
+    }
+    
+    // Auto-cerrar después de 5 segundos
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 5000);
+  }
+
+  // Helper methods for Excel-like display
+  getLetter(index: number): string {
+    // Comenzar desde B (índice 1) en lugar de A (índice 0)
+    let result = '';
+    let adjustedIndex = index + 1; // Ajustar para comenzar desde B
+    
+    while (adjustedIndex >= 0) {
+      result = String.fromCharCode((adjustedIndex % 26) + 65) + result;
+      adjustedIndex = Math.floor(adjustedIndex / 26) - 1;
+    }
+    return result;
+  }
+  
+  getCellType(value: any): 'number' | 'date' | 'text' {
+    if (value === null || value === undefined || value === '') {
+      return 'text';
+    }
+    
+    // Verificar si es un número
+    if (typeof value === 'number' || (!isNaN(Number(value)) && !isNaN(parseFloat(value.toString())))) {
+      return 'number';
+    }
+    
+    // Intentar detectar si es una fecha
+    if (typeof value === 'string') {
+      const dateValue = new Date(value);
+      if (!isNaN(dateValue.getTime()) && (value.includes('/') || value.includes('-') || value.includes('.'))) {
+        return 'date';
+      }
+    }
+    
+    return 'text';
+  }
+
+  formatCell(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    const type = this.getCellType(value);
+    
+    if (type === 'number') {
+      const num = typeof value === 'number' ? value : parseFloat(value);
+      // Formatear números con máximo 2 decimales si es necesario
+      if (num % 1 === 0) {
+        return num.toString();
+      } else {
+        return num.toFixed(2).replace(/\.?0+$/, '');
+      }
+    }
+    
+    if (type === 'date') {
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      } catch {
+        return value.toString();
+      }
+    }
+    
+    return value.toString().trim();
+  }
+
+  /**
+   * Obtiene el tipo de celda en español para la vista previa
+   */
+  getCellTypeLabel(value: any): string {
+    const type = this.getCellType(value);
+    switch (type) {
+      case 'number': return 'Número';
+      case 'date': return 'Fecha';
+      case 'text': return 'Texto';
+      default: return 'Texto';
+    }
+  }
+
+  /**
+   * Traduce los encabezados del Excel al español para la vista previa
+   */
+  translateExcelHeader(header: string): string {
+    const translations: { [key: string]: string } = {
+      // Traducciones exactas
+      // 'HOUSE/TOWER (CODE)': 'CASA/TORRE (CÓDIGO)', // ELIMINADO
+      'WINDOW CODE': 'CÓDIGO VENTANA',
+      'UNITS': 'UNIDADES',
+      'Location': 'Ubicación',
+      'Width (m)': 'Ancho (m)',
+      'Height (m)': 'Alto (m)',
+      'Surface (m²)': 'Superficie (m²)',
+      'Quantity PER UNIT': 'Cantidad POR UNIDAD',
+      'Total surface (m²)': 'Superficie total (m²)',
+      'MANUFACTURING WIDTH': 'ANCHO MANUFACTURA',
+      'MANUFACTURING HEIGHT': 'ALTO MANUFACTURA',
+      'DESIGN 1': 'DISEÑO 1',
+      'DESIGN 2': 'DISEÑO 2',
+      'COMMENT 1': 'COMENTARIO 1',
+      'COMMENT 2': 'COMENTARIO 2',
+      'Material': 'Material',
+      'Profile section': 'Sección perfil',
+      'Body color': 'Color estructura',
+      'Glass thickness': 'Espesor vidrio',
+      'Glass protection': 'Protección vidrio',
+           'Film color': 'Color película',
+      'Opaque/Clear glass': 'Vidrio Opaco/Transparente',
+      'Window Type': 'Tipo de Ventana',
+      'Glass type': 'Tipo de vidrio',
+      'OPENING': 'APERTURA',
+      'Lock': 'Cerradura',
+      
+      // Traducciones parciales (contienen palabras clave)
+      'CODE': 'CÓDIGO',
+      'Width': 'Ancho',
+      'Height': 'Alto',
+      'Surface': 'Superficie',
+      'Quantity': 'Cantidad',
+      'Manufacturing': 'Manufactura',
+      'Design': 'Diseño',
+      'Comment': 'Comentario',
+      'Opening': 'Apertura',
+      'Glass': 'Vidrio',
+      'Color': 'Color',
+      'Type': 'Tipo',
+      'Protection': 'Protección',
+      'Film': 'Película',
+      'Body': 'Estructura',
+      'Profile': 'Perfil',
+      'Section': 'Sección',
+      'Thickness': 'Espesor',
+      'Clear': 'Transparente',
+      'Opaque': 'Opaco',
+      'Window': 'Ventana',
+      'House': 'Casa',
+      'Tower': 'Torre',
+      'Units': 'Unidades',
+      'Total': 'Total'
+    };
+
+    // Buscar traducción exacta primero
+    if (translations[header]) {
+      return translations[header];
+    }
+
+    // Si no hay traducción exacta, buscar traducciones parciales
+    let translatedHeader = header;
+    Object.entries(translations).forEach(([english, spanish]) => {
+      const regex = new RegExp(`\\b${english}\\b`, 'gi');
+      translatedHeader = translatedHeader.replace(regex, spanish);
+    });
+
+    return translatedHeader;
+  }
+
+  /**
+   * Obtiene las etiquetas de la interfaz en español
+   */
+  getExcelPreviewLabels() {
+    return {
+      fileName: 'Nombre del archivo',
+      fileSize: 'Tamaño del archivo',
+      headers: 'Encabezados',
+      dataPreview: 'Vista previa de datos',
+      row: 'Fila',
+      column: 'Columna',
+      value: 'Valor',
+      type: 'Tipo',
+      totalRows: 'Total de filas',
+      totalColumns: 'Total de columnas',
+      detectedHeaders: 'Encabezados detectados',
+      dataTypes: 'Tipos de datos detectados',
+      importReady: 'Listo para importar',
+      mappingInfo: 'Información de mapeo',
+      systemField: 'Campo del sistema',
+      excelColumn: 'Columna Excel',
+      mapping: 'Mapeo'
+    };
+  }
+
+  /**
+   * Formatea el tamaño del archivo en español
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  /**
+   * Obtiene información estadística del archivo Excel en español
+   */
+  getExcelStats() {
+    if (!this.selectedFile || !this.excelHeaders.length) {
+      return null;
+    }
+
+    const labels = this.getExcelPreviewLabels();
+    const mapping = this.createAutomaticMapping();
+    
+    return {
+      fileName: this.selectedFile.name,
+      fileSize: this.formatFileSize(this.selectedFile.size),
+      totalRows: this.excelPreviewData.length,
+      totalColumns: this.excelHeaders.length,
+      headersTranslated: this.excelHeaders.map(header => ({
+        original: header,
+        translated: this.translateExcelHeader(header),
+        mapped: !!mapping[Object.keys(mapping).find(key => mapping[key] === header) || '']
+      })),
+      mappedFields: Object.keys(mapping).length,
+      unmappedHeaders: this.excelHeaders.filter(header => 
+        !Object.values(mapping).includes(header)
+      ).length
+    };
+  }
 }

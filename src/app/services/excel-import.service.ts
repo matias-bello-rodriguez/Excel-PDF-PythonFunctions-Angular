@@ -8,8 +8,10 @@ import * as XLSX from 'xlsx';
 export class ExcelImportService {
   private readonly SHEET_NAME = 'detalle';
   private readonly START_ROW = 5; // Índice 5 corresponde a la fila 6 (0-based)
+  private readonly START_COLUMN = 'B'; // Comenzar desde la columna B
 
   constructor() {}
+  
   async generatePreview(file: File): Promise<{ headers: string[], data: any[][] }> {
     try {
       const allData = await this.parseFile(file);
@@ -22,10 +24,10 @@ export class ExcelImportService {
       // Extraer encabezados (primera fila) y filtrar valores undefined o null
       const headers = (allData[0] || []).map(header => 
         header !== undefined && header !== null ? String(header).trim() : ''
-      );
+      ).filter(header => header !== ''); // Filtrar headers vacíos
       
       // Verificar que tengamos encabezados válidos
-      if (headers.every(h => h === '')) {
+      if (headers.length === 0) {
         throw new Error('No se encontraron encabezados válidos en el archivo Excel');
       }
       
@@ -44,6 +46,7 @@ export class ExcelImportService {
       throw error;
     }
   }
+
   async importExcel(file: File, columnMapping: { [key: string]: string }): Promise<any[]> {
     try {
       const { headers, data } = await this.generatePreview(file);
@@ -94,6 +97,7 @@ export class ExcelImportService {
       throw error;
     }
   }
+
   private parseFile(file: File): Promise<any[][]> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -129,10 +133,13 @@ export class ExcelImportService {
             throw new Error(`No se pudo acceder a la hoja "${sheetName}"`);
           }
           
-          // Configurar para leer desde la fila especificada
+          // Configurar el rango para comenzar desde B6 (columna B, fila 6)
+          const range = `${this.START_COLUMN}${this.START_ROW + 1}:Z1000`; // B6:Z1000
+          
+          // Leer datos desde el rango especificado
           const data: any[][] = XLSX.utils.sheet_to_json(ws, { 
             header: 1,        // Usar índices numéricos para las columnas
-            range: this.START_ROW  // Comenzar desde la fila configurada (índice START_ROW)
+            range: range      // Comenzar desde B6
           });
 
           // Verificar que se obtuvieron datos
@@ -151,7 +158,7 @@ export class ExcelImportService {
             throw new Error('No se encontraron datos válidos en el archivo Excel');
           }
 
-          console.log(`Excel file parsed successfully. Sheet: "${sheetName}", Rows: ${filteredData.length}`);
+          console.log(`Excel file parsed successfully. Sheet: "${sheetName}", Rows: ${filteredData.length}, Range: ${range}`);
           resolve(filteredData);
         } catch (error) {
           console.error('Error parsing Excel file:', error);

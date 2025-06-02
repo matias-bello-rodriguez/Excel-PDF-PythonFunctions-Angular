@@ -347,4 +347,76 @@ export class ProductoService {
     
     return imageUrl;
   }
+
+  /**
+   * Importa productos desde un archivo Excel con mapeo automático
+   */
+  async importProductosFromExcel(
+    cubicacionId: string, 
+    productos: Partial<Producto>[]
+  ): Promise<{ success: number; errors: string[] }> {
+    const results = { success: 0, errors: [] as string[] };
+    
+    try {
+      for (let i = 0; i < productos.length; i++) {
+        const producto = productos[i];
+        
+        // Asegurar que tenga cubicacion_id
+        producto.cubicacion_id = cubicacionId;
+        
+        // Generar código único si no existe
+        if (!producto.codigo) {
+          producto.codigo = `PROD-${Date.now()}-${i}`;
+        }
+        
+        // Validar datos mínimos requeridos
+        if (!producto.nombre || producto.nombre.trim() === '') {
+          producto.nombre = `Producto ${producto.codigo}`;
+        }
+        
+        // Calcular superficies si hay dimensiones
+        if (producto.ancho_diseno && producto.alto_diseno) {
+          const ancho = Number(producto.ancho_diseno);
+          const alto = Number(producto.alto_diseno);
+          const cantidad = Number(producto.cantidad) || 1;
+          
+          if (!isNaN(ancho) && !isNaN(alto)) {
+            producto.superficie_unitaria = (ancho * alto) / 1000000; // Convertir a m²
+            producto.superficie_total = producto.superficie_unitaria * cantidad;
+          }
+        }
+        
+        // Calcular precio total si hay precio unitario
+        if (producto.precio_unitario && producto.cantidad) {
+          const precio = Number(producto.precio_unitario);
+          const cantidad = Number(producto.cantidad);
+          
+          if (!isNaN(precio) && !isNaN(cantidad)) {
+            producto.precio_total = precio * cantidad;
+          }
+        }
+        
+        try {
+          const created = await this.create(producto);
+          if (created) {
+            results.success++;
+          } else {
+            results.errors.push(`Fila ${i + 1}: No se pudo crear el producto`);
+          }
+        } catch (error: any) {
+          results.errors.push(`Fila ${i + 1}: ${error.message || 'Error desconocido'}`);
+        }
+      }
+      
+      // Invalidar caché después de la importación masiva
+      this.cacheService.invalidateCache(`productos_cubicacion_${cubicacionId}`);
+      this.cacheService.invalidateCache(this.CACHE_KEY);
+      
+      return results;
+    } catch (error) {
+      this.errorService.handle(error, 'Importando productos desde Excel');
+      results.errors.push('Error general en la importación');
+      return results;
+    }
+  }
 }

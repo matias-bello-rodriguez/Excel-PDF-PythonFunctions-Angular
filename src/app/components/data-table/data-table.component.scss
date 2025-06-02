@@ -175,8 +175,21 @@ tbody tr:nth-child(even) {
   display: flex;
   justify-content: flex-end;
   min-width: 120px; // Ancho mínimo para evitar que se comprima
+  align-items: center;
+  
+  // Cuando la acción está con una imagen
+  &.with-image {
+    justify-content: center;
+    min-width: 150px; // Aumentamos un poco el ancho para mejor presentación
+    padding: var(--spacing-03);
+  }
+}
 
-  align-items: center;}
+// Clase para centrar los botones de acción cuando están al lado de una imagen
+tr:has(td .image-container) .actions-cell,
+.actions-with-image {
+  justify-content: center;
+}
 
 .actions-container {
   display: flex;
@@ -279,6 +292,14 @@ tr.pinned .action-btn.pin i {
     opacity: 1;
     visibility: visible;
   }
+  
+  // Ajuste para tooltips en botones centrados
+  .actions-with-image &,
+  .with-image & {
+    .tooltip {
+      bottom: -32px; // Un poco más abajo para los botones más grandes
+    }
+  }
 }
 
 // Estados de carga y sin datos
@@ -362,26 +383,28 @@ tr.pinned .action-btn.pin i {
   align-items: center;
   justify-content: center;
   padding: 0;
-  min-width: 26px;
-  max-width: 26px;
-  height: 26px;
+  min-width: 150px;
+  max-width: 150px;
+  height: 150px;
   overflow: hidden;
 }
 
 .product-thumbnail {
-  width: 26px;
-  height: 26px;
+  width: 300px;
+  height: 300px;
   object-fit: cover;
-  border-radius: 2px;
+  border-radius: 3px;
   box-shadow: none;
-  transition: transform 0.2s;
+  transition: transform 0.3s;
   background-color: #f5f5f5; // Color de fondo mientras carga
   
   &:hover {
-    transform: scale(3); // Mayor zoom para ver mejor
+    transform: scale(9); // Aumentado de 3 a 9 (triple del tamaño actual)
     cursor: pointer;
     z-index: 100; // Mayor índice para asegurar que esté sobre todo
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.4);
+    position: relative; // Asegura que la posición sea adecuada
+    transform-origin: center; // Asegura que la ampliación se centre correctamente
   }
 }
 
@@ -402,4 +425,21 @@ td .image-container {
 .image-error {
   border: 1px solid #ffcccc;
   opacity: 0.7;
+}
+
+// Mejoras específicas para botones cuando están centrados en filas con imágenes
+.actions-with-image .action-btn,
+.with-image .action-btn {
+  width: 36px;
+  height: 36px;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+  
+  i {
+    font-size: 16px; // Iconos ligeramente más grandes
+  }
 }

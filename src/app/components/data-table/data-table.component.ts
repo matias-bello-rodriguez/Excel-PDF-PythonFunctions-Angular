@@ -39,7 +39,7 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
 
   // Drag and drop variables
   draggedColumn: string | null = null;
-    showColumnMenu: boolean = false;
+  showColumnMenu: boolean = false;
   columnMenuAnchor: HTMLElement | null = null;
 
   hasProyectoColumn = false;
@@ -260,5 +260,15 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
     if (imageUrl) {
       window.open(imageUrl, '_blank');
     }
+  }
+
+  // Determina si un item tiene una imagen
+  hasImage(item: TableData): boolean {
+    // Busca una columna de tipo 'image' y verifica si el item tiene valor para esa columna
+    const imageColumn = this.columns.find(col => col.type === 'image');
+    if (imageColumn && item[imageColumn.key]) {
+      return true;
+    }
+    return false;
   }
 }
