@@ -41,7 +41,7 @@
                   <img src="plano-ejemplo.png" [alt]="producto.codigo">
                 </div>                <div class="info-section">
                     <table class="detalles-precio">
-                      <tr class="rojo">
+                      <tr>
                         <td >Detalle</td>
                         <td></td>
                       </tr>
@@ -49,7 +49,7 @@
                         <td>Precio unitario</td>
                         <td class="valor">${{ formatNumber(producto.precio_unitario) }} USD</td>
                       </tr>
-                      <tr>
+                      <tr class="rojo">
                         <td>Cantidad</td>
                         <td class="valor">{{ producto.superficie_total }} m² ({{ producto.cantidad }} Pzas.)</td>
                       </tr>
