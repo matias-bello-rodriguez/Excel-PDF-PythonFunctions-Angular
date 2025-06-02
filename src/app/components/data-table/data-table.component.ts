@@ -230,17 +230,24 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
     
     // Devolver primero los elementos fijados y luego los filtrados
     return [...pinnedRows, ...filteredRows];
-  }
-
-  /**
+  }  /**
    * Maneja errores al cargar imágenes
    */
   handleImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     imgElement.classList.add('image-error');
+    console.warn('Error al cargar la imagen:', imgElement.src);
     
-    // Opcionalmente, puedes establecer una imagen predeterminada
-    // imgElement.src = 'assets/images/no-image.png';
+    try {
+      // Guardar la URL original para posible diagnóstico
+      const originalSrc = imgElement.src;
+      
+      // Establecer una imagen predeterminada
+      imgElement.src = 'assets/images/no-image.png';
+      imgElement.title = 'No se pudo cargar la imagen. URL original: ' + originalSrc;
+    } catch (err) {
+      console.error('Error al manejar imagen fallida:', err);
+    }
   }
 
   /**

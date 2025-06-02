@@ -30,9 +30,8 @@
             [attr.data-index]="i" 
             tabindex="0"
             (click)="onRowClick(item)"
-            [class.pinned]="isPinned(item[idField])">
-          <td *ngFor="let column of getVisibleColumns()" [ngClass]="{'actions-cell': column.key === 'actions'}">
-            <ng-container [ngSwitch]="column.key">
+            [class.pinned]="isPinned(item[idField])">          <td *ngFor="let column of getVisibleColumns()" [ngClass]="{'actions-cell': column.key === 'actions'}">
+            <ng-container [ngSwitch]="column.type || column.key">
               <!-- Columna de acciones -->
               <ng-container *ngSwitchCase="'actions'">
                 <div class="actions-cell">
@@ -91,13 +90,12 @@
                   {{ item[column.key] === 'activo' ? 'Activo' : 'Inactivo' }}
                 </span>
               </ng-container>
-              
-              <!-- Nueva columna de imagen (corregida) -->
+                <!-- Nueva columna de imagen (corregida) -->
               <ng-container *ngSwitchCase="'image'">
                 <div class="image-container">
                   <img *ngIf="item[column.key]" 
                        [src]="item[column.key]" 
-                       alt="" 
+                       alt="Imagen de producto" 
                        class="product-thumbnail"
                        (click)="onImageClick(item[column.key], $event)"
                        (error)="handleImageError($event)">

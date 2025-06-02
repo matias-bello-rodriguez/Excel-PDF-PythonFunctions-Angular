@@ -320,10 +320,31 @@ export class ProductoService {
     // Intentar recuperar del localStorage
     const tempImage = localStorage.getItem(`temp_image_${producto.id}`);
     if (tempImage) {
-      return tempImage;
+      return this.formatImageUrl(tempImage);
     }
     
     // Si no hay imagen temporal, devolver la URL normal
-    return producto.imagen;
+    return this.formatImageUrl(producto.imagen);
+  }
+
+  /**
+   * Verifica y formatea correctamente las URLs de imágenes
+   */
+  private formatImageUrl(imageUrl: string | null): string {
+    if (!imageUrl) return '';
+    
+    // Si ya es una URL completa, devolverla directamente
+    if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Si es una cadena base64 sin el prefijo adecuado, añadirlo
+    if (imageUrl.startsWith('iVBOR') || imageUrl.includes('base64')) {
+      if (!imageUrl.startsWith('data:')) {
+        return `data:image/png;base64,${imageUrl}`;
+      }
+    }
+    
+    return imageUrl;
   }
 }

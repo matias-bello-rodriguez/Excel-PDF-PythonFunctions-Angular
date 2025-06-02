@@ -324,12 +324,19 @@ export class ProductListComponent implements OnInit, OnDestroy {
       sortable: true,
       draggable: true,
       visible: true,
-    },
-    {
+    },    {
       key: 'fecha_actualizacion',
       label: 'Fecha Actualización',
       type: 'date',
       sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'imagen',
+      label: 'Img',
+      type: 'image',  // Asegúrate de que este valor sea 'image'
+      sortable: false,
       draggable: true,
       visible: true,
     },
@@ -339,14 +346,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
       type: 'actions',
       sortable: false,
       draggable: false,
-      visible: true,
-    },
-    {
-      key: 'imagen',
-      label: 'Img',
-      type: 'image',  // Asegúrate de que este valor sea 'image'
-      sortable: false,
-      draggable: true,
       visible: true,
     },
   ];
@@ -393,13 +392,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
     precio_unitario: 'number', // Cambiado de 'currency' a 'number'
     precio_total: 'number', // Cambiado de 'currency' a 'number'
     factor_instalacion: 'number',
-    descripcion: 'text',
-    observaciones: 'text',
-    activo: 'boolean',
-    fecha_creacion: 'date',
+    descripcion: 'text',    observaciones: 'text',
+    activo: 'boolean',    fecha_creacion: 'date',
     fecha_actualizacion: 'date',
-    actions: 'text',
     imagen: 'image',
+    actions: 'text',
   };
 
   uniqueValues: { [key: string]: string[] } = {};
@@ -433,10 +430,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
     precio_total: 'Precio Total',
     factor_instalacion: 'Factor Instalación',
     descripcion: 'Descripción',
-    observaciones: 'Observaciones',
-    activo: 'Activo',
+    observaciones: 'Observaciones',    activo: 'Activo',
     fecha_creacion: 'Fecha Creación',
     fecha_actualizacion: 'Fecha Actualización',
+    imagen: 'Img',
     actions: 'Acciones',
   };
 
