@@ -35,6 +35,14 @@
         <i class="fas fa-eye"></i>
         Vista previa
       </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'mapping'"
+        [disabled]="!selectedFile"
+        (click)="activeTab = 'mapping'">
+        <i class="fas fa-map"></i>
+        Mapeo de columnas
+      </button>
     </div>
 
     <!-- Contenido del modal -->
@@ -124,22 +132,106 @@
             <span>Cargando datos del archivo...</span>
           </div>
         </div>
+      </div>      <!-- Pestaña de mapeo de columnas -->
+      <div *ngIf="activeTab === 'mapping'" class="tab-content">
+        <div class="mapping-container">
+          <h3>Mapeo de columnas</h3>
+          <p class="mapping-instructions">
+            Arrastra las columnas del Excel y suéltalas en los campos del sistema correspondientes:
+          </p>
+          
+          <!-- Mensaje de mapeo automático -->
+          <div *ngIf="hasMappings()" class="mapping-help">
+            <div class="help-icon">
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="help-text">
+              <strong>¡Excelente!</strong> Se han mapeado automáticamente {{ getMappedFieldsCount() }} campos que coinciden con las columnas de tu Excel.
+              Puedes ajustar estos mapeos o agregar más arrastrando las columnas disponibles.
+            </div>
+          </div>
+          
+          <!-- Lista de columnas disponibles del Excel -->
+          <div class="available-columns">
+            <h4>Columnas disponibles</h4>
+            <div class="column-list">
+              <div *ngFor="let header of excelHeaders" 
+                   class="column-item"
+                   draggable="true"
+                   [class.mapped]="isHeaderMapped(header)"
+                   (dragstart)="onDragStart($event, header)">
+                {{ header }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tabla de mapeo de campos -->
+          <div class="mapping-fields">
+            <h4>Mapeo de campos</h4>
+            <table class="mapping-table">
+              <thead>
+                <tr>
+                  <th>Campo del sistema</th>
+                  <th>Columna del Excel</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>                <tr *ngFor="let field of systemFields"
+                    [class.drop-target]="dragTarget === field.id"
+                    [class.important-field]="field.id === 'codigo' || field.id === 'nombre'">
+                  <td>
+                    <span *ngIf="field.id === 'codigo' || field.id === 'nombre'" class="important-marker">*</span>
+                    {{ field.name }}
+                  </td>
+                  <td 
+                    (dragenter)="onDragEnter($event, field.id)" 
+                    (dragover)="onDragOver($event)" 
+                    (dragleave)="onDragLeave($event)" 
+                    (drop)="onDrop($event, field.id)"
+                    class="drop-zone"
+                    [class.has-mapping]="isFieldMapped(field.id)">
+                    
+                    <div *ngIf="isFieldMapped(field.id)" class="mapped-column">
+                      <span>{{ getMappedColumn(field.id) }}</span>
+                      <i class="fas fa-check-circle" style="color: #28a745; margin-left: 8px;"></i>
+                    </div>
+                    <div *ngIf="!isFieldMapped(field.id)" class="empty-mapping">
+                      Arrastra una columna aquí
+                    </div>
+                  </td>
+                  <td>
+                    <button *ngIf="isFieldMapped(field.id)" class="btn-remove-mapping" 
+                      (click)="removeMapping(field.id)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Botones de acción -->
     <div class="modal-footer">
-      <button 
-        class="btn btn-secondary" 
-        (click)="onCloseModal()">
-        Cancelar
-      </button>
-      <button 
-        class="btn btn-primary"
-        [disabled]="!selectedFile"
-        (click)="activeTab === 'preview' ? importExcel() : nextStep()">
-        {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
-      </button>
+      <div class="button-container">
+        <button 
+          class="btn btn-secondary" 
+          (click)="onCloseModal()">
+          Cancelar
+        </button>
+        <button 
+          class="btn btn-primary"
+          [disabled]="!selectedFile"
+          (click)="activeTab === 'preview' ? importExcel() : nextStep()">
+          {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
+        </button>
+        <button *ngIf="activeTab === 'mapping'" class="btn-primary" 
+          [disabled]="!hasMappings()" (click)="importExcel()">
+          Importar datos
+        </button>
+      </div>
     </div>
   </div>
 </div>
