@@ -1,7 +1,6 @@
 <div class="page-header">
-  <app-page-title [title]="pageTitle"></app-page-title>
-  <div class="header-actions">
-    <button mat-icon-button color="primary" (click)="refreshData" matTooltip="Recargar datos">
+  <app-page-title [title]="pageTitle"></app-page-title>  <div class="header-actions">
+    <button mat-icon-button color="primary" (click)="refreshData()" matTooltip="Recargar datos">
     </button>
       <app-add-button label="AGREGAR PRODUCTO" icon="fa-plus" (click)="nuevoProducto()"></app-add-button>
   </div>
@@ -36,21 +35,18 @@
             <i class="fas fa-columns" aria-hidden="true"></i>
             <span class="tooltip">Personalizar columnas</span>
           </button>
-        </div>
-        <div class="tooltip-container">
-          <button class="btn-icon" 
+        </div>        <div class="tooltip-container">          <button class="btn-icon" 
             (click)="showExcelModal = true"
             aria-label="Importar desde Excel">
             <i class="fas fa-file-import" aria-hidden="true"></i>
             <span class="tooltip">Importar desde Excel</span>
           </button>
-        </div>
-        <div class="tooltip-container">
+        </div>        <div class="tooltip-container">
           <button class="btn-icon" 
-            aria-label="Exportar lista"
-            (click)="toggleExportDialog()">
+            aria-label="Exportar PDF"
+            (click)="toggleOfertaModal()">
             <i class="fas fa-file-export" aria-hidden="true"></i>
-            <span class="tooltip">Exportar</span>
+            <span class="tooltip">Exportar PDF</span>
           </button>
         </div>
         <div class="tooltip-container">
@@ -144,118 +140,14 @@
 
 
 
-<!-- Modal para importar desde Excel -->
-<div *ngIf="showExcelModal" class="modal-overlay" (click)="showExcelModal = false">
-  <div class="modal" (click)="$event.stopPropagation()" style="display: flex; flex-direction: column;">    
-    <div class="modal-header">
-      <div class="modal-title-container">
-        <img src="/icon-excel.svg" alt="Excel" class="excel-icon">
-        <h3>Importar Excel</h3>
-      </div>
-      <span class="close-btn-wrapper">
-        <button class="close-btn custom-close" type="button" (click)="showExcelModal = false" aria-label="Cerrar diálogo de importación">
-          <i class="fas fa-times" aria-hidden="true"></i>
-          <span>Cancelar</span>
-        </button>
-      </span>
-    </div>
-      <!-- Navegación de pestañas -->
-    <div class="modal-tabs">
-      <button 
-        class="tab-button" 
-        [class.active]="activeTab === 'upload'"
-        (click)="activeTab = 'upload'">
-        <i class="fas fa-upload"></i>
-        Subir archivo
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="activeTab === 'preview'"
-        (click)="activeTab = 'preview'"
-        [disabled]="!selectedFile">
-        <i class="fas fa-table"></i>
-        Vista previa
-      </button>
-    </div>    <!-- Contenido de las pestañas -->
-    <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 0;">
-      <!-- Pestaña de Upload -->
-      <div class="upload-section" *ngIf="activeTab === 'upload'" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
-        <div class="upload-area" 
-             (click)="fileInput.click()"
-             (dragover)="onFileDragOver($event)"
-             (dragleave)="onFileDragLeave($event)"
-             (drop)="onFileDropped($event)"
-             style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 30rem;">
-          <img src="/logo-excel.svg" alt="Excel" class="excel-logo" style="width: 6rem; height: 6rem; margin-bottom: 2rem;">
-          <h4>Selecciona tu archivo de Excel</h4>
-          <p>Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
-          <input
-            #fileInput
-            type="file"
-            [hidden]="true"
-            (change)="onFileSelected($event)"
-            accept=".xlsx,.xls">
-          <div class="file-info" *ngIf="selectedFileName" style="margin-top: 2rem;">
-            <i class="fas fa-file-excel"></i>
-            <span>{{ selectedFileName }}</span>
-            <button class="remove-file" (click)="resetExcelModal(); $event.stopPropagation()">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-      </div>      <!-- Pestaña de Vista Previa -->
-      <div *ngIf="activeTab === 'preview'" style="height: 100%; flex: 1; overflow: auto; padding: 0;">
-        <div class="preview-table-container" *ngIf="excelHeaders.length > 0">
-          <table class="preview-table" style="min-width: 100%;">
-            <thead>
-              <!-- Fila de letras de columnas (A, B, C, etc.) -->
-              <tr>
-                <th class="row-header"></th>
-                <th *ngFor="let header of excelHeaders; let j = index">
-                  {{ getLetter(j) }}
-                </th>
-              </tr>
-              <!-- Fila de nombres de columnas del Excel -->
-              <tr>
-                <th class="row-header">#</th>
-                <th *ngFor="let header of excelHeaders">{{ header }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of excelPreviewData; let i = index">
-                <td class="row-header">{{ i + 1 }}</td>
-                <td *ngFor="let cell of row" [attr.data-type]="getCellType(cell)">
-                  {{ formatCell(cell) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="loading-preview" *ngIf="isLoadingPreview">
-          <div class="spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <span>Cargando datos del archivo...</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="modal-footer">
-      <button 
-        class="btn btn-secondary" 
-        (click)="showExcelModal = false">
-        Cancelar
-      </button>
-      <button 
-        class="btn btn-primary"
-        [disabled]="!selectedFile"
-        (click)="activeTab === 'preview' ? importExcel() : nextStep()">
-        {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
-      </button>
-    </div>
-  </div>
-</div>
+<!-- Excel Import Modal Component -->
+<app-excel-import-modal
+  [showModal]="showExcelModal"
+  [cubicacionId]="null"
+  (closeModal)="showExcelModal = false"
+  (importSuccess)="onExcelImportSuccess($event)"
+  (importError)="onExcelImportError($event)">
+</app-excel-import-modal>
 
 <!-- Modal para generar oferta PDF -->
 <div *ngIf="showOfertaModal" class="modal-overlay" (click)="showOfertaModal = false">

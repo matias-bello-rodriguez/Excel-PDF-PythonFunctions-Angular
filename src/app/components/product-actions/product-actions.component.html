@@ -1,0 +1,70 @@
+<div class="product-actions" 
+     [class.horizontal]="orientation === 'horizontal'"
+     [class.vertical]="orientation === 'vertical'"
+     [class.size-small]="size === 'small'"
+     [class.size-medium]="size === 'medium'"
+     [class.size-large]="size === 'large'"
+     [class.loading]="isLoading">
+
+  <!-- Botón de Editar -->
+  <div class="action-item" *ngIf="showEdit">
+    <button 
+      type="button"
+      class="action-btn edit-btn"
+      [disabled]="isLoading"
+      [attr.aria-label]="getAriaLabel('edit')"
+      [matTooltip]="getTooltipText('edit')"
+      matTooltipPosition="above"
+      (click)="onEdit($event)">
+      <mat-icon>edit</mat-icon>
+    </button>
+  </div>
+
+  <!-- Botón de Eliminar -->
+  <div class="action-item" *ngIf="showDelete">
+    <button 
+      type="button"
+      class="action-btn delete-btn"
+      [disabled]="isLoading"
+      [attr.aria-label]="getAriaLabel('delete')"
+      [matTooltip]="getTooltipText('delete')"
+      matTooltipPosition="above"
+      (click)="onDelete($event)">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+
+  <!-- Botón de Fijar/Desfijar -->
+  <div class="action-item" *ngIf="showPin">
+    <button 
+      type="button"
+      class="action-btn pin-btn"
+      [class.pinned]="isPinned"
+      [disabled]="isLoading"
+      [attr.aria-label]="getAriaLabel('pin')"
+      [matTooltip]="getTooltipText('pin')"
+      matTooltipPosition="above"
+      (click)="onPin($event)">
+      <mat-icon>{{ isPinned ? 'push_pin' : 'push_pin' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Botón de Ver Detalle -->
+  <div class="action-item" *ngIf="showDetail">
+    <button 
+      type="button"
+      class="action-btn detail-btn"
+      [disabled]="isLoading"
+      [attr.aria-label]="getAriaLabel('detail')"
+      [matTooltip]="getTooltipText('detail')"
+      matTooltipPosition="above"
+      (click)="onViewDetail($event)">
+      <mat-icon>visibility</mat-icon>
+    </button>
+  </div>
+
+  <!-- Indicador de carga -->
+  <div class="loading-indicator" *ngIf="isLoading">
+    <mat-icon class="spinner">hourglass_empty</mat-icon>
+  </div>
+</div>

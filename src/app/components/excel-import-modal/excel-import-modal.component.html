@@ -1,0 +1,145 @@
+<!-- Modal para importar desde Excel -->
+<div *ngIf="showModal" class="modal-overlay" (click)="onCloseModal()">
+  <div class="modal" (click)="$event.stopPropagation()">    
+    <div class="modal-header">
+      <div class="modal-title-container">
+        <img src="/icon-excel.svg" alt="Excel" class="excel-icon">
+        <h3>Importar Excel</h3>
+      </div>
+      <span class="close-btn-wrapper">
+        <button 
+          class="close-btn custom-close" 
+          type="button" 
+          (click)="onCloseModal()" 
+          aria-label="Cerrar diálogo de importación">
+          <i class="fas fa-times" aria-hidden="true"></i>
+          <span>Cancelar</span>
+        </button>
+      </span>
+    </div>
+
+    <!-- Navegación de pestañas -->
+    <div class="modal-tabs">
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'upload'"
+        (click)="activeTab = 'upload'">
+        <i class="fas fa-upload"></i>
+        Subir archivo
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'preview'"
+        [disabled]="!selectedFile"
+        (click)="activeTab = 'preview'">
+        <i class="fas fa-eye"></i>
+        Vista previa
+      </button>
+    </div>
+
+    <!-- Contenido del modal -->
+    <div class="modal-body">
+      <!-- Pestaña de carga de archivo -->
+      <div *ngIf="activeTab === 'upload'" class="upload-tab">
+        <div class="file-drop-zone" 
+             [class.has-file]="selectedFile"
+             (click)="fileInput.click()">
+          <img src="/logo-excel.svg" alt="Excel" class="excel-logo">
+          <h4>Selecciona tu archivo de Excel</h4>
+          <p>Arrastra y suelta tu archivo aquí o haz clic para seleccionar</p>
+          <input
+            #fileInput
+            type="file"
+            [hidden]="true"
+            (change)="onFileSelected($event)"
+            accept=".xlsx,.xls">
+          <div class="file-info" *ngIf="selectedFileName">
+            <i class="fas fa-file-excel"></i>
+            <span>{{ selectedFileName }}</span>
+            <button class="remove-file" (click)="resetModal(); $event.stopPropagation()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Información del archivo -->
+        <div class="file-stats" *ngIf="getExcelStats() as stats">
+          <h5>Información del archivo:</h5>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="label">Archivo:</span>
+              <span class="value">{{ stats.fileName }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Tamaño:</span>
+              <span class="value">{{ stats.fileSize }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Filas:</span>
+              <span class="value">{{ stats.totalRows }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Columnas:</span>
+              <span class="value">{{ stats.totalColumns }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Campos mapeados:</span>
+              <span class="value">{{ stats.mappedFields }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña de vista previa -->
+      <div *ngIf="activeTab === 'preview'" class="preview-tab">
+        <div class="preview-header">
+          <h4>Vista previa de datos</h4>
+          <p *ngIf="excelPreviewData.length > 0">
+            Mostrando {{ excelPreviewData.length }} filas de datos
+          </p>
+        </div>
+        
+        <div class="table-container" *ngIf="!isLoadingPreview && excelHeaders.length > 0">
+          <table class="excel-preview-table">
+            <thead>
+              <tr>
+                <th class="row-header">#</th>
+                <th *ngFor="let header of excelHeaders">{{ header }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of excelPreviewData; let i = index">
+                <td class="row-header">{{ i + 1 }}</td>
+                <td *ngFor="let cell of row" [attr.data-type]="getCellType(cell)">
+                  {{ formatCell(cell) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="loading-preview" *ngIf="isLoadingPreview">
+          <div class="spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Cargando datos del archivo...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="modal-footer">
+      <button 
+        class="btn btn-secondary" 
+        (click)="onCloseModal()">
+        Cancelar
+      </button>
+      <button 
+        class="btn btn-primary"
+        [disabled]="!selectedFile"
+        (click)="activeTab === 'preview' ? importExcel() : nextStep()">
+        {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
+      </button>
+    </div>
+  </div>
+</div>

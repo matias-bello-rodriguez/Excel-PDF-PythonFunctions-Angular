@@ -1,0 +1,153 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <i class="fa fa-file-pdf-o"></i>
+        Exportar a PDF
+      </h2>
+      <button type="button" class="close-btn" (click)="onClose()">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Export Options -->
+      <div class="export-options">
+        <h3>Opciones de Exportación</h3>
+        
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="exportOptions.includeImages" />
+            <span class="checkmark"></span>
+            Incluir imágenes de productos
+          </label>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="exportOptions.includeDescription" />
+            <span class="checkmark"></span>
+            Incluir descripciones detalladas
+          </label>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="exportOptions.includePrices" />
+            <span class="checkmark"></span>
+            Incluir precios
+          </label>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="exportOptions.includeStock" />
+            <span class="checkmark"></span>
+            Incluir información de stock
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="orientation">Orientación:</label>
+          <select id="orientation" [(ngModel)]="exportOptions.orientation" class="form-control">
+            <option value="portrait">Vertical</option>
+            <option value="landscape">Horizontal</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="pageSize">Tamaño de página:</label>
+          <select id="pageSize" [(ngModel)]="exportOptions.pageSize" class="form-control">
+            <option value="A4">A4</option>
+            <option value="A3">A3</option>
+            <option value="LETTER">Carta</option>
+            <option value="LEGAL">Legal</option>
+          </select>
+        </div>
+      </div>      <!-- Export Statistics -->
+      <div class="export-stats" *ngIf="getExportStats() as exportStats">
+        <h3>Estadísticas de Exportación</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Total de productos:</span>
+            <span class="stat-value">{{ exportStats.totalProducts }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Productos filtrados:</span>
+            <span class="stat-value">{{ exportStats.filteredProducts }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Páginas estimadas:</span>
+            <span class="stat-value">{{ exportStats.estimatedPages }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Tamaño estimado:</span>
+            <span class="stat-value">{{ exportStats.estimatedSize }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="preview-section" *ngIf="showPreview">
+        <h3>Vista Previa</h3>
+        <div class="preview-container">
+          <div class="preview-page">
+            <div class="preview-header">
+              <h4>Lista de Productos</h4>
+              <span class="preview-date">{{ currentDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="preview-content">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th *ngIf="exportOptions.includeDescription">Descripción</th>
+                    <th *ngIf="exportOptions.includePrices">Precio</th>
+                    <th *ngIf="exportOptions.includeStock">Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let product of previewProducts; let i = index" [class.odd]="i % 2 === 1">
+                    <td>{{ product.codigo_producto }}</td>
+                    <td>{{ product.nombre_producto }}</td>
+                    <td *ngIf="exportOptions.includeDescription">{{ product.descripcion | slice:0:50 }}...</td>
+                    <td *ngIf="exportOptions.includePrices">{{ product.precio | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td *ngIf="exportOptions.includeStock">{{ product.stock || 'N/A' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-section" *ngIf="isExporting">
+        <h3>Generando PDF...</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="exportProgress"></div>
+        </div>
+        <p class="progress-text">{{ progressMessage }}</p>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        <i class="fa fa-exclamation-triangle"></i>
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isExporting">
+        Cancelar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="togglePreview()" [disabled]="isExporting">
+        {{ showPreview ? 'Ocultar Vista Previa' : 'Vista Previa' }}
+      </button>      <button type="button" class="btn btn-success" (click)="onExport()" [disabled]="isExporting || !productos.length">
+        <i class="fa fa-download"></i>
+        {{ isExporting ? 'Exportando...' : 'Exportar PDF' }}
+      </button>
+    </div>
+  </div>
+</div>
