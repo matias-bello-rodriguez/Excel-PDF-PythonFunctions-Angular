@@ -105,28 +105,13 @@
               <p class="mapping-instructions">
                 Arrastra las columnas del Excel y suéltalas en los campos del sistema:
               </p>
-              
-              <!-- Mensaje de mapeo automático -->
+                <!-- Mensaje de mapeo automático -->
               <div *ngIf="hasMappings()" class="mapping-help">
                 <div class="help-icon">
                   <i class="fas fa-info-circle"></i>
                 </div>
                 <div class="help-text">
                   <strong>{{ getMappedFieldsCount() }}</strong> campos mapeados automáticamente
-                </div>
-              </div>
-              
-              <!-- Lista de columnas disponibles del Excel -->
-              <div class="available-columns">
-                <h6>Columnas disponibles</h6>
-                <div class="column-list">
-                  <div *ngFor="let header of excelHeaders" 
-                       class="column-item"
-                       draggable="true"
-                       [class.mapped]="isHeaderMapped(header)"
-                       (dragstart)="onDragStart($event, header)">
-                    {{ header }}
-                  </div>
                 </div>
               </div>
               
@@ -168,14 +153,19 @@
           <!-- Panel derecho: Tabla de vista previa -->
           <div class="table-panel">
             <div class="table-container">
-              <table class="excel-preview-table">
-                <thead>
+              <table class="excel-preview-table">                <thead>
                   <tr>
                     <th class="row-header">#</th>
                     <th *ngFor="let header of excelHeaders" 
-                        [class.mapped-header]="isHeaderMapped(header)">
-                      {{ header }}
-                      <i *ngIf="isHeaderMapped(header)" class="fas fa-check-circle mapped-indicator"></i>
+                        [class.mapped-header]="isHeaderMapped(header)"
+                        [class.draggable-header]="!isHeaderMapped(header)"
+                        draggable="true"
+                        (dragstart)="onDragStart($event, header)">
+                      <div class="header-content">
+                        <span class="header-text">{{ header }}</span>
+                        <i *ngIf="isHeaderMapped(header)" class="fas fa-check-circle mapped-indicator"></i>
+                        <i *ngIf="!isHeaderMapped(header)" class="fas fa-arrows-alt drag-indicator"></i>
+                      </div>
                     </th>
                   </tr>
                 </thead>

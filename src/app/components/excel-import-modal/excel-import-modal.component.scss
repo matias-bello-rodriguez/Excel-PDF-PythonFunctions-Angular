@@ -746,62 +746,6 @@ tr.drop-target {
   }
 }
 
-/* Estilos para las columnas disponibles */
-.available-columns {
-  margin-bottom: 1.5rem;
-  
-  h6 {
-    margin: 0 0 0.75rem 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #495057;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .column-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-height: 150px;
-    overflow-y: auto;
-    
-    .column-item {
-      padding: 0.5rem 0.75rem;
-      background: white;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      cursor: grab;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-      
-      &:hover {
-        background: #e3f2fd;
-        border-color: #2196f3;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      
-      &:active {
-        cursor: grabbing;
-      }
-      
-      &.mapped {
-        background: #d4edda;
-        border-color: #28a745;
-        color: #155724;
-        opacity: 0.7;
-        cursor: not-allowed;
-        
-        &:hover {
-          transform: none;
-          box-shadow: none;
-        }
-      }
-    }
-  }
-}
-
 /* Estilos para los campos del sistema */
 .system-fields {
   h6 {
@@ -916,23 +860,66 @@ tr.drop-target {
     text-overflow: ellipsis;
     max-width: 150px;
   }
-  
-  th {
+    th {
     background: #f8f9fa;
     font-weight: 600;
     color: #495057;
     position: sticky;
     top: 0;
     z-index: 10;
+    cursor: default;
     
     &.mapped-header {
       background: #d4edda;
       color: #155724;
+      cursor: not-allowed;
       
-      .mapped-indicator {
-        margin-left: 0.5rem;
-        color: #28a745;
-        font-size: 0.7rem;
+      .header-content {
+        .mapped-indicator {
+          margin-left: 0.5rem;
+          color: #28a745;
+          font-size: 0.7rem;
+        }
+      }
+    }
+    
+    &.draggable-header {
+      cursor: grab;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #e3f2fd;
+        color: #1976d2;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      &:active {
+        cursor: grabbing;
+        transform: translateY(0);
+      }
+      
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        
+        .drag-indicator {
+          font-size: 0.7rem;
+          color: #6c757d;
+          margin-left: 0.5rem;
+        }
+      }
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .header-text {
+        flex: 1;
+        text-align: center;
       }
     }
   }
