@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 export class ExcelImportService {
   private readonly SHEET_NAME = 'detalle';
   private readonly START_ROW = 5; // Índice 5 corresponde a la fila 6 (0-based)
-  private readonly START_COLUMN = 'B'; // Comenzar desde la columna B
+  private readonly START_COLUMN = 'A'; // Comenzar desde la columna B
 
   constructor() {}
   
