@@ -118,55 +118,34 @@ export interface Cubicacion {
 
 export interface Producto {
   id: string;
-  cubicacion_id: string;
-  codigo: string;
-  nombre: string;
-  tipo_producto: ProductType;
-  categoria?: string;
+  cubicacion_id?: string;
+  codigo?: string;
   ubicacion?: string;
-  cantidad: number;
-  ancho_diseno?: number;
-  alto_diseno?: number;
-  superficie_unitaria?: number;
+  ancho_m?: number;
+  alto_m?: number;
+  superficie?: number;
   superficie_total?: number;
-  ancho_manufactura?: number;
-  alto_manufactura?: number;
+  cantidad_por_unidad?: number;
+  alto_fabricacion_m?: number;
+  ancho_fabricacion_m?: number;
+  diseno_1?: string;
+  diseno_2?: string;
+  comentario_1?: string;
+  comentario_2?: string;
   material?: string;
-  seccion_perfil?: string;
-  color_estructura?: string;
-  espesor_vidrio?: string;
-  proteccion_vidrio?: string;
-  color_pelicula?: string;
-  tipo_vidrio?: GlassType;
+  tipo_vidrio: string;
   tipo_ventana?: string;
-  tipo_vidrio_detalle?: string;
-  apertura_1?: string;
-  apertura_2?: string;
-  apertura_3?: string;
-  cerradura_1?: string;
-  cerradura_2?: string;
-  cerradura_3?: string;
-  precio_unitario?: number;
-  precio_total?: number;
-  factor_instalacion?: number;
-  descripcion?: string;
-  observaciones?: string;
-  activo?: boolean;
-  fecha_creacion?: Date;
-  fecha_actualizacion?: Date;
-  imagen: string | null;
-  
-  // Campos para metadatos adicionales (serán guardados como JSON)
-  detalles_perfiles?: string;
-  detalles_vidrios?: string;
-  
-  // Relaciones
-  Cubicacion?: {
-    codigo: string;
-    nombre?: string;
-    Proyecto?:Cubicacion['Proyecto'] | null;
-    
-  };
+  perfil_mm?: string;
+  color_body?: string;
+  color_film?: string;
+  espesor_vidrio_mm?: string;
+  opaco_o_transparente?: string;
+  apertura?: string;
+  cierre?: string;
+  proteccion_vidrio?: string;
+  precio_unitario_sqm_usd?: number;
+  precio_pieza_base_usd?: number;
+  precio_total_pieza_usd?: number;
 }
 
 export interface ProyectoContacto {

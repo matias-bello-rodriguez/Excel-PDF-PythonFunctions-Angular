@@ -6,7 +6,7 @@ import { TakeoffListComponent } from './pages/takeoff-list/takeoff-list.componen
 import { TakeoffAddComponent } from './pages/takeoff-add/takeoff-add.component';
 import { CustomerListComponent } from './pages/customer-list/customer-list.component';
 import { ProductListComponent } from './pages/product-list/product-list.component';
-import { ProductAddWindowComponent } from './pages/product-add/product-add-window.component';
+// import { ProductAddWindowComponent } from './pages/product-add/product-add-window.component';
 import { ProductAddMultipleWindowComponent } from './pages/product-add-multiple-window/product-add-multiple-window.component';
 import { ProjectListComponent } from './pages/project-list/project-list.component';
 import { ProjectAddComponent } from './pages/project-add/project-add.component';
@@ -44,18 +44,18 @@ export const routes: Routes = [
         data: { roles: ['ADMIN', 'MANAGER'] } // Ejemplo de restricción por rol
       },
       { path: 'productos', component: ProductListComponent },
-      {
-        path: 'productos/agregar-ventana/:cubicacionId',
-        component: ProductAddWindowComponent,
-      },
+      // {
+      //   path: 'productos/agregar-ventana/:cubicacionId',
+      //   component: ProductAddWindowComponent,
+      // },
       {
         path: 'productos/agregar-producto-multiple',
         component: ProductAddMultipleWindowComponent,
       },
-      {
-        path: 'productos/agregar-producto-multiple/:moduleId',
-        component: ProductAddWindowComponent,
-      },
+      // {
+      //   path: 'productos/agregar-producto-multiple/:moduleId',
+      //   component: ProductAddWindowComponent,
+      // },
       {
         path: 'cubicaciones/productos/:codigo',
         component: ProductListComponent,

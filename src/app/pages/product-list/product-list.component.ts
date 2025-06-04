@@ -104,31 +104,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
       visible: true,
     },
     {
-      key: 'nombre',
-      label: 'Nombre',
-      type: 'text',
-      sortable: true,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'tipo_producto',
-      label: 'Tipo',
-      type: 'enum',
-      sortable: true,
-      draggable: true,
-      visible: true,
-      enumValues: Object.values(ProductType),
-    },
-    {
-      key: 'categoria',
-      label: 'Categoría',
-      type: 'text',
-      sortable: true,
-      draggable: true,
-      visible: true,
-    },
-    {
       key: 'ubicacion',
       label: 'Ubicación',
       type: 'text',
@@ -137,32 +112,32 @@ export class ProductListComponent implements OnInit, OnDestroy {
       visible: true,
     },
     {
-      key: 'cantidad',
-      label: 'Cantidad',
+      key: 'ancho_m',
+      label: 'Ancho (m)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'ancho_diseno',
-      label: 'Ancho Diseño',
+      key: 'alto_m',
+      label: 'Alto (m)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'alto_diseno',
-      label: 'Alto Diseño',
+      key: 'superficie',
+      label: 'Superficie (m²)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'superficie_unitaria',
-      label: 'Superficie Unitaria (m²)',
+      key: 'cantidad_por_unidad',
+      label: 'Cantidad por Unidad',
       type: 'number',
       sortable: true,
       draggable: true,
@@ -177,18 +152,50 @@ export class ProductListComponent implements OnInit, OnDestroy {
       visible: true,
     },
     {
-      key: 'ancho_manufactura',
-      label: 'Ancho Manufactura',
+      key: 'alto_fabricacion_m',
+      label: 'Alto Fabricación (m)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'alto_manufactura',
-      label: 'Alto Manufactura',
+      key: 'ancho_fabricacion_m',
+      label: 'Ancho Fabricación (m)',
       type: 'number',
       sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'diseno_1',
+      label: 'Diseño 1',
+      type: 'image',
+      sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'diseno_2',
+      label: 'Diseño 2',
+      type: 'image',
+      sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'comentario_1',
+      label: 'Comentario 1',
+      type: 'text',
+      sortable: false,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'comentario_2',
+      label: 'Comentario 2',
+      type: 'text',
+      sortable: false,
       draggable: true,
       visible: true,
     },
@@ -201,25 +208,41 @@ export class ProductListComponent implements OnInit, OnDestroy {
       visible: true,
     },
     {
-      key: 'seccion_perfil',
-      label: 'Sección Perfil',
+      key: 'perfil_mm',
+      label: 'Perfil (mm)',
+      type: 'number',
+      sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'color_body',
+      label: 'Color Body',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'color_estructura',
-      label: 'Color Estructura',
+      key: 'color_film',
+      label: 'Color Film',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'espesor_vidrio',
-      label: 'Espesor Vidrio',
+      key: 'tipo_vidrio',
+      label: 'Tipo Vidrio',
       type: 'text',
+      sortable: true,
+      draggable: true,
+      visible: true,
+    },
+    {
+      key: 'espesor_vidrio_mm',
+      label: 'Espesor Vidrio (mm)',
+      type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
@@ -233,114 +256,58 @@ export class ProductListComponent implements OnInit, OnDestroy {
       visible: true,
     },
     {
-      key: 'color_pelicula',
-      label: 'Color Película',
+      key: 'opaco_o_transparente',
+      label: 'Opaco/Transparente',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'tipo_vidrio',
-      label: 'Tipo Vidrio',
-      type: 'enum',
-      sortable: true,
-      draggable: true,
-      visible: true,
-      enumValues: Object.values(GlassType),
-    },
-    {
-      key: 'tipo_vidrio_detalle',
-      label: 'Detalle Vidrio',
+      key: 'tipo_ventana',
+      label: 'Tipo Ventana',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'aperturas',
-      label: 'Aperturas',
+      key: 'apertura',
+      label: 'Apertura',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'cerraduras',
-      label: 'Cerraduras',
+      key: 'cierre',
+      label: 'Cierre',
       type: 'text',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'precio_unitario',
-      label: 'Precio Unitario',
+      key: 'precio_unitario_sqm_usd',
+      label: 'Precio Unitario (USD/m²)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'precio_total',
-      label: 'Precio Total',
+      key: 'precio_pieza_base_usd',
+      label: 'Precio Base (USD)',
       type: 'number',
       sortable: true,
       draggable: true,
       visible: true,
     },
     {
-      key: 'factor_instalacion',
-      label: 'Factor Instalación',
+      key: 'precio_total_pieza_usd',
+      label: 'Precio Total (USD)',
       type: 'number',
       sortable: true,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'descripcion',
-      label: 'Descripción',
-      type: 'text',
-      sortable: false,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'observaciones',
-      label: 'Observaciones',
-      type: 'text',
-      sortable: false,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'activo',
-      label: 'Activo',
-      type: 'boolean',
-      sortable: true,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'fecha_creacion',
-      label: 'Fecha Creación',
-      type: 'date',
-      sortable: true,
-      draggable: true,
-      visible: true,
-    },    {
-      key: 'fecha_actualizacion',
-      label: 'Fecha Actualización',
-      type: 'date',
-      sortable: true,
-      draggable: true,
-      visible: true,
-    },
-    {
-      key: 'imagen',
-      label: 'Img',
-      type: 'image',  // Asegúrate de que este valor sea 'image'
-      sortable: false,
       draggable: true,
       visible: true,
     },
@@ -372,34 +339,32 @@ export class ProductListComponent implements OnInit, OnDestroy {
   } = {
     cubicacion_id: 'text',
     codigo: 'text',
-    nombre: 'text',
-    tipo_producto: 'enum',
-    categoria: 'text',
     ubicacion: 'text',
-    cantidad: 'number',
-    ancho_diseno: 'number',
-    alto_diseno: 'number',
-    superficie_unitaria: 'number',
+    ancho_m: 'number',
+    alto_m: 'number',
+    superficie: 'number',
+    cantidad_por_unidad: 'number',
     superficie_total: 'number',
-    ancho_manufactura: 'number',
-    alto_manufactura: 'number',
+    alto_fabricacion_m: 'number',
+    ancho_fabricacion_m: 'number',
+    diseno_1: 'text',
+    diseno_2: 'text',
+    comentario_1: 'text',
+    comentario_2: 'text',
     material: 'text',
-    seccion_perfil: 'text',
-    color_estructura: 'text',
-    espesor_vidrio: 'text',
+    perfil_mm: 'number',
+    color_body: 'text',
+    color_film: 'text',
+    tipo_vidrio: 'text',
+    espesor_vidrio_mm: 'number',
     proteccion_vidrio: 'text',
-    color_pelicula: 'text',
-    tipo_vidrio: 'enum',
-    tipo_vidrio_detalle: 'text',
-    aperturas: 'text', // Nueva columna unificada
-    cerraduras: 'text', // Nueva columna unificada
-    precio_unitario: 'number', // Cambiado de 'currency' a 'number'
-    precio_total: 'number', // Cambiado de 'currency' a 'number'
-    factor_instalacion: 'number',
-    descripcion: 'text',    observaciones: 'text',
-    activo: 'boolean',    fecha_creacion: 'date',
-    fecha_actualizacion: 'date',
-    imagen: 'image',
+    opaco_o_transparente: 'text',
+    tipo_ventana: 'text',
+    apertura: 'text',
+    cierre: 'text',
+    precio_unitario_sqm_usd: 'number',
+    precio_pieza_base_usd: 'number',
+    precio_total_pieza_usd: 'number',
     actions: 'text',
   };
 
@@ -409,32 +374,33 @@ export class ProductListComponent implements OnInit, OnDestroy {
   columnLabels: { [key: string]: string } = {
     cubicacion_id: 'Cubicación',
     codigo: 'Código',
-    nombre: 'Nombre',
-    tipo_producto: 'Tipo',
-    categoria: 'Categoría',
     ubicacion: 'Ubicación',
-    cantidad: 'Cantidad',
-    ancho_diseno: 'Ancho Diseño',
-    alto_diseno: 'Alto Diseño',
-    superficie_unitaria: 'Superficie Unitaria (m²)',
+    ancho_m: 'Ancho (m)',
+    alto_m: 'Alto (m)',
+    superficie: 'Superficie (m²)',
+    cantidad_por_unidad: 'Cantidad por Unidad',
     superficie_total: 'Superficie Total (m²)',
-    ancho_manufactura: 'Ancho Manufactura',
-    alto_manufactura: 'Alto Manufactura',
+    alto_fabricacion_m: 'Alto Fabricación (m)',
+    ancho_fabricacion_m: 'Ancho Fabricación (m)',
+    diseno_1: 'Diseño 1',
+    diseno_2: 'Diseño 2',
+    comentario_1: 'Comentario 1',
+    comentario_2: 'Comentario 2',
     material: 'Material',
-    seccion_perfil: 'Sección Perfil',
-    color_estructura: 'Color Estructura',
-    espesor_vidrio: 'Espesor Vidrio',
-    proteccion_vidrio: 'Protección Vidrio',
-    color_pelicula: 'Color Película',
+    perfil_mm: 'Perfil (mm)',
+    color_body: 'Color Body',
+    color_film: 'Color Film',
     tipo_vidrio: 'Tipo Vidrio',
-    tipo_vidrio_detalle: 'Detalle Vidrio',
-    aperturas: 'Aperturas', // Nueva columna unificada
-    cerraduras: 'Cerraduras', // Nueva columna unificada
-    precio_unitario: 'Precio Unitario',
-    precio_total: 'Precio Total',
-    factor_instalacion: 'Factor Instalación',
-    descripcion: 'Descripción',
-    observaciones: 'Observaciones',    activo: 'Activo',
+    espesor_vidrio_mm: 'Espesor Vidrio (mm)',
+    proteccion_vidrio: 'Protección Vidrio',
+    opaco_o_transparente: 'Opaco/Transparente',
+    tipo_ventana: 'Tipo Ventana',
+    apertura: 'Apertura',
+    cierre: 'Cierre',
+    precio_unitario_sqm_usd: 'Precio Unitario (USD/m²)',
+    precio_pieza_base_usd: 'Precio Base (USD)',
+    precio_total_pieza_usd: 'Precio Total (USD)',
+    activo: 'Activo',
     fecha_creacion: 'Fecha Creación',
     fecha_actualizacion: 'Fecha Actualización',
     imagen: 'Img',
@@ -727,57 +693,38 @@ export class ProductListComponent implements OnInit, OnDestroy {
   // Modificar el método formatearProductos para incluir la imagen
   formatearProductos(productos: Producto[]): any[] {
     return productos.map((producto) => {
-      // Obtener la URL de la imagen usando el servicio
       const imagenUrl = this.productoService.getProductImageSrc(producto);
-      
-      console.log('URL de imagen para producto', producto.id, ':', imagenUrl);
       
       return {
         id: producto.id,
         cubicacion_id: producto.cubicacion_id || '',
         codigo: producto.codigo || '',
-        nombre: producto.nombre || '',
-        // Añadir la imagen del producto
-        imagen: imagenUrl,
-        tipo_producto: producto.tipo_producto || '',
-        categoria: producto.categoria || '',
         ubicacion: producto.ubicacion || '',
-        cantidad: producto.cantidad || 0,
-        ancho_diseno: producto.ancho_diseno || 0,
-        alto_diseno: producto.alto_diseno || 0,
-        superficie_unitaria: producto.superficie_unitaria || 0,
+        ancho_m: producto.ancho_m || 0,
+        alto_m: producto.alto_m || 0,
+        superficie: producto.superficie || 0,
+        cantidad_por_unidad: producto.cantidad_por_unidad || 0,
         superficie_total: producto.superficie_total || 0,
-        ancho_manufactura: producto.ancho_manufactura || 0,
-        alto_manufactura: producto.alto_manufactura || 0,
-        material: producto.material || '',
-        seccion_perfil: producto.seccion_perfil || '',
-        color_estructura: producto.color_estructura || '',
-        espesor_vidrio: producto.espesor_vidrio || '',
-        proteccion_vidrio: producto.proteccion_vidrio || '',
-        color_pelicula: producto.color_pelicula || '',
-        tipo_vidrio: producto.tipo_vidrio || '',
-        tipo_vidrio_detalle: producto.tipo_vidrio_detalle || '',
-        aperturas:
-          [producto.apertura_1, producto.apertura_2, producto.apertura_3]
-            .filter((a) => a && a.trim() !== '')
-            .join(' | ') || 'No definida',
-        cerraduras:
-          [producto.cerradura_1, producto.cerradura_2, producto.cerradura_3]
-            .filter((c) => c && c.trim() !== '')
-            .join(' | ') || 'No definida',
-        precio_unitario: producto.precio_unitario || 0,
-        precio_total: (producto.cantidad || 0) * (producto.precio_unitario || 0),
-        factor_instalacion: producto.factor_instalacion || 0,
-        descripcion: producto.descripcion || '',
-        observaciones: producto.observaciones || '',
-        activo: producto.activo || false,
-        fecha_creacion: producto.fecha_creacion
-          ? new Date(producto.fecha_creacion)
-          : null,
-        fecha_actualizacion: producto.fecha_actualizacion
-          ? new Date(producto.fecha_actualizacion)
-          : null,
-        producto_original: producto, // Guardamos el original para acceder a otros datos
+        alto_fabricacion_m: producto.alto_fabricacion_m || 0,
+        ancho_fabricacion_m: producto.ancho_fabricacion_m || 0,
+        diseno_1: producto.diseno_1 = imagenUrl || 'Imagen no disponible',
+        diseno_2: producto.diseno_2 || 'Imagen no disponible',
+        comentario_1: producto.comentario_1 || 'Sin comentarios',
+        comentario_2: producto.comentario_2 || 'Sin comentarios',
+        material: producto.material || '-',
+        perfil_mm: producto.perfil_mm || '-',
+        color_body: producto.color_body || '-',
+        color_film: producto.color_film || '-',
+        tipo_vidrio: producto.tipo_vidrio || '-',
+        espesor_vidrio_mm: producto.espesor_vidrio_mm || '-',
+        proteccion_vidrio: producto.proteccion_vidrio || '-',
+        opaco_o_transparente: producto.opaco_o_transparente || '-',
+        tipo_ventana: producto.tipo_ventana || '-',
+        apertura: producto.apertura || '-',
+        cierre: producto.cierre || '-',
+        precio_unitario_sqm_usd: producto.precio_unitario_sqm_usd || '-',
+        precio_pieza_base_usd: producto.precio_pieza_base_usd || '-',
+        precio_total_pieza_usd: producto.precio_total_pieza_usd || '-',
       };
     });
   }
@@ -850,11 +797,23 @@ export class ProductListComponent implements OnInit, OnDestroy {
         let filteredProductos = this.originalProductos.filter((item) => {
           // Buscar en todos los campos de texto relevantes
           return (
-            item.nombre?.toLowerCase().includes(searchTerm) ||
             item.codigo?.toLowerCase().includes(searchTerm) ||
-            item.descripcion?.toLowerCase().includes(searchTerm) ||
-            item.categoria?.toLowerCase().includes(searchTerm) ||
-            item.tipo_producto?.toLowerCase().includes(searchTerm)
+            item.ubicacion?.toLowerCase().includes(searchTerm) ||
+            item.ancho_m?.toString().includes(searchTerm) ||
+            item.alto_m?.toString().includes(searchTerm) ||
+            item.diseno_1?.toLowerCase().includes(searchTerm) ||
+            item.diseno_2?.toLowerCase().includes(searchTerm) ||
+            item.comentario_1?.toLowerCase().includes(searchTerm) ||
+            item.comentario_2?.toLowerCase().includes(searchTerm) ||
+            item.material?.toLowerCase().includes(searchTerm) ||
+            item.color_body?.toLowerCase().includes(searchTerm) ||
+            item.color_film?.toLowerCase().includes(searchTerm) ||
+            item.tipo_vidrio?.toLowerCase().includes(searchTerm) ||
+            item.proteccion_vidrio?.toLowerCase().includes(searchTerm) ||
+            item.opaco_o_transparente?.toLowerCase().includes(searchTerm) ||
+            item.tipo_ventana?.toLowerCase().includes(searchTerm) ||
+            item.apertura?.toLowerCase().includes(searchTerm) ||
+            item.cierre?.toLowerCase().includes(searchTerm)
           );
         });
 
@@ -1144,15 +1103,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
                 });
               }
               break;
-
-            case 'boolean':
-              if (filter.value === 'true' || filter.value === 'false') {
-                const boolValue = filter.value === 'true';
-                productosFiltrados = productosFiltrados.filter((item) => {
-                  return item[col as keyof typeof item] === boolValue;
-                });
-              }
-              break;
           }
         }
       }
@@ -1427,7 +1377,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   getProductImageSrc(producto: Producto): string {
-  if (!producto || !producto.imagen) return '';
+  if (!producto || !producto.diseno_1) return '';
   
   // Intentar recuperar del localStorage
   const tempImage = localStorage.getItem(`temp_image_${producto.id}`);
@@ -1436,7 +1386,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
   
   // Si no hay imagen temporal, devolver la URL normal
-  return this.formatImageUrl(producto.imagen);
+  return this.formatImageUrl(producto.diseno_1);
 }
 
 handleImageError(event: Event): void {

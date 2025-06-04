@@ -22,9 +22,7 @@ export class ExcelImportService {
       }
       
       // Extraer encabezados (primera fila) y filtrar valores undefined o null
-      const headers = (allData[0] || []).map(header => 
-        header !== undefined && header !== null ? String(header).trim() : ''
-      ).filter(header => header !== ''); // Filtrar headers vacíos
+      const headers = allData[0] || [];
       
       // Verificar que tengamos encabezados válidos
       if (headers.length === 0) {
@@ -134,7 +132,7 @@ export class ExcelImportService {
           }
           
           // Configurar el rango para comenzar desde B6 (columna B, fila 6)
-          const range = `${this.START_COLUMN}${this.START_ROW + 1}:Z1000`; // B6:Z1000
+          const range = `${this.START_COLUMN}${this.START_ROW + 1}:AD1000`; // B6:AA1000
           
           // Leer datos desde el rango especificado
           const data: any[][] = XLSX.utils.sheet_to_json(ws, { 

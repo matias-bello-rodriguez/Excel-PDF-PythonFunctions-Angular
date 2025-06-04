@@ -16,9 +16,7 @@
           <span>Cancelar</span>
         </button>
       </span>
-    </div>
-
-    <!-- Navegación de pestañas -->
+    </div>    <!-- Navegación de pestañas -->
     <div class="modal-tabs">
       <button 
         class="tab-button" 
@@ -33,15 +31,7 @@
         [disabled]="!selectedFile"
         (click)="activeTab = 'preview'">
         <i class="fas fa-eye"></i>
-        Vista previa
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="activeTab === 'mapping'"
-        [disabled]="!selectedFile"
-        (click)="activeTab = 'mapping'">
-        <i class="fas fa-map"></i>
-        Mapeo de columnas
+        Vista previa y mapeo
       </button>
     </div>
 
@@ -96,124 +86,121 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Pestaña de vista previa -->
+      </div>      <!-- Pestaña de vista previa -->
       <div *ngIf="activeTab === 'preview'" class="preview-tab">
         <div class="preview-header">
-          <h4>Vista previa de datos</h4>
+          <h4>Vista previa de datos y mapeo de columnas</h4>
           <p *ngIf="excelPreviewData.length > 0">
             Mostrando {{ excelPreviewData.length }} filas de datos
           </p>
         </div>
         
-        <div class="table-container" *ngIf="!isLoadingPreview && excelHeaders.length > 0">
-          <table class="excel-preview-table">
-            <thead>
-              <tr>
-                <th class="row-header">#</th>
-                <th *ngFor="let header of excelHeaders">{{ header }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of excelPreviewData; let i = index">
-                <td class="row-header">{{ i + 1 }}</td>
-                <td *ngFor="let cell of row" [attr.data-type]="getCellType(cell)">
-                  {{ formatCell(cell) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Contenedor principal con mapeo y tabla -->
+        <div class="preview-container" *ngIf="!isLoadingPreview && excelHeaders.length > 0">
+          
+          <!-- Panel izquierdo: Mapeo de columnas -->
+          <div class="mapping-panel">
+            <div class="mapping-container">
+              <h5>Mapeo de columnas</h5>
+              <p class="mapping-instructions">
+                Arrastra las columnas del Excel y suéltalas en los campos del sistema:
+              </p>
+              
+              <!-- Mensaje de mapeo automático -->
+              <div *ngIf="hasMappings()" class="mapping-help">
+                <div class="help-icon">
+                  <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="help-text">
+                  <strong>{{ getMappedFieldsCount() }}</strong> campos mapeados automáticamente
+                </div>
+              </div>
+              
+              <!-- Lista de columnas disponibles del Excel -->
+              <div class="available-columns">
+                <h6>Columnas disponibles</h6>
+                <div class="column-list">
+                  <div *ngFor="let header of excelHeaders" 
+                       class="column-item"
+                       draggable="true"
+                       [class.mapped]="isHeaderMapped(header)"
+                       (dragstart)="onDragStart($event, header)">
+                    {{ header }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Lista de campos del sistema -->
+              <div class="system-fields">
+                <h6>Campos del sistema</h6>
+                <div class="field-list">
+                  <div *ngFor="let field of systemFields.slice(0, 8)"
+                       class="field-item"
+                       [class.drop-target]="dragTarget === field.id"
+                       [class.important-field]="field.id === 'codigo' || field.id === 'ubicacion'"
+                       (dragenter)="onDragEnter($event, field.id)" 
+                       (dragover)="onDragOver($event)" 
+                       (dragleave)="onDragLeave($event)" 
+                       (drop)="onDrop($event, field.id)">
+                    
+                    <div class="field-header">
+                      <span *ngIf="field.id === 'codigo' || field.id === 'ubicacion'" class="important-marker">*</span>
+                      <span class="field-name">{{ field.name }}</span>
+                    </div>
+                    
+                    <div class="field-mapping" [class.has-mapping]="isFieldMapped(field.id)">
+                      <div *ngIf="isFieldMapped(field.id)" class="mapped-column">
+                        <span>{{ getMappedColumn(field.id) }}</span>
+                        <button class="btn-remove-mapping" (click)="removeMapping(field.id)">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                      <div *ngIf="!isFieldMapped(field.id)" class="empty-mapping">
+                        Arrastra columna aquí
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Panel derecho: Tabla de vista previa -->
+          <div class="table-panel">
+            <div class="table-container">
+              <table class="excel-preview-table">
+                <thead>
+                  <tr>
+                    <th class="row-header">#</th>
+                    <th *ngFor="let header of excelHeaders" 
+                        [class.mapped-header]="isHeaderMapped(header)">
+                      {{ header }}
+                      <i *ngIf="isHeaderMapped(header)" class="fas fa-check-circle mapped-indicator"></i>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of excelPreviewData; let i = index">
+                    <td class="row-header">{{ i + 1 }}</td>
+                    <td *ngFor="let cell of row; let j = index" 
+                        [attr.data-type]="getCellType(cell)"
+                        [class.mapped-cell]="isHeaderMapped(excelHeaders[j])">
+                      {{ formatCell(cell) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         
         <div class="loading-preview" *ngIf="isLoadingPreview">
           <div class="spinner">
             <i class="fas fa-spinner fa-spin"></i>
             <span>Cargando datos del archivo...</span>
-          </div>
-        </div>
-      </div>      <!-- Pestaña de mapeo de columnas -->
-      <div *ngIf="activeTab === 'mapping'" class="tab-content">
-        <div class="mapping-container">
-          <h3>Mapeo de columnas</h3>
-          <p class="mapping-instructions">
-            Arrastra las columnas del Excel y suéltalas en los campos del sistema correspondientes:
-          </p>
-          
-          <!-- Mensaje de mapeo automático -->
-          <div *ngIf="hasMappings()" class="mapping-help">
-            <div class="help-icon">
-              <i class="fas fa-info-circle"></i>
-            </div>
-            <div class="help-text">
-              <strong>¡Excelente!</strong> Se han mapeado automáticamente {{ getMappedFieldsCount() }} campos que coinciden con las columnas de tu Excel.
-              Puedes ajustar estos mapeos o agregar más arrastrando las columnas disponibles.
-            </div>
-          </div>
-          
-          <!-- Lista de columnas disponibles del Excel -->
-          <div class="available-columns">
-            <h4>Columnas disponibles</h4>
-            <div class="column-list">
-              <div *ngFor="let header of excelHeaders" 
-                   class="column-item"
-                   draggable="true"
-                   [class.mapped]="isHeaderMapped(header)"
-                   (dragstart)="onDragStart($event, header)">
-                {{ header }}
-              </div>
-            </div>
-          </div>
-          
-          <!-- Tabla de mapeo de campos -->
-          <div class="mapping-fields">
-            <h4>Mapeo de campos</h4>
-            <table class="mapping-table">
-              <thead>
-                <tr>
-                  <th>Campo del sistema</th>
-                  <th>Columna del Excel</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>                <tr *ngFor="let field of systemFields"
-                    [class.drop-target]="dragTarget === field.id"
-                    [class.important-field]="field.id === 'codigo' || field.id === 'nombre'">
-                  <td>
-                    <span *ngIf="field.id === 'codigo' || field.id === 'nombre'" class="important-marker">*</span>
-                    {{ field.name }}
-                  </td>
-                  <td 
-                    (dragenter)="onDragEnter($event, field.id)" 
-                    (dragover)="onDragOver($event)" 
-                    (dragleave)="onDragLeave($event)" 
-                    (drop)="onDrop($event, field.id)"
-                    class="drop-zone"
-                    [class.has-mapping]="isFieldMapped(field.id)">
-                    
-                    <div *ngIf="isFieldMapped(field.id)" class="mapped-column">
-                      <span>{{ getMappedColumn(field.id) }}</span>
-                      <i class="fas fa-check-circle" style="color: #28a745; margin-left: 8px;"></i>
-                    </div>
-                    <div *ngIf="!isFieldMapped(field.id)" class="empty-mapping">
-                      Arrastra una columna aquí
-                    </div>
-                  </td>
-                  <td>
-                    <button *ngIf="isFieldMapped(field.id)" class="btn-remove-mapping" 
-                      (click)="removeMapping(field.id)">
-                      <i class="fas fa-times"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+          </div>        </div>
       </div>
-    </div>
-
-    <!-- Botones de acción -->
+    </div><!-- Botones de acción -->
     <div class="modal-footer">
       <div class="button-container">
         <button 
@@ -226,10 +213,6 @@
           [disabled]="!selectedFile"
           (click)="activeTab === 'preview' ? importExcel() : nextStep()">
           {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
-        </button>
-        <button *ngIf="activeTab === 'mapping'" class="btn-primary" 
-          [disabled]="!hasMappings()" (click)="importExcel()">
-          Importar datos
         </button>
       </div>
     </div>

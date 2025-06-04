@@ -9,7 +9,7 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class ProductoService {
-  public readonly TABLE_NAME = 'productos';
+  public readonly TABLE_NAME = 'producto';
   private readonly CACHE_KEY = 'productos_cache';
 
   constructor(
@@ -260,13 +260,13 @@ export class ProductoService {
       const producto = await this.getById(id);
       if (!producto) return false;
 
-      // Calcular superficie unitaria (m²) si hay dimensiones
-      if (producto.ancho_diseno && producto.alto_diseno) {
-        const superficieUnitaria = (producto.ancho_diseno * producto.alto_diseno) / 1000000; // Convertir a m²
-        const superficieTotal = superficieUnitaria * producto.cantidad;
+      // Calcular superficie (m²) si hay dimensiones
+      if (producto.ancho_m && producto.alto_m) {
+        const superficie = producto.ancho_m * producto.alto_m;
+        const superficieTotal = superficie * (producto.cantidad_por_unidad || 1);
 
         await this.update(id, {
-          superficie_unitaria: superficieUnitaria,
+          superficie: superficie,
           superficie_total: superficieTotal
         });
       }
@@ -302,7 +302,7 @@ export class ProductoService {
       
       // Actualizar el producto con la URL de la imagen
       const updated = await this.update(productoId, {
-        imagen: imageUrl
+        diseno_1: imageUrl
       });
       
       return !!updated;
@@ -315,7 +315,7 @@ export class ProductoService {
 
   // Añadir método para obtener la imagen desde localStorage si existe
   getProductImageSrc(producto: Producto): string {
-    if (!producto || !producto.imagen) return '';
+    if (!producto || !producto.diseno_1) return '';
     
     // Intentar recuperar del localStorage
     const tempImage = localStorage.getItem(`temp_image_${producto.id}`);
@@ -324,7 +324,7 @@ export class ProductoService {
     }
     
     // Si no hay imagen temporal, devolver la URL normal
-    return this.formatImageUrl(producto.imagen);
+    return this.formatImageUrl(producto.diseno_1);
   }
 
   /**
@@ -369,30 +369,25 @@ export class ProductoService {
           producto.codigo = `PROD-${Date.now()}-${i}`;
         }
         
-        // Validar datos mínimos requeridos
-        if (!producto.nombre || producto.nombre.trim() === '') {
-          producto.nombre = `Producto ${producto.codigo}`;
-        }
-        
         // Calcular superficies si hay dimensiones
-        if (producto.ancho_diseno && producto.alto_diseno) {
-          const ancho = Number(producto.ancho_diseno);
-          const alto = Number(producto.alto_diseno);
-          const cantidad = Number(producto.cantidad) || 1;
+        if (producto.ancho_m && producto.alto_m) {
+          const ancho = Number(producto.ancho_m);
+          const alto = Number(producto.alto_m);
+          const cantidad = Number(producto.cantidad_por_unidad) || 1;
           
           if (!isNaN(ancho) && !isNaN(alto)) {
-            producto.superficie_unitaria = (ancho * alto) / 1000000; // Convertir a m²
-            producto.superficie_total = producto.superficie_unitaria * cantidad;
+            producto.superficie = ancho * alto;
+            producto.superficie_total = producto.superficie * cantidad;
           }
         }
         
-        // Calcular precio total si hay precio unitario
-        if (producto.precio_unitario && producto.cantidad) {
-          const precio = Number(producto.precio_unitario);
-          const cantidad = Number(producto.cantidad);
+        // Calcular precio total si hay precio base y superficie
+        if (producto.precio_pieza_base_usd && producto.superficie) {
+          const precioBase = Number(producto.precio_pieza_base_usd);
+          const superficie = Number(producto.superficie);
           
-          if (!isNaN(precio) && !isNaN(cantidad)) {
-            producto.precio_total = precio * cantidad;
+          if (!isNaN(precioBase) && !isNaN(superficie)) {
+            producto.precio_total_pieza_usd = precioBase * superficie;
           }
         }
         

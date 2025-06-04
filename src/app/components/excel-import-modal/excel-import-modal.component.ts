@@ -17,9 +17,8 @@ export class ExcelImportModalComponent {
   @Output() closeModal = new EventEmitter<void>();
   @Output() importSuccess = new EventEmitter<any[]>();
   @Output() importError = new EventEmitter<string>();
-
   // Estados del modal
-  activeTab: 'upload' | 'preview' | 'mapping' = 'upload';
+  activeTab: 'upload' | 'preview' = 'upload';
   selectedFile: File | null = null;
   selectedFileName = '';
   excelHeaders: string[] = [];
@@ -125,25 +124,19 @@ export class ExcelImportModalComponent {
 
   /**
    * Avanza al siguiente paso
-   */
-  nextStep(): void {
+   */  nextStep(): void {
     if (this.activeTab === 'upload' && this.selectedFile) {
       this.activeTab = 'preview';
     } else if (this.activeTab === 'preview') {
-      // Inicializar el mapeo automático antes de mostrar la pantalla de mapeo
-      this.columnMapping = this.createAutomaticMapping();
-      this.activeTab = 'mapping';
+      this.importExcel();
     }
   }
-
   /**
    * Retrocede al paso anterior
    */
   previousStep(): void {
     if (this.activeTab === 'preview') {
       this.activeTab = 'upload';
-    } else if (this.activeTab === 'mapping') {
-      this.activeTab = 'preview';
     }
   }
 
@@ -154,13 +147,9 @@ export class ExcelImportModalComponent {
     if (!this.selectedFile) {
       alert('Por favor, selecciona un archivo Excel');
       return;
-    }
-
-    try {
-      // Usar el mapeo manual si estamos en la pestaña de mapeo
-      const mappingToUse = this.activeTab === 'mapping' 
-        ? this.columnMapping 
-        : this.createAutomaticMapping();
+    }    try {
+      // Usar el mapeo de columnas ya configurado
+      const mappingToUse = this.columnMapping;
       
       // Verificar que se pudo crear un mapeo mínimo
       if (Object.keys(mappingToUse).length === 0) {
@@ -238,26 +227,45 @@ export class ExcelImportModalComponent {
     }
       // Mapeo específico para los campos del Excel proporcionados
     const specificMappings: { [key: string]: string[] } = {
-      'codigo': ['WINDOW CODE', 'CODE', 'CÓDIGO', 'codigo', 'window code', 'code', 'codigo'],
       'ubicacion': ['Location', 'UBICACIÓN', 'ubicacion', 'UNITS', 'location', 'units', 'ubicación'],
-      'ancho_diseno': ['Width (m)', 'Width', 'ANCHO', 'ancho', 'width (m)', 'width', 'ancho_diseno', 'ancho diseno'],
-      'alto_diseno': ['Height (m)', 'Height', 'ALTO', 'alto', 'height (m)', 'height', 'alto_diseno', 'alto diseno'],
+      'codigo': ['WINDOW CODE', 'CODE', 'CÓDIGO', 'codigo', 'window code', 'code', 'codigo'],
+      'ancho_m': ['Width (m)', 'Width', 'ANCHO', 'ancho', 'width (m)', 'width', 'ancho_diseno', 'ancho diseno'],
+      'alto_m': ['Height (m)', 'Height', 'ALTO', 'alto', 'height (m)', 'height', 'alto_diseno', 'alto diseno'],
       'superficie': ['Surface (m²)', 'Surface', 'SUPERFICIE', 'superficie', 'surface (m²)', 'surface', 'area', 'AREA'],
-      'cantidad': ['Quantity', 'CANTIDAD', 'cantidad', 'QTY', 'qty', 'quantity', 'CANT', 'cant'],
+      'cantidad_por_unidad': ['Quantity', 'CANTIDAD', 'cantidad', 'QTY', 'qty', 'quantity', 'CANT', 'cant', 'QUANTITY', 'CANTIDAD','Quantity Per Unity' ],
+      'superficie_total': ['Total Surface (m²)', 'Total Surface', 'SUPERFICIE_TOTAL', 'superficie_total', 'total surface (m²)', 'total surface', 'total superficie', 'TOTAL_SUPERFICIE'],
+      'ancho_fabricacion_m': ['Fabrication Width (m)', 'Fabrication Width', 'ANCHO_FABRICACION', 'ancho_fabricacion', 'fabrication width (m)', 'fabrication width', 'ancho_fabricacion_m'],
+      'alto_fabricacion_m': ['Fabrication Height (m)', 'Fabrication Height', 'ALTO_FABRICACION', 'alto_fabricacion', 'fabrication height (m)', 'fabrication height', 'alto_fabricacion_m'],
+      'diseno_1': ['Design 1', 'Design 1', 'DISEÑO_1', 'diseño_1', 'design 1', 'design_1'],
+      'diseno_2': ['Design 2', 'Design 2', 'DISEÑO_2', 'diseño_2', 'design 2', 'design_2'],
+      'comentario_1': ['Comment 1', 'Comment 1', 'COMENTARIO_1', 'comentario_1', 'comment 1', 'comment_1'],
+      'comentario_2': ['Comment 2', 'Comment 2', 'COMENTARIO_2', 'comentario_2', 'comment 2', 'comment_2'],
+      'material': ['Material', 'MATERIAL', 'material', 'MATERIAL_TYPE', 'material type'],
+      'perfil_mm': ['Profile (mm)', 'Profile', 'PERFIL_MM', 'perfil_mm', 'profile (mm)', 'profile mm', 'Profile', 'Perfil', 'Profile section'],
+      'color_body': ['Body Color', 'Body Color', 'COLOR_BODY', 'color_body', 'body color', 'body color'],
+      'espesor_vidrio_mm': ['Glass Thickness (mm)', 'Glass Thickness', 'ESPESOR_VIDRIO_MM', 'espesor_vidrio_mm', 'glass thickness (mm)', 'glass thickness mm', 'thickness glass'],
+      'proteccion_vidrio': ['Glass Protection', 'Glass Protection', 'PROTECCION_VIDRIO', 'proteccion_vidrio', 'glass protection', 'glass_protection'],
+      'color_film': ['Film Color', 'Film Color', 'COLOR_FILM', 'color_film', 'film color', 'film_color'],
+      'opaco_o_transparente': ['Opaque or Transparent', 'Opaque or Transparent', 'OPACO_O_TRANSPARENTE', 'opaco_o_transparente', 'opaque or transparent', 'opaque_transparent', 'Opaque/Clear Glass'],
       'precio_unitario_usd': ['Unit Price USD', 'Price', 'PRECIO', 'precio', 'unit price usd', 'price', 'precio_unitario', 'precio unitario', 'PRECIO_UNITARIO_USD', 'UNIT_PRICE_USD'],
-      'costo_instalacion_clp': ['Install Cost CLP', 'Installation', 'INSTALACION', 'instalacion', 'install cost clp', 'installation', 'costo_instalacion', 'costo instalacion', 'COSTO_INSTALACION_CLP'],
-      'precio_final_usd': ['Final Price USD', 'Final Price', 'PRECIO_FINAL', 'precio_final', 'final price usd', 'final price', 'precio final', 'PRECIO_FINAL_USD'],
-      'total_instalacion_clp': ['Total Install CLP', 'Total Installation', 'TOTAL_INSTALACION', 'total_instalacion', 'total install clp', 'total installation', 'total instalacion', 'TOTAL_INSTALACION_CLP'],
-      'total_pieza_usd': ['Piece Total USD', 'Piece Total', 'TOTAL_PIEZA', 'total_pieza', 'piece total usd', 'piece total', 'total pieza', 'TOTAL_PIEZA_USD'],
-      'nombre': ['PRODUCT NAME', 'Name', 'NOMBRE', 'nombre', 'product name', 'name', 'descripcion', 'DESCRIPCION', 'description'],
-      'tipo_producto': ['PRODUCT TYPE', 'Type', 'TIPO', 'tipo', 'product type', 'type', 'tipo_producto', 'tipo producto', 'categoria', 'CATEGORIA'],
-      'metodo_instalacion': ['INSTALL METHOD', 'Method', 'METODO', 'metodo', 'install method', 'method', 'metodo_instalacion', 'metodo instalacion', 'installation_method'],
-      'tipo_marco': ['FRAME TYPE', 'Frame', 'MARCO', 'marco', 'frame type', 'frame', 'tipo_marco', 'tipo marco', 'TIPO_MARCO'],
-      'longitud_marco': ['FRAME LENGTH', 'Length', 'LONGITUD', 'longitud', 'frame length', 'length', 'longitud_marco', 'longitud marco', 'LONGITUD_MARCO']
+      'tipo_ventana': ['Window Type', 'Window Type', 'TIPO_VENTANA', 'tipo_ventana', 'window type', 'window_type'],
+      'tipo_vidrio': ['Glass Type', 'Glass Type', 'TIPO_VIDRIO', 'tipo_vidrio', 'glass type', 'glass_type'],
+      'apertura': ['Opening', 'Opening', 'APERTURA', 'apertura', 'opening'],
+      'cierre': ['Closing', 'Closing', 'CIERRE', 'cierre', 'closing', 'Lock'],
+      'precio_unitario_sqm_usd': ['Unit Price per sqm USD', 'Unit Price sqm', 'PRECIO_UNITARIO_SQM_USD', 'precio_unitario_sqm_usd', 'unit price sqm usd', 'unit price sqm', 'precio unitario sqm usd', 'precio unitario sqm', 'UNIT_PRICE_SQM_USD'],
+      'precio_pieza_base_usd': ['Base Piece Price USD', 'Base Piece Price', 'PRECIO_PIEZA_BASE_USD', 'precio_pieza_base_usd', 'base piece price usd', 'base piece price', 'precio pieza base usd', 'precio pieza base'],
+      'precio_total_pieza_usd': ['Piece Total USD', 'Piece Total', 'TOTAL_PIEZA', 'total_pieza', 'piece total usd', 'piece total', 'total pieza', 'TOTAL_PIEZA_USD'],
+      
     };
     
     // Función auxiliar para normalizar texto (remover acentos, espacios extra, etc.)
     const normalizeText = (text: string): string => {
+
+      if (!text) return '';
+      // Convertir a minúsculas, eliminar espacios al inicio y final, y reemplazar caracteres especiales
+      // con sus equivalentes sin acento, y reemplazar espacios múltiples por uno solo
+      // y guiones bajos o guiones por espacios
+      else
       return text.toLowerCase()
         .trim()
         .replace(/[áàäâ]/g, 'a')
