@@ -175,22 +175,27 @@ export class ExcelImportService {
             header = this.cleanCellValue(cellValue);
           }
           
-          // Solo agregar headers que no están vacíos
-          if (header && header !== '') {
-            headers.push(header);
-            hasValidHeaders = true;
-            
-            // Extraer color de fondo y fuente del header
-            const bgColor = this.extractBackgroundColor(cell);
-            const fontColor = this.extractFontColor(cell);
-            
-            columnColors[header] = {
-              backgroundColor: bgColor,
-              fontColor: fontColor
-            };
-            return true;
-          } else {
-            // Si encuentra un header vacío, detener la extracción
+          // MODIFICACIÓN: Agregar ALL headers, incluso los vacíos
+          // Asignar un nombre por defecto a columnas vacías
+          if (!header || header === '') {
+            header = `Columna_${colNumber}`; // Crear nombre genérico para columnas vacías
+          }
+          
+          headers.push(header);
+          hasValidHeaders = true;
+          
+          // Extraer color de fondo y fuente del header
+          const bgColor = this.extractBackgroundColor(cell);
+          const fontColor = this.extractFontColor(cell);
+          
+          columnColors[header] = {
+            backgroundColor: bgColor,
+            fontColor: fontColor
+          };
+          
+          // CONTINUAR PROCESANDO TODAS LAS COLUMNAS hasta un límite
+          // En lugar de parar en la primera columna vacía, continuar hasta un número máximo de columnas
+          if (headers.length >= 50) { // Límite máximo de 50 columnas
             return false;
           }
         }
@@ -220,13 +225,13 @@ export class ExcelImportService {
           // Procesar el valor de la celda usando el método mejorado
           const cellValue = this.cleanCellValue(cell.value);
           
-          // Verificar si hay datos válidos en esta fila
-          if (cellValue !== '' && cellValue !== null && cellValue !== undefined) {
+          // MODIFICACIÓN: Verificar datos válidos de manera más permisiva
+          if (cellValue && cellValue !== '' && cellValue !== null && cellValue !== undefined) {
             hasValidData = true;
           }
           
           const cellInfo: ExcelCellInfo = {
-            value: cellValue,
+            value: cellValue || '', // Asegurar que siempre haya un valor (aunque sea vacío)
             backgroundColor: this.extractBackgroundColor(cell),
             fontColor: this.extractFontColor(cell)
           };
@@ -234,8 +239,9 @@ export class ExcelImportService {
           rowData.push(cellInfo);
         });
         
-        // Solo agregar filas que tengan al menos un dato válido
-        if (hasValidData) {
+        // MODIFICACIÓN: Ser más permisivo con filas que tienen pocos datos
+        // Agregar fila si tiene al menos un dato válido O si es una de las primeras 50 filas
+        if (hasValidData || validRowsCount < 50) {
           data.push(rowData);
           validRowsCount++;
         }
@@ -283,7 +289,7 @@ export class ExcelImportService {
       return cellValue.trim();
     }
     
-    // Si es un número, formatear a 2 decimales
+    // Si es un número, formatear según sea necesario
     if (typeof cellValue === 'number') {
       // Verificar si es un número entero o tiene decimales
       if (Number.isInteger(cellValue)) {
@@ -311,27 +317,17 @@ export class ExcelImportService {
         return this.cleanCellValue(cellValue.result);
       }
       
-      // PRIORIDAD 2: Si es una fórmula compartida sin resultado
-      if (cellValue.sharedFormula !== undefined) {
-        // Si no hay resultado, devolver vacío en lugar de la fórmula
+      // PRIORIDAD 2: Si es una fórmula compartida SIN resultado, devolver vacío
+      if (cellValue.sharedFormula !== undefined && cellValue.result === undefined) {
         return '';
       }
       
-      // PRIORIDAD 3: Fórmula regular con resultado
-      if (cellValue.formula !== undefined) {
-        // Si tiene resultado, usar el resultado; si no, devolver vacío
-        if (cellValue.result !== undefined) {
-          return this.cleanCellValue(cellValue.result);
-        }
-        return '';
-      }
-      
-      // PRIORIDAD 4: Texto con hipervínculo
+      // PRIORIDAD 3: Texto con hipervínculo
       if (cellValue.text !== undefined) {
         return String(cellValue.text).trim();
       }
       
-      // PRIORIDAD 5: Texto enriquecido (rich text)
+      // PRIORIDAD 4: Texto enriquecido (rich text)
       if (cellValue.richText && Array.isArray(cellValue.richText)) {
         return cellValue.richText.map((rt: any) => {
           if (typeof rt === 'string') return rt;
@@ -340,56 +336,31 @@ export class ExcelImportService {
         }).join('').trim();
       }
       
-      // PRIORIDAD 6: Valor compartido (shared string)
-      if (cellValue.sharedString !== undefined) {
-        return String(cellValue.sharedString).trim();
+      // PRIORIDAD 5: Fórmula regular
+      if (cellValue.formula !== undefined) {
+        // Si tiene resultado, usar el resultado; si no, devolver vacío
+        if (cellValue.result !== undefined) {
+          return this.cleanCellValue(cellValue.result);
+        }
+        return '';
       }
       
-      // PRIORIDAD 7: Si tiene una propiedad 'value', usarla recursivamente
-      if (cellValue.value !== undefined) {
-        return this.cleanCellValue(cellValue.value);
-      }
-      
-      // PRIORIDAD 8: Valor de error
+      // PRIORIDAD 6: Valor de error
       if (cellValue.error !== undefined) {
         return `#${cellValue.error}`;
       }
       
-      // Para otros tipos de objeto, intentar extraer propiedades útiles
-      try {
-        // Verificar si tiene propiedades conocidas de ExcelJS
-        if (cellValue.model && cellValue.model.value !== undefined) {
-          return this.cleanCellValue(cellValue.model.value);
-        }
-        
-        // Si es un objeto con una sola propiedad, intentar usarla
-        const keys = Object.keys(cellValue);
-        if (keys.length === 1 && cellValue[keys[0]] !== undefined) {
-          const singleValue = cellValue[keys[0]];
-          if (typeof singleValue !== 'object') {
-            return this.cleanCellValue(singleValue);
-          }
-        }
-        
-        // Si el objeto tiene propiedades numéricas, intentar extraerlas
-        if (keys.some(key => typeof cellValue[key] === 'number')) {
-          const numericKey = keys.find(key => typeof cellValue[key] === 'number');
-          if (numericKey) {
-            return this.cleanCellValue(cellValue[numericKey]);
-          }
-        }
-        
-        // Como último recurso, convertir a JSON pero solo para objetos pequeños
-        const jsonString = JSON.stringify(cellValue);
-        if (jsonString !== '{}' && jsonString !== 'null' && jsonString.length < 50) {
-          console.warn('Objeto pequeño encontrado en celda:', cellValue);
-          return jsonString;
-        }
-      } catch (e) {
-        console.warn('No se pudo procesar objeto de celda:', cellValue);
+      // PRIORIDAD 7: Valor compartido (shared string)
+      if (cellValue.sharedString !== undefined) {
+        return String(cellValue.sharedString).trim();
       }
       
-      // Si todo falla, devolver string vacío
+      // PRIORIDAD 8: Si tiene una propiedad 'value', usarla recursivamente
+      if (cellValue.value !== undefined) {
+        return this.cleanCellValue(cellValue.value);
+      }
+      
+      // NO MOSTRAR OBJETOS COMPLEJOS - devolver vacío
       return '';
     }
     
