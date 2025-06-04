@@ -198,3 +198,10 @@ export interface Usuario {
   fecha_creacion?: Date;
   fecha_actualizacion?: Date;
 }
+
+
+export interface ExcelCellInfo {
+  value: any;
+  backgroundColor: string;
+  fontColor: string;
+}

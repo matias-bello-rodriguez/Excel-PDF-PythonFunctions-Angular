@@ -236,7 +236,6 @@ export class DataTableComponent implements OnChanges, OnInit, OnDestroy {
   handleImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     imgElement.classList.add('image-error');
-    console.warn('Error al cargar la imagen:', imgElement.src);
     
     try {
       // Guardar la URL original para posible diagnóstico

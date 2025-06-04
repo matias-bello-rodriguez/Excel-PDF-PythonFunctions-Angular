@@ -1,14 +1,16 @@
 // src/app/services/excel-import.service.ts
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
+import { ExcelCellInfo } from '@app/interfaces/entities';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExcelImportService {
-  private readonly SHEET_NAME = 'detalle';
+  private readonly SHEET_NAME = 'DETALLE'; // Cambiado a mayúsculas
   private readonly START_ROW = 5; // Índice 5 corresponde a la fila 6 (0-based)
-  private readonly START_COLUMN = 'A'; // Comenzar desde la columna B
+  private readonly START_COLUMN = 'A'; // Comenzar desde la columna A
 
   constructor() {}
   
@@ -96,6 +98,454 @@ export class ExcelImportService {
     }
   }
 
+  async generatePreviewWithColors(file: File): Promise<{ 
+    headers: string[], 
+    data: ExcelCellInfo[][], 
+    columnColors: { [key: string]: { backgroundColor: string; fontColor: string } } 
+  }> {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const arrayBuffer = await file.arrayBuffer();
+      await workbook.xlsx.load(arrayBuffer);
+      
+      // Verificar que el libro tenga hojas
+      if (!workbook.worksheets || workbook.worksheets.length === 0) {
+        throw new Error('El archivo Excel no contiene hojas');
+      }
+      
+      // Buscar la hoja "DETALLE" (insensible a mayúsculas/minúsculas)
+      let targetWorksheet = null;
+      
+      // Buscar por nombre exacto primero
+      targetWorksheet = workbook.getWorksheet(this.SHEET_NAME);
+      
+      // Si no se encuentra, buscar insensible a mayúsculas/minúsculas
+      if (!targetWorksheet) {
+        const worksheetNames = workbook.worksheets.map(ws => ws.name);
+        console.log('Hojas disponibles:', worksheetNames);
+        
+        const foundWorksheet = workbook.worksheets.find(ws => 
+          ws.name.toUpperCase() === this.SHEET_NAME.toUpperCase()
+        );
+        
+        if (foundWorksheet) {
+          targetWorksheet = foundWorksheet;
+          console.log(`Encontrada hoja "${foundWorksheet.name}" (buscando "${this.SHEET_NAME}")`);
+        }
+      }
+      
+      // Si aún no se encuentra, usar la primera hoja disponible
+      if (!targetWorksheet) {
+        targetWorksheet = workbook.getWorksheet(1);
+        console.warn(`No se encontró la hoja "${this.SHEET_NAME}". Se utilizará la primera hoja: "${targetWorksheet?.name}"`);
+      }
+
+      if (!targetWorksheet) {
+        throw new Error('No se encontró ninguna hoja de trabajo válida');
+      }
+
+      console.log(`Procesando hoja: "${targetWorksheet.name}"`);
+
+      const headers: string[] = [];
+      const data: ExcelCellInfo[][] = [];
+      const columnColors: { [key: string]: { backgroundColor: string; fontColor: string } } = {};
+      
+      // Obtener rango de datos - comenzar desde la fila configurada
+      const startRow = this.START_ROW + 1; // Empezar desde la fila 6 (1-based)
+      const maxPreviewRows = 100; // Límite para preview
+      const endRow = Math.min(targetWorksheet.rowCount, startRow + maxPreviewRows);
+      
+      // Validar que hay datos en el rango especificado
+      if (startRow > targetWorksheet.rowCount) {
+        throw new Error(`No hay datos a partir de la fila ${startRow}. El archivo tiene ${targetWorksheet.rowCount} filas.`);
+      }
+      
+      // Extraer headers con colores desde la columna configurada
+      const headerRow = targetWorksheet.getRow(startRow);
+      let hasValidHeaders = false;
+      const startColNumber = this.getColumnNumber(this.START_COLUMN);
+      
+      headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (colNumber >= startColNumber) {
+          const cellValue = cell.value;
+          let header = '';
+          
+          // Procesar diferentes tipos de valores de celda
+          if (cellValue !== null && cellValue !== undefined) {
+            header = this.cleanCellValue(cellValue);
+          }
+          
+          // Solo agregar headers que no están vacíos
+          if (header && header !== '') {
+            headers.push(header);
+            hasValidHeaders = true;
+            
+            // Extraer color de fondo y fuente del header
+            const bgColor = this.extractBackgroundColor(cell);
+            const fontColor = this.extractFontColor(cell);
+            
+            columnColors[header] = {
+              backgroundColor: bgColor,
+              fontColor: fontColor
+            };
+            return true;
+          } else {
+            // Si encuentra un header vacío, detener la extracción
+            return false;
+          }
+        }
+        return true;
+      });
+      
+      // Verificar que se encontraron encabezados válidos
+      if (!hasValidHeaders || headers.length === 0) {
+        throw new Error('No se encontraron encabezados válidos en el archivo Excel');
+      }
+      
+      console.log(`Headers extraídos desde fila ${startRow}, columna ${this.START_COLUMN}:`, headers);
+      
+      // Extraer datos con colores
+      let validRowsCount = 0;
+      
+      for (let rowNumber = startRow + 1; rowNumber <= endRow; rowNumber++) {
+        const row = targetWorksheet.getRow(rowNumber);
+        const rowData: ExcelCellInfo[] = [];
+        let hasValidData = false;
+        
+        // Iterar por cada header para obtener las celdas correspondientes
+        headers.forEach((_, colIndex) => {
+          const actualCol = colIndex + startColNumber;
+          const cell = row.getCell(actualCol);
+          
+          // Procesar el valor de la celda usando el método mejorado
+          const cellValue = this.cleanCellValue(cell.value);
+          
+          // Verificar si hay datos válidos en esta fila
+          if (cellValue !== '' && cellValue !== null && cellValue !== undefined) {
+            hasValidData = true;
+          }
+          
+          const cellInfo: ExcelCellInfo = {
+            value: cellValue,
+            backgroundColor: this.extractBackgroundColor(cell),
+            fontColor: this.extractFontColor(cell)
+          };
+          
+          rowData.push(cellInfo);
+        });
+        
+        // Solo agregar filas que tengan al menos un dato válido
+        if (hasValidData) {
+          data.push(rowData);
+          validRowsCount++;
+        }
+      }
+      
+      // Verificar que se encontraron datos válidos
+      if (data.length === 0) {
+        throw new Error('No se encontraron datos válidos en el archivo Excel');
+      }
+      
+      // Contar celdas coloreadas para estadísticas
+      const coloredCellsStats = this.countColoredCells(data);
+      
+      // Logging detallado
+      console.log('Excel preview with colors generated:', { 
+        sheet: targetWorksheet.name,
+        targetSheetName: this.SHEET_NAME,
+        headers, 
+        rowCount: data.length,
+        validRowsProcessed: validRowsCount,
+        totalRowsInSheet: targetWorksheet.rowCount,
+        startRow: startRow,
+        startColumn: this.START_COLUMN,
+        sampleRow: data.length > 0 ? data[0].map(cell => cell.value) : 'No data rows',
+        coloredCells: coloredCellsStats,
+        headerColors: Object.keys(columnColors).length
+      });
+      
+      return { headers, data, columnColors };
+    } catch (error) {
+      console.error('Error parsing Excel with colors:', error);
+      throw error;
+    }
+  }
+
+  // MÉTODO AUXILIAR MEJORADO para limpiar valores de celda
+  private cleanCellValue(cellValue: any): string {
+    // Manejar valores nulos o undefined
+    if (cellValue === null || cellValue === undefined) {
+      return '';
+    }
+    
+    // Si ya es un string, devolverlo limpio
+    if (typeof cellValue === 'string') {
+      return cellValue.trim();
+    }
+    
+    // Si es un número, formatear a 2 decimales
+    if (typeof cellValue === 'number') {
+      // Verificar si es un número entero o tiene decimales
+      if (Number.isInteger(cellValue)) {
+        return String(cellValue);
+      } else {
+        return cellValue.toFixed(2);
+      }
+    }
+    
+    // Si es un boolean, convertir a string
+    if (typeof cellValue === 'boolean') {
+      return String(cellValue);
+    }
+    
+    // Si es una fecha, formatearla
+    if (cellValue instanceof Date) {
+      return cellValue.toLocaleDateString();
+    }
+    
+    // Manejar objetos específicos de ExcelJS
+    if (typeof cellValue === 'object') {
+      // PRIORIDAD 1: Si es una fórmula compartida con resultado
+      if (cellValue.result !== undefined && cellValue.result !== null) {
+        // Procesar recursivamente el resultado
+        return this.cleanCellValue(cellValue.result);
+      }
+      
+      // PRIORIDAD 2: Si es una fórmula compartida sin resultado
+      if (cellValue.sharedFormula !== undefined) {
+        // Si no hay resultado, devolver vacío en lugar de la fórmula
+        return '';
+      }
+      
+      // PRIORIDAD 3: Fórmula regular con resultado
+      if (cellValue.formula !== undefined) {
+        // Si tiene resultado, usar el resultado; si no, devolver vacío
+        if (cellValue.result !== undefined) {
+          return this.cleanCellValue(cellValue.result);
+        }
+        return '';
+      }
+      
+      // PRIORIDAD 4: Texto con hipervínculo
+      if (cellValue.text !== undefined) {
+        return String(cellValue.text).trim();
+      }
+      
+      // PRIORIDAD 5: Texto enriquecido (rich text)
+      if (cellValue.richText && Array.isArray(cellValue.richText)) {
+        return cellValue.richText.map((rt: any) => {
+          if (typeof rt === 'string') return rt;
+          if (rt.text) return rt.text;
+          return '';
+        }).join('').trim();
+      }
+      
+      // PRIORIDAD 6: Valor compartido (shared string)
+      if (cellValue.sharedString !== undefined) {
+        return String(cellValue.sharedString).trim();
+      }
+      
+      // PRIORIDAD 7: Si tiene una propiedad 'value', usarla recursivamente
+      if (cellValue.value !== undefined) {
+        return this.cleanCellValue(cellValue.value);
+      }
+      
+      // PRIORIDAD 8: Valor de error
+      if (cellValue.error !== undefined) {
+        return `#${cellValue.error}`;
+      }
+      
+      // Para otros tipos de objeto, intentar extraer propiedades útiles
+      try {
+        // Verificar si tiene propiedades conocidas de ExcelJS
+        if (cellValue.model && cellValue.model.value !== undefined) {
+          return this.cleanCellValue(cellValue.model.value);
+        }
+        
+        // Si es un objeto con una sola propiedad, intentar usarla
+        const keys = Object.keys(cellValue);
+        if (keys.length === 1 && cellValue[keys[0]] !== undefined) {
+          const singleValue = cellValue[keys[0]];
+          if (typeof singleValue !== 'object') {
+            return this.cleanCellValue(singleValue);
+          }
+        }
+        
+        // Si el objeto tiene propiedades numéricas, intentar extraerlas
+        if (keys.some(key => typeof cellValue[key] === 'number')) {
+          const numericKey = keys.find(key => typeof cellValue[key] === 'number');
+          if (numericKey) {
+            return this.cleanCellValue(cellValue[numericKey]);
+          }
+        }
+        
+        // Como último recurso, convertir a JSON pero solo para objetos pequeños
+        const jsonString = JSON.stringify(cellValue);
+        if (jsonString !== '{}' && jsonString !== 'null' && jsonString.length < 50) {
+          console.warn('Objeto pequeño encontrado en celda:', cellValue);
+          return jsonString;
+        }
+      } catch (e) {
+        console.warn('No se pudo procesar objeto de celda:', cellValue);
+      }
+      
+      // Si todo falla, devolver string vacío
+      return '';
+    }
+    
+    // Para cualquier otro tipo, convertir a string y verificar si es numérico
+    const stringValue = String(cellValue).trim();
+    
+    // Intentar convertir a número si parece ser un número
+    if (/^-?\d*\.?\d+$/.test(stringValue)) {
+      const numValue = parseFloat(stringValue);
+      if (!isNaN(numValue)) {
+        if (Number.isInteger(numValue)) {
+          return String(numValue);
+        } else {
+          return numValue.toFixed(2);
+        }
+      }
+    }
+    
+    return stringValue;
+  }
+
+  /**
+   * Cuenta las celdas coloreadas en los datos
+   */
+  private countColoredCells(data: ExcelCellInfo[][]): { yellow: number; cyan: number; total: number } {
+    let yellow = 0;
+    let cyan = 0;
+    let total = 0;
+    
+    if (!data || !Array.isArray(data)) {
+      return { yellow: 0, cyan: 0, total: 0 };
+    }
+    
+    data.forEach(row => {
+      if (Array.isArray(row)) {
+        row.forEach(cell => {
+          if (cell && cell.backgroundColor && cell.backgroundColor !== 'transparent') {
+            const bgColor = cell.backgroundColor.replace('#', '').toUpperCase();
+            total++;
+            
+            // Detectar color amarillo #FFFF00
+            if (bgColor === 'FFFF00') {
+              yellow++;
+            }
+            // Detectar color cian #66FFFF
+            else if (bgColor === '66FFFF') {
+              cyan++;
+            }
+          }
+        });
+      }
+    });
+    
+    return { yellow, cyan, total };
+  }
+
+  /**
+   * Verifica si una celda tiene un color específico
+   */
+  private isCellColorMatch(cell: ExcelCellInfo, targetColor: string): boolean {
+    if (!cell || !cell.backgroundColor || cell.backgroundColor === 'transparent') {
+      return false;
+    }
+    
+    const cellColor = cell.backgroundColor.replace('#', '').toUpperCase();
+    const target = targetColor.replace('#', '').toUpperCase();
+    
+    return cellColor === target;
+  }
+
+  /**
+   * Obtiene estadísticas detalladas de colores en el archivo
+   */
+  private getColorStatistics(data: ExcelCellInfo[][]): {
+    totalCells: number;
+    coloredCells: number;
+    colors: { [color: string]: number };
+    yellow: number;
+    cyan: number;
+  } {
+    let totalCells = 0;
+    let coloredCells = 0;
+    const colors: { [color: string]: number } = {};
+    let yellow = 0;
+    let cyan = 0;
+    
+    data.forEach(row => {
+      row.forEach(cell => {
+        totalCells++;
+        
+        if (cell && cell.backgroundColor && cell.backgroundColor !== 'transparent') {
+          coloredCells++;
+          const bgColor = cell.backgroundColor.toUpperCase();
+          
+          // Contar por color específico
+          colors[bgColor] = (colors[bgColor] || 0) + 1;
+          
+          // Contar colores específicos que nos interesan
+          const cleanColor = bgColor.replace('#', '');
+          if (cleanColor === 'FFFF00') {
+            yellow++;
+          } else if (cleanColor === '66FFFF') {
+            cyan++;
+          }
+        }
+      });
+    });
+    
+    return {
+      totalCells,
+      coloredCells,
+      colors,
+      yellow,
+      cyan
+    };
+  }
+  
+  private extractBackgroundColor(cell: ExcelJS.Cell): string {
+    try {
+      const fill = cell.fill;
+      if (fill && fill.type === 'pattern') {
+        const patternFill = fill as ExcelJS.FillPattern;
+        if (patternFill.fgColor) {
+          if (typeof patternFill.fgColor === 'object' && 'argb' in patternFill.fgColor && patternFill.fgColor.argb) {
+            return `#${patternFill.fgColor.argb.slice(2)}`; // Remover alpha
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error extracting background color:', error);
+    }
+    return 'transparent';
+  }
+  
+  private extractFontColor(cell: ExcelJS.Cell): string {
+    try {
+      const font = cell.font;
+      if (font && font.color) {
+        if (typeof font.color === 'object' && 'argb' in font.color && font.color.argb) {
+          return `#${font.color.argb.slice(2)}`; // Remover alpha
+        }
+      }
+    } catch (error) {
+      console.warn('Error extracting font color:', error);
+    }
+    return '#000000';
+  }
+  
+  private getColumnNumber(columnLetter: string): number {
+    let result = 0;
+    for (let i = 0; i < columnLetter.length; i++) {
+      result = result * 26 + (columnLetter.charCodeAt(i) - 64);
+    }
+    return result;
+  }
+
   private parseFile(file: File): Promise<any[][]> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -114,15 +564,17 @@ export class ExcelImportService {
             throw new Error('El archivo Excel no contiene hojas');
           }
           
-          // Buscar la hoja "detalle" o usar la primera hoja si no se encuentra
+          // Buscar la hoja "DETALLE" (insensible a mayúsculas/minúsculas)
           let sheetName = wb.SheetNames.find(name => 
-            name.toLowerCase() === this.SHEET_NAME.toLowerCase()
+            name.toUpperCase() === this.SHEET_NAME.toUpperCase()
           );
           
-          // Si no se encuentra la hoja 'detalle', usar la primera hoja disponible
+          // Si no se encuentra la hoja 'DETALLE', usar la primera hoja disponible
           if (!sheetName) {
-            console.warn(`No se encontró la hoja "${this.SHEET_NAME}". Se utilizará la primera hoja: "${wb.SheetNames[0]}"`);
+            console.warn(`No se encontró la hoja "${this.SHEET_NAME}". Hojas disponibles: ${wb.SheetNames.join(', ')}. Se utilizará la primera hoja: "${wb.SheetNames[0]}"`);
             sheetName = wb.SheetNames[0];
+          } else {
+            console.log(`Encontrada hoja "${sheetName}" (buscando "${this.SHEET_NAME}")`);
           }
 
           const ws: XLSX.WorkSheet = wb.Sheets[sheetName];
@@ -131,13 +583,13 @@ export class ExcelImportService {
             throw new Error(`No se pudo acceder a la hoja "${sheetName}"`);
           }
           
-          // Configurar el rango para comenzar desde B6 (columna B, fila 6)
-          const range = `${this.START_COLUMN}${this.START_ROW + 1}:AD1000`; // B6:AA1000
+          // Configurar el rango para comenzar desde A6 (columna A, fila 6)
+          const range = `${this.START_COLUMN}${this.START_ROW + 1}:AD1000`; // A6:AD1000
           
           // Leer datos desde el rango especificado
           const data: any[][] = XLSX.utils.sheet_to_json(ws, { 
             header: 1,        // Usar índices numéricos para las columnas
-            range: range      // Comenzar desde B6
+            range: range      // Comenzar desde A6
           });
 
           // Verificar que se obtuvieron datos

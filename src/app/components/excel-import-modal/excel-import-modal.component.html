@@ -80,10 +80,15 @@
               <span class="label">Columnas:</span>
               <span class="value">{{ stats.totalColumns }}</span>
             </div>
-            <div class="stat-item">
-              <span class="label">Campos mapeados:</span>
-              <span class="value">{{ stats.mappedFields }}</span>
+                <div class="stat-item" *ngIf="stats.coloredCells && stats.coloredCells.yellow > 0">
+              <span class="label">Celdas amarillas:</span>
+              <span class="value color-indicator yellow">{{ stats.coloredCells.yellow }}</span>
             </div>
+            <div class="stat-item" *ngIf="stats.coloredCells && stats.coloredCells.cyan > 0">
+              <span class="label">Celdas cian:</span>
+              <span class="value color-indicator cyan">{{ stats.coloredCells.cyan }}</span>
+            </div>
+
           </div>
         </div>
       </div>      <!-- Pestaña de vista previa -->
@@ -119,7 +124,7 @@
               <div class="system-fields">
                 <h6>Campos del sistema</h6>
                 <div class="field-list">
-                  <div *ngFor="let field of systemFields.slice(0, 8)"
+                  <div *ngFor="let field of systemFields"
                        class="field-item"
                        [class.drop-target]="dragTarget === field.id"
                        [class.important-field]="field.id === 'codigo' || field.id === 'ubicacion'"
@@ -174,8 +179,15 @@
                     <td class="row-header">{{ i + 1 }}</td>
                     <td *ngFor="let cell of row; let j = index" 
                         [attr.data-type]="getCellType(cell)"
-                        [class.mapped-cell]="isHeaderMapped(excelHeaders[j])">
-                      {{ formatCell(cell) }}
+                        [class.mapped-cell]="isHeaderMapped(excelHeaders[j])"
+                        [class.yellow-cell]="getCellColorInfo(i, j).isYellow"
+                        [class.cyan-cell]="getCellColorInfo(i, j).isCyan"
+                        [attr.title]="getCellColorTooltip(cell)">
+                      <div class="cell-content">
+                        {{ formatCell(cell) }}
+                        <span *ngIf="getCellColorInfo(i, j).isYellow" class="color-marker yellow-marker">●</span>
+                        <span *ngIf="getCellColorInfo(i, j).isCyan" class="color-marker cyan-marker">●</span>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -183,26 +195,30 @@
             </div>
           </div>
         </div>
-        
-        <div class="loading-preview" *ngIf="isLoadingPreview">
+          <div class="loading-preview" *ngIf="isLoadingPreview">
           <div class="spinner">
             <i class="fas fa-spinner fa-spin"></i>
             <span>Cargando datos del archivo...</span>
-          </div>        </div>
+          </div>
+        </div>
       </div>
-    </div><!-- Botones de acción -->
+    </div>
+
+    <!-- Footer con botones de acción -->
     <div class="modal-footer">
-      <div class="button-container">
+      <div class="footer-buttons">
         <button 
           class="btn btn-secondary" 
           (click)="onCloseModal()">
-          Cancelar
+          <i class="fas fa-times"></i>
+          <span>Cancelar</span>
         </button>
         <button 
           class="btn btn-primary"
           [disabled]="!selectedFile"
           (click)="activeTab === 'preview' ? importExcel() : nextStep()">
-          {{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}
+          <i class="fas" [class.fa-arrow-right]="activeTab === 'upload'" [class.fa-download]="activeTab === 'preview'"></i>
+          <span>{{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}</span>
         </button>
       </div>
     </div>

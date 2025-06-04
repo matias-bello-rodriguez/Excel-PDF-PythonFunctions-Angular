@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExcelImportService } from '../../services/excel-import.service';
 import { FormsModule } from '@angular/forms';
+import { ExcelCellInfo } from '@app/interfaces/entities';
 
 @Component({
   selector: 'app-excel-import-modal',
@@ -22,6 +23,10 @@ export class ExcelImportModalComponent {
   selectedFile: File | null = null;
   selectedFileName = '';
   excelHeaders: string[] = [];
+  excelPreviewDataWithColors: ExcelCellInfo[][] = [];
+  columnColors: { [key: string]: { backgroundColor: string; fontColor: string } } = {};
+  coloredCellsStats: { yellow: number; cyan: number } = { yellow: 0, cyan: 0 };
+
   excelPreviewData: any[][] = [];
   isLoadingPreview = false;
 
@@ -29,20 +34,30 @@ export class ExcelImportModalComponent {
   systemFields: {id: string, name: string}[] = [
     {id: 'codigo', name: 'Código'},
     {id: 'ubicacion', name: 'Ubicación'},
-    {id: 'ancho_diseno', name: 'Ancho'},
-    {id: 'alto_diseno', name: 'Alto'},
+    {id: 'ancho_m', name: 'Ancho (m)'},
+    {id: 'alto_m', name: 'Alto (m)'},
     {id: 'superficie', name: 'Superficie'},
-    {id: 'cantidad', name: 'Cantidad'},
-    {id: 'precio_unitario_usd', name: 'Precio Unitario (USD)'},
-    {id: 'costo_instalacion_clp', name: 'Costo Instalación (CLP)'},
-    {id: 'precio_final_usd', name: 'Precio Final (USD)'},
-    {id: 'total_instalacion_clp', name: 'Total Instalación (CLP)'},
-    {id: 'total_pieza_usd', name: 'Total Pieza (USD)'},
-    {id: 'nombre', name: 'Nombre'},
-    {id: 'tipo_producto', name: 'Tipo Producto'},
-    {id: 'metodo_instalacion', name: 'Método Instalación'},
-    {id: 'tipo_marco', name: 'Tipo Marco'},
-    {id: 'longitud_marco', name: 'Longitud Marco'}
+    {id: 'cantidad_por_unidad', name: 'Cantidad por Unidad'},
+    {id: 'superficie_total', name: 'Superficie Total'},
+    {id: 'ancho_fabricacion_m', name: 'Ancho Fabricación (m)'},
+    {id: 'alto_fabricacion_m', name: 'Alto Fabricación (m)'},
+    {id: 'diseno_1', name: 'Diseño 1'},
+    {id: 'diseno_2', name: 'Diseño 2'},
+    {id: 'comentario_1', name: 'Comentario 1'},
+    {id: 'comentario_2', name: 'Comentario 2'},
+    {id: 'material', name: 'Material'},
+    {id: 'perfil_mm', name: 'Perfil (mm)'},
+    {id: 'color_body', name: 'Color Body'},
+    {id: 'espesor_vidrio_mm', name: 'Espesor Vidrio (mm)'},
+    {id: 'proteccion_vidrio', name: 'Protección Vidrio'},
+    {id: 'color_film', name: 'Color Film'},
+    {id: 'opaco_o_transparente', name: 'Opaco o Transparente'},
+    {id: 'tipo_ventana', name: 'Tipo Ventana'},
+    {id: 'tipo_vidrio', name: 'Tipo Vidrio'},
+    {id: 'apertura', name: 'Apertura'},
+    {id: 'cierre', name: 'Cierre'},
+    //despues 
+
   ];
   
   columnMapping: { [key: string]: string } = {};
@@ -86,37 +101,63 @@ export class ExcelImportModalComponent {
 
     this.isLoadingPreview = true;
     try {
-      const preview = await this.excelService.generatePreview(this.selectedFile);
-      this.excelHeaders = preview.headers;
-      this.excelPreviewData = preview.data;
-        // Mostrar headers disponibles para debugging
+      // Cargar datos con información de colores
+      const previewWithColors = await this.excelService.generatePreviewWithColors(this.selectedFile);
+      this.excelHeaders = previewWithColors.headers;
+      this.excelPreviewDataWithColors = previewWithColors.data;
+      this.columnColors = previewWithColors.columnColors;
+      
+      // Convertir datos con colores a formato simple para compatibilidad
+      this.excelPreviewData = previewWithColors.data.map(row => 
+        row.map(cell => cell.value)
+      );
+      
+      // Calcular estadísticas de celdas coloreadas
+      this.calculateColoredCellsStats();
+      
+      // Mostrar headers disponibles para debugging
       console.log('Headers encontrados en Excel:', this.excelHeaders);
+      console.log('Celdas coloreadas encontradas:', this.coloredCellsStats);
       
       // Aplicar mapeo automático después de cargar los headers
       this.columnMapping = this.createAutomaticMapping();
       
-      console.log('Excel data loaded:', {
+      console.log('Excel data loaded with colors:', {
         headers: this.excelHeaders,
         preview: this.excelPreviewData,
+        coloredCells: this.coloredCellsStats,
         automaticMapping: this.columnMapping
       });
       this.activeTab = 'preview';
     } catch (error) {
       console.error('Error al cargar el archivo:', error);
-      this.importError.emit('Error al cargar el archivo Excel');
+      // Fallback a método sin colores si falla
+      try {
+        const preview = await this.excelService.generatePreview(this.selectedFile);
+        this.excelHeaders = preview.headers;
+        this.excelPreviewData = preview.data;
+        this.columnMapping = this.createAutomaticMapping();
+        this.activeTab = 'preview';
+      } catch (fallbackError) {
+        this.importError.emit('Error al cargar el archivo Excel');
+      }
     } finally {
       this.isLoadingPreview = false;
     }
   }
 
+
   /**
    * Resetea el estado del modal
    */
-  resetModal(): void {
+ resetModal(): void {
     this.selectedFile = null;
     this.selectedFileName = '';
     this.excelPreviewData = [];
+    this.excelPreviewDataWithColors = [];
     this.excelHeaders = [];
+    this.columnColors = {};
+    this.coloredCellsStats = { yellow: 0, cyan: 0 };
     this.isLoadingPreview = false;
     this.columnMapping = {};
     this.activeTab = 'upload';
@@ -366,9 +407,11 @@ export class ExcelImportModalComponent {
       mappedFields: this.getMappedFieldsCount(),
       unmappedHeaders: this.excelHeaders.filter(header => 
         !Object.values(this.columnMapping).includes(header)
-      ).length
+      ).length,
+      coloredCells: this.coloredCellsStats
     };
   }
+
 
   /**
    * Formatea el tamaño del archivo
@@ -501,4 +544,86 @@ export class ExcelImportModalComponent {
   getMappedFieldsCount(): number {
     return Object.keys(this.columnMapping).length;
   }
+
+  /**
+   * Calcula estadísticas de celdas coloreadas
+   */
+  private calculateColoredCellsStats(): void {
+    this.coloredCellsStats = { yellow: 0, cyan: 0 };
+    
+    if (!this.excelPreviewDataWithColors || this.excelPreviewDataWithColors.length === 0) {
+      return;
+    }
+    
+    this.excelPreviewDataWithColors.forEach(row => {
+      row.forEach(cell => {
+        if (this.isCellColorMatch(cell, 'FFFF00')) {
+          this.coloredCellsStats.yellow++;
+        }
+        if (this.isCellColorMatch(cell, '66FFFF')) {
+          this.coloredCellsStats.cyan++;
+        }
+      });
+    });
+  }
+
+  /**
+   * Verifica si una celda tiene un color específico
+   */
+  isCellColored(cell: any, colorHex: string): boolean {
+    if (this.excelPreviewDataWithColors.length === 0) {
+      return false;
+    }
+    
+    // Si cell es un valor simple, buscar en los datos con colores
+    const rowIndex = this.excelPreviewData.findIndex(row => row.includes(cell));
+    if (rowIndex === -1) return false;
+    
+    const colIndex = this.excelPreviewData[rowIndex].indexOf(cell);
+    if (colIndex === -1) return false;
+    
+    const cellWithColor = this.excelPreviewDataWithColors[rowIndex]?.[colIndex];
+    return this.isCellColorMatch(cellWithColor, colorHex);
+  }
+
+  /**
+   * Verifica si el color de una celda coincide con el color especificado
+   */
+  private isCellColorMatch(cell: ExcelCellInfo, targetColor: string): boolean {
+    if (!cell || !cell.backgroundColor) return false;
+    
+    const cellColor = cell.backgroundColor.replace('#', '').toUpperCase();
+    const target = targetColor.replace('#', '').toUpperCase();
+    
+    return cellColor === target;
+  }
+
+  /**
+   * Obtiene el tooltip de color para una celda
+   */
+  getCellColorTooltip(cell: any): string {
+    if (this.isCellColored(cell, 'FFFF00')) {
+      return 'Celda marcada en amarillo';
+    }
+    if (this.isCellColored(cell, '66FFFF')) {
+      return 'Celda marcada en cian';
+    }
+    return '';
+  }
+
+  /**
+   * Obtiene información de color de una celda específica por posición
+   */
+  getCellColorInfo(rowIndex: number, colIndex: number): { isYellow: boolean; isCyan: boolean } {
+    if (!this.excelPreviewDataWithColors[rowIndex] || !this.excelPreviewDataWithColors[rowIndex][colIndex]) {
+      return { isYellow: false, isCyan: false };
+    }
+
+    const cell = this.excelPreviewDataWithColors[rowIndex][colIndex];
+    return {
+      isYellow: this.isCellColorMatch(cell, 'FFFF00'),
+      isCyan: this.isCellColorMatch(cell, '66FFFF')
+    };
+  }
+
 }
