@@ -273,14 +273,27 @@
       font-size: 0.875rem;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       background-color: white;
-      border: 1px solid #d4d4d4; /* Borde exterior similar a Excel */
-
-      th, td {
+      border: 1px solid #d4d4d4; /* Borde exterior similar a Excel */      th, td {
         border: 1px solid #d4d4d4; /* Color de borde similar a Excel */
         padding: 0.5rem;
         text-align: left;
         min-width: 100px;
-      }      thead {
+      }
+      
+      th {
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.3;
+        vertical-align: top;
+        min-height: 3rem;
+        hyphens: auto;
+      }
+      
+      td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }thead {
         position: sticky;
         top: 0;
         z-index: 1;
@@ -850,15 +863,25 @@ tr.drop-target {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
-  
-  th, td {
+    th, td {
     padding: 0.5rem;
     text-align: left;
     border-bottom: 1px solid #dee2e6;
+    max-width: 150px;
+  }
+  
+  th {
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.2;
+    vertical-align: top;
+    min-height: 2.5rem;
+  }
+  
+  td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 150px;
   }
     th {
     background: #f8f9fa;
@@ -868,17 +891,15 @@ tr.drop-target {
     top: 0;
     z-index: 10;
     cursor: default;
-    
-    &.mapped-header {
+      &.mapped-header {
       background: #d4edda;
       color: #155724;
       cursor: not-allowed;
       
       .header-content {
         .mapped-indicator {
-          margin-left: 0.5rem;
           color: #28a745;
-          font-size: 0.7rem;
+          font-size: 0.8rem;
         }
       }
     }
@@ -898,28 +919,40 @@ tr.drop-target {
         cursor: grabbing;
         transform: translateY(0);
       }
-      
-      .header-content {
+        .header-content {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.25rem;
         
         .drag-indicator {
-          font-size: 0.7rem;
+          font-size: 0.8rem;
           color: #6c757d;
-          margin-left: 0.5rem;
         }
       }
     }
-    
-    .header-content {
+      .header-content {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-height: 2.5rem;
       
       .header-text {
         flex: 1;
         text-align: center;
+        word-break: break-word;
+        hyphens: auto;
+        line-height: 1.2;
+        font-size: 0.8rem;
+      }
+      
+      .mapped-indicator,
+      .drag-indicator {
+        flex-shrink: 0;
+        margin: 0;
       }
     }
   }
