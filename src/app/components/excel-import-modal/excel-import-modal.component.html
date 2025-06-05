@@ -33,6 +33,14 @@
         <i class="fas fa-eye"></i>
         Vista previa y mapeo
       </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'images'"
+        [disabled]="!selectedFile"
+        (click)="openImagesTab()">
+        <i class="fas fa-images"></i>
+        Imágenes
+      </button>
     </div>
 
     <!-- Contenido del modal -->
@@ -201,6 +209,100 @@
             <span>Cargando datos del archivo...</span>
           </div>
         </div>
+      </div>      <!-- Pestaña de imágenes extraídas -->
+      <div *ngIf="activeTab === 'images'" class="images-tab">
+        <div class="images-header">
+          <h4>Extracción de imágenes del Excel</h4>
+          <div class="server-status" [ngClass]="{'status-ok': pythonServerAvailable, 'status-error': !pythonServerAvailable}">
+            <i class="fas" [ngClass]="{'fa-check-circle': pythonServerAvailable, 'fa-exclamation-circle': !pythonServerAvailable}"></i>
+            <span>Servidor Python: {{ pythonServerAvailable ? 'Disponible' : 'No disponible' }}</span>
+            <button class="btn-refresh" (click)="checkPythonServer()" title="Verificar conexión con el servidor">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="images-actions">
+          <button 
+            class="btn btn-primary" 
+            (click)="extractImages()"
+            [disabled]="isExtractingImages || !pythonServerAvailable">
+            <i class="fas fa-search"></i>
+            <span>Extraer imágenes</span>
+          </button>
+          
+          <button 
+            class="btn btn-secondary" 
+            (click)="exportImagesToZIP()"
+            [disabled]="extractedImages.length === 0">
+            <i class="fas fa-file-archive"></i>
+            <span>Exportar todas en ZIP</span>
+          </button>
+          
+          <button 
+            class="btn btn-danger" 
+            (click)="removeAllExtractedImages()"
+            [disabled]="extractedImages.length === 0">
+            <i class="fas fa-trash-alt"></i>
+            <span>Eliminar todas</span>
+          </button>
+        </div>
+        
+        <!-- Estado de la extracción -->
+        <div class="extraction-status" *ngIf="isExtractingImages || imageExtractionError || extractedImages.length > 0">
+          <div class="status-message" [ngClass]="{'is-loading': isExtractingImages, 'has-error': imageExtractionError, 'has-results': extractedImages.length > 0}">
+            <i class="fas" [ngClass]="{'fa-spinner fa-spin': isExtractingImages, 'fa-exclamation-triangle': imageExtractionError, 'fa-check-circle': extractedImages.length > 0 && !imageExtractionError}"></i>
+            <span>{{ getImageExtractionStatus() }}</span>
+          </div>
+        </div>
+        
+        <!-- Mensaje de instrucción -->
+        <div class="instructions" *ngIf="!pythonServerAvailable && !isExtractingImages">
+          <i class="fas fa-info-circle"></i>
+          <p>
+            Es necesario iniciar el servidor Python para la extracción de imágenes. 
+            Ejecute el script <code>start_server.py</code> en el directorio <code>python-excel-service</code>.
+          </p>
+        </div>
+        
+        <!-- Galería de imágenes -->
+        <div class="images-gallery" *ngIf="extractedImages.length > 0">
+          <div class="image-count">
+            <span>{{ extractedImages.length }} imágenes encontradas</span>
+          </div>
+          
+          <div class="image-grid">
+            <div class="image-card" *ngFor="let image of extractedImages">
+              <div class="image-container">
+                <img [src]="image.data" [alt]="image.filename" class="extracted-image">
+              </div>
+              <div class="image-info">
+                <div class="image-filename" [title]="image.filename">{{ image.filename }}</div>
+                <div class="image-details">
+                  <span class="detail-item">{{ image.size | number }} bytes</span>
+                  <span class="detail-item">{{ image.mimeType }}</span>
+                </div>
+              </div>
+              <div class="image-actions">
+                <button class="btn-action" (click)="downloadImage(image)" title="Descargar imagen">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button class="btn-action" (click)="removeExtractedImage(image)" title="Eliminar imagen">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="btn-action" (click)="openImageModal(image)" title="Ver imagen">
+                  <i class="fas fa-search-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mensaje si no hay imágenes -->
+        <div class="no-images" *ngIf="!isExtractingImages && !imageExtractionError && extractedImages.length === 0 && pythonServerAvailable">
+          <i class="fas fa-images"></i>
+          <p>No se han extraído imágenes aún. Haz clic en "Extraer imágenes" para comenzar.</p>
+        </div>
       </div>
     </div>
 
@@ -209,13 +311,15 @@
       <div class="footer-buttons">
         <button 
           class="btn btn-secondary" 
-          (click)="onCloseModal()">
-          <i class="fas fa-times"></i>
-          <span>Cancelar</span>
+          (click)="activeTab === 'preview' || activeTab === 'images' ? previousStep() : onCloseModal()">
+          <i class="fas fa-arrow-left" *ngIf="activeTab === 'preview' || activeTab === 'images'"></i>
+          <i class="fas fa-times" *ngIf="activeTab === 'upload'"></i>
+          <span>{{ activeTab === 'upload' ? 'Cancelar' : 'Atrás' }}</span>
         </button>
         <button 
           class="btn btn-primary"
           [disabled]="!selectedFile"
+          *ngIf="activeTab !== 'images'"
           (click)="activeTab === 'preview' ? importExcel() : nextStep()">
           <i class="fas" [class.fa-arrow-right]="activeTab === 'upload'" [class.fa-download]="activeTab === 'preview'"></i>
           <span>{{ activeTab === 'preview' ? 'Importar' : 'Siguiente' }}</span>

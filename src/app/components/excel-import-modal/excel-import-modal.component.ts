@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ExcelImportService } from '../../services/excel-import.service';
+import { ExcelImportService, ExtractedImage, ImageExtractionResponse } from '../../services/excel-import.service';
 import { FormsModule } from '@angular/forms';
 import { ExcelCellInfo } from '@app/interfaces/entities';
+import JSZip from 'jszip';
 
 @Component({
   selector: 'app-excel-import-modal',
@@ -18,14 +19,22 @@ export class ExcelImportModalComponent {
   @Output() closeModal = new EventEmitter<void>();
   @Output() importSuccess = new EventEmitter<any[]>();
   @Output() importError = new EventEmitter<string>();
+  @Output() imagesExtracted = new EventEmitter<ExtractedImage[]>();
+  
   // Estados del modal
-  activeTab: 'upload' | 'preview' = 'upload';
+  activeTab: 'upload' | 'preview' | 'images' = 'upload';
   selectedFile: File | null = null;
   selectedFileName = '';
   excelHeaders: string[] = [];
   excelPreviewDataWithColors: ExcelCellInfo[][] = [];
   columnColors: { [key: string]: { backgroundColor: string; fontColor: string } } = {};
   coloredCellsStats: { yellow: number; cyan: number } = { yellow: 0, cyan: 0 };
+
+  // Estados para extracción de imágenes
+  extractedImages: ExtractedImage[] = [];
+  isExtractingImages = false;
+  pythonServerAvailable = false;
+  imageExtractionError: string | null = null;
 
   excelPreviewData: any[][] = [];
   isLoadingPreview = false;
@@ -626,4 +635,367 @@ export class ExcelImportModalComponent {
     };
   }
 
+  /**
+   * Extrae las imágenes del archivo Excel
+   */  async extractImages(): Promise<void> {
+    if (!this.selectedFile) {
+      this.imageExtractionError = 'No hay archivo seleccionado';
+      return;
+    }
+
+    this.isExtractingImages = true;
+    this.imageExtractionError = null;
+
+    try {
+      this.excelService.extractImagesFromExcel(this.selectedFile).subscribe({        next: (response: ImageExtractionResponse) => {
+          if (response.success) {
+            this.extractedImages = response.images;
+            console.log(`Extracted ${this.extractedImages.length} images`);
+          } else {
+            this.imageExtractionError = response.message || 'Error al extraer imágenes';
+          }
+          this.isExtractingImages = false;
+        },
+        error: (error) => {
+          console.error('Error extracting images:', error);
+          this.imageExtractionError = 'Error de conexión con el servidor Python';
+          this.isExtractingImages = false;
+        }
+      });
+    } catch (error) {
+      console.error('Error extracting images:', error);
+      this.imageExtractionError = 'Error de conexión con el servidor Python';
+      this.isExtractingImages = false;
+    }
+  }
+  /**
+   * Verifica si el servidor Python está disponible para la extracción de imágenes
+   */
+  async checkPythonServer(): Promise<void> {
+    try {
+      const response = await fetch('http://localhost:8000/health');
+      
+      if (response.ok) {
+        this.pythonServerAvailable = true;
+        console.log('Servidor Python disponible');
+      } else {
+        this.pythonServerAvailable = false;
+        console.warn('Servidor Python no disponible, estado:', response.status);
+      }
+    } catch (error) {
+      this.pythonServerAvailable = false;
+      console.error('Error al verificar el servidor Python:', error);
+    }
+  }
+
+  /**
+   * Abre la pestaña de imágenes
+   */
+  openImagesTab(): void {
+    this.activeTab = 'images';
+    
+    // Verificar disponibilidad del servidor Python al abrir la pestaña de imágenes
+    this.checkPythonServer();
+  }
+
+  /**
+   * Regresa a la pestaña anterior (upload o preview)
+   */
+  goBackToPreviousTab(): void {
+    if (this.activeTab === 'images') {
+      this.activeTab = 'preview';
+    } else {
+      this.activeTab = 'upload';
+    }
+  }
+
+  /**
+   * Copia el texto al portapapeles
+   */
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Texto copiado al portapapeles: ' + text);
+    }).catch(err => {
+      console.error('Error al copiar al portapapeles:', err);
+    });
+  }
+  /**
+   * Descarga una imagen
+   */
+  downloadImage(image: ExtractedImage): void {
+    const blob = this.excelService.base64ToBlob(image.data, image.mimeType);
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = image.filename || 'imagen_extraida';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Limpiar URL objeto
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Elimina una imagen extraída
+   */
+  removeExtractedImage(image: ExtractedImage): void {
+    this.extractedImages = this.extractedImages.filter(img => img !== image);
+  }
+
+  /**
+   * Elimina todas las imágenes extraídas
+   */
+  removeAllExtractedImages(): void {
+    this.extractedImages = [];
+  }
+
+  /**
+   * Obtiene el estado de extracción de imágenes
+   */
+  getImageExtractionStatus(): string {
+    if (this.isExtractingImages) {
+      return 'Extrayendo imágenes...';
+    }
+    if (this.imageExtractionError) {
+      return 'Error: ' + this.imageExtractionError;
+    }
+    if (this.extractedImages.length > 0) {
+      return 'Imágenes extraídas: ' + this.extractedImages.length;
+    }
+    return 'No se han extraído imágenes';
+  }
+
+  /**
+   * Obtiene el estilo CSS para una celda basada en su contenido
+   */
+  getCellStyle(cell: any): { [key: string]: string } {
+    const baseStyle = {
+      'padding': '8px',
+      'border': '1px solid #ddd',
+      'vertical-align': 'middle',
+      'text-align': 'left'
+    };
+    
+    if (typeof cell === 'number') {
+      return { ...baseStyle, 'text-align': 'right' };
+    }
+    if (typeof cell === 'boolean') {
+      return { ...baseStyle, 'text-align': 'center' };
+    }
+    return baseStyle;
+  }
+
+  /**
+   * Formatea el valor de una celda para mostrarlo en la tabla
+   */
+  formatCellValue(cell: any): string {
+    if (cell === null || cell === undefined) return '';
+    if (typeof cell === 'number') return cell.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return String(cell);
+  }
+
+  /**
+   * Obtiene el título de la columna basado en el mapeo
+   */  getColumnTitle(fieldId: string): string {
+    const mappedColumn = this.getMappedColumn(fieldId);
+    if (mappedColumn) {
+      const columnIndex = this.excelHeaders.indexOf(mappedColumn);
+      if (columnIndex !== -1) {
+        return this.excelHeaders[columnIndex];
+      }
+    }
+    return fieldId;
+  }
+
+  /**
+   * Obtiene el valor de una celda en la fila y columna especificadas
+   */
+  getCellValue(rowIndex: number, colIndex: number): any {
+    if (this.excelPreviewData && this.excelPreviewData[rowIndex]) {
+      return this.excelPreviewData[rowIndex][colIndex];
+    }
+    return null;
+  }
+
+  /**
+   * Verifica si una fila tiene celdas coloreadas
+   */
+  hasColoredCells(row: any[]): boolean {
+    return row.some(cell => cell && cell.backgroundColor && (cell.backgroundColor === 'FFFF00' || cell.backgroundColor === '66FFFF'));
+  }
+
+  /**
+   * Obtiene el estilo de fila para resaltar filas con celdas coloreadas
+   */
+  getRowStyle(row: any[]): { [key: string]: string } {
+    if (this.hasColoredCells(row)) {
+      return {
+        'background-color': '#f9f9c5', // Color de fondo suave
+        'font-weight': 'bold'
+      };
+    }
+    return {};
+  }
+
+  /**
+   * Exporta los datos visibles de la tabla a un archivo CSV
+   */
+  exportToCSV(): void {
+    const csvRows: string[] = [];
+    
+    // Obtener los encabezados
+    const headers = this.excelHeaders.filter(header => this.getMappedColumn(header)).map(header => this.getColumnTitle(header));
+    csvRows.push(headers.join(','));
+    
+    // Obtener las filas
+    this.excelPreviewData.forEach(row => {
+      const rowData = row.filter((cell, index) => this.getMappedColumn(this.excelHeaders[index]));
+      csvRows.push(rowData.join(','));
+    });
+    
+    // Crear un blob con los datos CSV y descargarlo
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'datos_exportados.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  /**
+   * Imprime los datos visibles de la tabla
+   */
+  printTable(): void {
+    const printWindow = window.open('', '_blank');
+    
+    if (printWindow) {
+      // Crear una tabla HTML para imprimir
+      let tableHTML = '<table style="width:100%; border-collapse:collapse;">';
+      
+      // Agregar los encabezados
+      tableHTML += '<tr>';
+      this.excelHeaders.forEach(header => {
+        const mappedColumn = this.getMappedColumn(header);
+        if (mappedColumn) {
+          tableHTML += `<th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">${this.getColumnTitle(header)}</th>`;
+        }
+      });
+      tableHTML += '</tr>';
+      
+      // Agregar las filas
+      this.excelPreviewData.forEach(row => {
+        tableHTML += '<tr>';
+        row.forEach((cell, index) => {
+          if (this.getMappedColumn(this.excelHeaders[index])) {
+            tableHTML += `<td style="border:1px solid #ddd; padding:8px;">${this.formatCellValue(cell)}</td>`;
+          }
+        });
+        tableHTML += '</tr>';
+      });
+      tableHTML += '</table>';
+      
+      // Escribir el contenido en la ventana de impresión
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Imprimir Datos</title>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h2>Datos Importados</h2>
+            ${tableHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    } else {
+      console.error('No se pudo abrir la ventana de impresión');
+    }
+  }
+
+  /**
+   * Exporta las imágenes extraídas a un archivo ZIP
+   */
+  async exportImagesToZIP(): Promise<void> {
+    if (this.extractedImages.length === 0) {
+      alert('No hay imágenes para exportar');
+      return;
+    }
+    
+    // Crear un archivo ZIP y agregar las imágenes
+    const zip = new JSZip();
+      this.extractedImages.forEach(image => {
+      zip.file(image.filename || 'imagen_extraida', image.data, { base64: true });
+    });
+    
+    // Generar el archivo ZIP y descargarlo
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    
+    const link = document.createElement('a');
+    link.href = zipUrl;
+    link.download = 'imagenes_extraidas.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  /**
+   * Abre el modal para ver la imagen en tamaño completo
+   */
+  openImageModal(image: ExtractedImage): void {
+    // Lógica para abrir el modal de imagen
+  }
+
+  /**
+   * Cierra el modal de imagen
+   */
+  closeImageModal(): void {
+    // Lógica para cerrar el modal de imagen
+  }
+
+  /**
+   * Inicializa el componente
+   */
+  ngOnInit(): void {
+    // Lógica de inicialización si es necesaria
+  }
+
+  /**
+   * Maneja el evento cuando el modal se cierra
+   */
+  ngOnDestroy(): void {
+    // Limpiar recursos o suscripciones si es necesario
+  }
+
+  /**
+   * Método de prueba para simular la extracción de imágenes
+   */  testImageExtraction(): void {
+    this.extractedImages = [
+      {
+        filename: 'imagen1.png',
+        mimeType: 'image/png',
+        size: 1024,
+        extension: 'png',
+        data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'
+      },
+      {
+        filename: 'imagen2.jpg',
+        mimeType: 'image/jpeg',
+        size: 2048,
+        extension: 'jpg',
+        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/2wBDAAoH'
+      }
+    ];
+  }
 }

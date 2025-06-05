@@ -1,8 +1,26 @@
 // src/app/services/excel-import.service.ts
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import * as XLSX from 'xlsx';
 import * as ExcelJS from 'exceljs';
 import { ExcelCellInfo } from '@app/interfaces/entities';
+
+// Interfaces para la respuesta del servidor Python
+export interface ExtractedImage {
+  filename: string;
+  data: string; // base64
+  mimeType: string;
+  size: number;
+  extension: string;
+}
+
+export interface ImageExtractionResponse {
+  success: boolean;
+  message: string;
+  images: ExtractedImage[];
+  count: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +29,9 @@ export class ExcelImportService {
   private readonly SHEET_NAME = 'DETALLE'; // Cambiado a mayúsculas
   private readonly START_ROW = 5; // Índice 5 corresponde a la fila 6 (0-based)
   private readonly START_COLUMN = 'A'; // Comenzar desde la columna A
+  private readonly PYTHON_API_URL = 'http://localhost:8000'; // URL del servidor Python
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
   
   async generatePreview(file: File): Promise<{ headers: string[], data: any[][] }> {
     try {
@@ -599,5 +618,64 @@ export class ExcelImportService {
         reject(new Error('Error al iniciar la lectura del archivo'));
       }
     });
+  }
+
+  /**
+   * Extrae imágenes de un archivo Excel usando el servidor Python
+   */
+  extractImagesFromExcel(file: File): Observable<ImageExtractionResponse> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    
+    return this.http.post<ImageExtractionResponse>(
+      `${this.PYTHON_API_URL}/extract-excel-images`,
+      formData
+    );
+  }
+
+  /**
+   * Verifica si el servidor Python está disponible
+   */
+  checkPythonServerHealth(): Observable<any> {
+    return this.http.get(`${this.PYTHON_API_URL}/health`);
+  }
+
+  /**
+   * Convierte datos base64 a Blob para descargar o mostrar imágenes
+   */
+  base64ToBlob(base64Data: string, mimeType: string): Blob {
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
+  /**
+   * Crea una URL objeto para mostrar una imagen
+   */
+  createImageUrl(base64Data: string, mimeType: string): string {
+    const blob = this.base64ToBlob(base64Data, mimeType);
+    return URL.createObjectURL(blob);
+  }
+
+  /**
+   * Descarga una imagen extraída
+   */
+  downloadImage(image: ExtractedImage): void {
+    const blob = this.base64ToBlob(image.data, image.mimeType);
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = image.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Limpiar URL objeto
+    URL.revokeObjectURL(url);
   }
 }
