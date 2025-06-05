@@ -182,19 +182,33 @@
                     </th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr *ngFor="let row of excelPreviewData; let i = index">
+                <tbody>                  <tr *ngFor="let row of excelPreviewData; let i = index">
                     <td class="row-header">{{ i + 1 }}</td>
                     <td *ngFor="let cell of row; let j = index" 
                         [attr.data-type]="getCellType(cell)"
                         [class.mapped-cell]="isHeaderMapped(excelHeaders[j])"
                         [class.yellow-cell]="getCellColorInfo(i, j).isYellow"
                         [class.cyan-cell]="getCellColorInfo(i, j).isCyan"
+                        [class.design-column]="j === designColumnIndex"
                         [attr.title]="getCellColorTooltip(cell)">
                       <div class="cell-content">
-                        {{ formatCell(cell) }}
-                        <span *ngIf="getCellColorInfo(i, j).isYellow" class="color-marker yellow-marker">●</span>
-                        <span *ngIf="getCellColorInfo(i, j).isCyan" class="color-marker cyan-marker">●</span>
+                        <!-- Mostrar imagen si está en la columna DESIGN y hay una imagen para esta fila -->
+                        <div *ngIf="j === designColumnIndex && getImageForRow(i)" class="design-image-cell">
+                          <img [src]="'data:' + getImageForRow(i)!.mimeType + ';base64,' + getImageForRow(i)!.data" 
+                               [alt]="getImageForRow(i)!.filename" 
+                               class="design-thumbnail"
+                               (click)="openImageModal(getImageForRow(i)!)"
+                               [title]="'Click para ampliar: ' + getImageForRow(i)!.filename">
+                          <div class="image-info">
+                            <span class="image-filename">{{ getImageForRow(i)!.filename }}</span>
+                          </div>
+                        </div>
+                        <!-- Contenido normal de la celda -->
+                        <div *ngIf="!(j === designColumnIndex && getImageForRow(i))" class="normal-cell-content">
+                          {{ formatCell(cell) }}
+                          <span *ngIf="getCellColorInfo(i, j).isYellow" class="color-marker yellow-marker">●</span>
+                          <span *ngIf="getCellColorInfo(i, j).isCyan" class="color-marker cyan-marker">●</span>
+                        </div>
                       </div>
                     </td>
                   </tr>

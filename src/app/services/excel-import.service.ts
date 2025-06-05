@@ -33,7 +33,7 @@ export interface ImageExtractionResponse {
 })
 export class ExcelImportService {
   private readonly SHEET_NAME = 'DETALLE'; // Cambiado a mayúsculas
-  private readonly START_ROW = 5; // Índice 5 corresponde a la fila 6 (0-based)
+  public readonly START_ROW = 5; // Hacer público para acceso desde el componente
   private readonly START_COLUMN = 'A'; // Comenzar desde la columna A
   private readonly PYTHON_API_URL = 'http://localhost:8000'; // URL del servidor Python
 

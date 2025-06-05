@@ -1700,7 +1700,7 @@ tr.drop-target {
       max-width: 100%;
       max-height: 300px;
       object-fit: contain;
-      border: 1px solid #ddd;
+      border: 1px solid #dee2e6;
     }
   }
   
@@ -1871,6 +1871,98 @@ tr.drop-target {
         background-color: #99c5ff;
         cursor: not-allowed;
       }
+    }
+  }
+}
+
+/* Estilos para imágenes en la columna DESIGN */
+.design-column {
+  background-color: rgba(0, 123, 255, 0.05) !important;
+  border: 1px solid rgba(0, 123, 255, 0.2) !important;
+  
+  &:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+  }
+}
+
+.design-image-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 80px;
+  padding: 0.5rem;
+  
+  .design-thumbnail {
+    max-width: 60px;
+    max-height: 60px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    border: 2px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    
+    &:hover {
+      transform: scale(1.1);
+      border-color: #007bff;
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+  }
+  
+  .image-info {
+    text-align: center;
+    
+    .image-filename {
+      font-size: 0.7rem;
+      color: #6c757d;
+      max-width: 70px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+  }
+}
+
+/* Estilo para destacar la columna DESIGN en el encabezado */
+.excel-preview-table th.design-column {
+  background-color: #007bff !important;
+  color: white !important;
+  position: relative;
+  
+  &::after {
+    content: '🖼️';
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+  }
+}
+
+/* Efecto hover para toda la columna DESIGN */
+.excel-preview-table:hover .design-column {
+  box-shadow: inset 0 0 0 2px rgba(0, 123, 255, 0.4);
+}
+
+/* Responsivo para imágenes en celdas */
+@media (max-width: 768px) {
+  .design-image-cell {
+    min-height: 60px;
+    padding: 0.25rem;
+    
+    .design-thumbnail {
+      max-width: 40px;
+      max-height: 40px;
+    }
+    
+    .image-info .image-filename {
+      font-size: 0.6rem;
+      max-width: 50px;
     }
   }
 }

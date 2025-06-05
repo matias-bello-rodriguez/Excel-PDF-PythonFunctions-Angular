@@ -73,9 +73,12 @@ export class ExcelImportModalComponent {
   // Variables para drag and drop
   draggedColumn: string | null = null;
   dragTarget: string | null = null;
-
   // Filtro de imágenes
   imageFilter: 'all' | 'assigned' | 'unassigned' = 'all';
+
+  // Propiedades para mapeo de imágenes por fila
+  imagesByRow: { [rowIndex: number]: ExtractedImage } = {};
+  designColumnIndex: number = -1;
 
   // Estados para la asignación de imágenes a productos
   showAssignModal = false;
@@ -135,15 +138,18 @@ export class ExcelImportModalComponent {
       // Mostrar headers disponibles para debugging
       console.log('Headers encontrados en Excel:', this.excelHeaders);
       console.log('Celdas coloreadas encontradas:', this.coloredCellsStats);
-      
-      // Aplicar mapeo automático después de cargar los headers
+        // Aplicar mapeo automático después de cargar los headers
       this.columnMapping = this.createAutomaticMapping();
+      
+      // Buscar y establecer la columna DESIGN automáticamente
+      this.findDesignColumnIndex();
       
       console.log('Excel data loaded with colors:', {
         headers: this.excelHeaders,
         preview: this.excelPreviewData,
         coloredCells: this.coloredCellsStats,
-        automaticMapping: this.columnMapping
+        automaticMapping: this.columnMapping,
+        designColumnIndex: this.designColumnIndex
       });
       
       // Cambiar a la pestaña de vista previa
@@ -171,7 +177,6 @@ export class ExcelImportModalComponent {
       this.isLoadingPreview = false;
     }
   }
-
   /**
    * Resetea el estado del modal
    */ resetModal(): void {
@@ -188,6 +193,10 @@ export class ExcelImportModalComponent {
     this.selectedImage = null;
     this.extractedImages = [];
     this.importedProducts = [];
+    
+    // Resetear propiedades de mapeo de imágenes
+    this.imagesByRow = {};
+    this.designColumnIndex = -1;
   }
 
   /**
@@ -708,11 +717,14 @@ export class ExcelImportModalComponent {
         this.isExtractingImages = false;
         return;
       }
-      this.excelService.extractImagesFromExcel(this.selectedFile).subscribe({
-        next: (response: ImageExtractionResponse) => {
+      this.excelService.extractImagesFromExcel(this.selectedFile).subscribe({        next: (response: ImageExtractionResponse) => {
           if (response.success) {
             this.extractedImages = response.images;
             console.log(`Extracted ${this.extractedImages.length} images`);
+            
+            // Mapear imágenes por posición de fila después de extraerlas
+            this.mapImagesByRowPosition();
+            
             if (!silent && this.extractedImages.length > 0) {
               // Cambiar a la pestaña de imágenes solo si no es silencioso y hay imágenes
               this.activeTab = 'images';
@@ -1480,5 +1492,85 @@ export class ExcelImportModalComponent {
     this.selectedImage = null;
     // Restaurar el scroll en el cuerpo
     document.body.style.overflow = 'auto';
+  }
+
+  /**
+   * Mapea las imágenes extraídas a las filas correspondientes basándose en su posición
+   */
+  private mapImagesByRowPosition(): void {
+    this.imagesByRow = {};
+    
+    if (!this.extractedImages || this.extractedImages.length === 0) {
+      return;
+    }
+
+    this.extractedImages.forEach(image => {
+      if (image.row !== undefined && image.row >= 0) {
+        // Ajustar la fila para que coincida con el índice de los datos de vista previa
+        // Las imágenes están en base 0, pero necesitamos ajustar según el START_ROW
+        const adjustedRowIndex = image.row - this.excelService.START_ROW;
+        
+        if (adjustedRowIndex >= 0 && adjustedRowIndex < this.excelPreviewDataWithColors.length) {
+          this.imagesByRow[adjustedRowIndex] = image;
+        }
+      }
+    });
+    
+    console.log('Imágenes mapeadas por fila:', this.imagesByRow);
+  }
+
+  /**
+   * Obtiene la imagen para una fila específica
+   */
+  getImageForRow(rowIndex: number): ExtractedImage | null {
+    return this.imagesByRow[rowIndex] || null;
+  }
+
+  /**
+   * Determina el índice de la columna DESIGN
+   */
+  private findDesignColumnIndex(): void {
+    this.designColumnIndex = this.excelHeaders.findIndex(header => 
+      header && (
+        header.toLowerCase().includes('design') ||
+        header.toLowerCase().includes('diseño') ||
+        header.toLowerCase().includes('diseno') ||
+        header.toLowerCase().includes('image') ||
+        header.toLowerCase().includes('imagen')
+      )
+    );
+    
+    console.log('Índice de columna DESIGN encontrado:', this.designColumnIndex, 'Header:', this.excelHeaders[this.designColumnIndex]);
+  }
+
+  /**
+   * Método de prueba para verificar el mapeo de imágenes por fila
+   */
+  testImageRowMapping(): void {
+    console.log('=== PRUEBA DE MAPEO POR FILA ===');
+    console.log('Archivo seleccionado:', this.selectedFile?.name);
+    console.log('Headers:', this.excelHeaders);
+    console.log('Índice columna DESIGN:', this.designColumnIndex);
+    console.log('Total filas de datos:', this.excelPreviewDataWithColors.length);
+    console.log('Imágenes extraídas:', this.extractedImages.length);
+    console.log('Mapeo por fila:', this.imagesByRow);
+    
+    // Mostrar detalles de cada imagen
+    this.extractedImages.forEach((img, index) => {
+      console.log(`Imagen ${index + 1}:`, {
+        filename: img.filename,
+        sheet: img.sheet,
+        cellAddress: img.cellAddress,
+        row: img.row,
+        column: img.column,
+        columnLetter: img.columnLetter
+      });
+    });
+    
+    // Mostrar qué filas tienen imágenes asignadas
+    Object.keys(this.imagesByRow).forEach(rowIndex => {
+      const img = this.imagesByRow[parseInt(rowIndex)];
+      console.log(`Fila ${rowIndex} -> Imagen: ${img.filename} (${img.cellAddress})`);
+    });
   }
 }
