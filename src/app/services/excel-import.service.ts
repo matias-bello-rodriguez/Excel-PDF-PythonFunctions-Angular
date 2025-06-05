@@ -13,6 +13,12 @@ export interface ExtractedImage {
   mimeType: string;
   size: number;
   extension: string;
+  sheet?: string;
+  cellAddress?: string;
+  row?: number;
+  column?: number;
+  columnLetter?: string;
+  anchorType?: string;
 }
 
 export interface ImageExtractionResponse {
@@ -619,7 +625,6 @@ export class ExcelImportService {
       }
     });
   }
-
   /**
    * Extrae imágenes de un archivo Excel usando el servidor Python
    */
@@ -628,7 +633,7 @@ export class ExcelImportService {
     formData.append('file', file, file.name);
     
     return this.http.post<ImageExtractionResponse>(
-      `${this.PYTHON_API_URL}/extract-excel-images`,
+      `${this.PYTHON_API_URL}/extract-images`,
       formData
     );
   }

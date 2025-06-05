@@ -6,13 +6,10 @@ import { ExcelCellInfo } from '@app/interfaces/entities';
 import JSZip from 'jszip';
 
 @Component({
-  selector: 'app-excel-import-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './excel-import-modal.component.html',
-  styleUrls: ['./excel-import-modal.component.scss']
+ 
 })
-export class ExcelImportModalComponent {
+export class ExcelImportModlComponent {
   @Input() showModal = false;
   @Input() cubicacionId: string | null = null;
   
@@ -32,7 +29,7 @@ export class ExcelImportModalComponent {
   isExtractingImages = false;
   pythonServerAvailable = false;
   imageExtractionError: string | null = null;
-  selectedImage: ExtractedImage | null = null; // Agregado para el modal de vista previa
+  selectedImage: ExtractedImage | null = null;
   importedProducts: any[] = []; // Almacena los productos importados para referencia
 
   excelPreviewData: any[][] = [];
@@ -226,12 +223,9 @@ export class ExcelImportModalComponent {
       console.log('Usando el siguiente mapeo para importar:', mappingToUse);
       
       // Primero, extraer imágenes si no se ha hecho todavía
-      if (this.extractedImages.length === 0 && this.pythonServerAvailable) {        try {
+      if (this.extractedImages.length === 0 && this.pythonServerAvailable) {
+        try {
           await new Promise<void>((resolve, reject) => {
-            if (!this.selectedFile) {
-              resolve();
-              return;
-            }
             this.excelService.extractImagesFromExcel(this.selectedFile).subscribe({
               next: (response: ImageExtractionResponse) => {
                 if (response.success) {
@@ -282,14 +276,14 @@ export class ExcelImportModalComponent {
         throw new Error('No se pudieron extraer productos válidos del archivo. Verifica que los encabezados del Excel coincidan con los campos esperados.');
       }      // Si hay imágenes extraídas, intentar asignarlas a productos por código
       if (this.extractedImages.length > 0) {
-        this.assignImagesToProducts();
+        this.assignImagesToProducts(validProducts);
         
         // Guardar los productos importados para referencia
         this.importedProducts = [...validProducts];
         
         // Mostrar resumen de asignación
         setTimeout(() => {
-          this.showImageAssignmentPreview();
+          this.showImageAssignmentPreview(validProducts);
         }, 500);
       } else {
         this.importedProducts = [...validProducts];
@@ -695,19 +689,17 @@ export class ExcelImportModalComponent {
   /**
    * Extrae las imágenes del archivo Excel
    * @param silent Si es true, no muestra mensajes de error ni cambia a la pestaña de imágenes
-   */  async extractImages(silent: boolean = false): Promise<void> {
+   */
+  async extractImages(silent: boolean = false): Promise<void> {
     if (!this.selectedFile) {
       if (!silent) this.imageExtractionError = 'No hay archivo seleccionado';
       return;
     }
 
     this.isExtractingImages = true;
-    if (!silent) this.imageExtractionError = null;    try {
-      if (!this.selectedFile) {
-        if (!silent) this.imageExtractionError = 'No hay archivo seleccionado';
-        this.isExtractingImages = false;
-        return;
-      }
+    if (!silent) this.imageExtractionError = null;
+
+    try {
       this.excelService.extractImagesFromExcel(this.selectedFile).subscribe({
         next: (response: ImageExtractionResponse) => {
           if (response.success) {
@@ -939,495 +931,58 @@ export class ExcelImportModalComponent {
    * Imprime los datos visibles de la tabla
    */
   printTable(): void {
-    window.print();
-  }
-
-  // =================== MÉTODOS DE ASIGNACIÓN DE IMÁGENES ===================
-
-  /**
-   * Obtiene las imágenes filtradas según el estado seleccionado
-   */
-  getFilteredImages(): ExtractedImage[] {
-    switch (this.imageFilter) {
-      case 'assigned':
-        return this.extractedImages.filter(img => this.isImageAssigned(img));
-      case 'unassigned':
-        return this.extractedImages.filter(img => !this.isImageAssigned(img));
-      default:
-        return this.extractedImages;
-    }
-  }
-
-  /**
-   * Verifica si una imagen está asignada a un producto
-   */
-  isImageAssigned(image: ExtractedImage): boolean {
-    return !!(image as any).assignedProductId;
-  }
-
-  /**
-   * Obtiene el número de imágenes asignadas
-   */
-  getAssignedImagesCount(): number {
-    return this.extractedImages.filter(img => this.isImageAssigned(img)).length;
-  }
-
-  /**
-   * Obtiene el código del producto asignado a una imagen
-   */
-  getAssignedProductCode(image: ExtractedImage): string | null {
-    const productId = (image as any).assignedProductId;
-    if (!productId) return null;
+    const printWindow = window.open('', '_blank');
     
-    const product = this.importedProducts.find(p => p.id === productId);
-    return product ? (product.codigo || product.code || 'Sin código') : null;
-  }
-
-  /**
-   * Asigna automáticamente las imágenes a los productos basándose en coincidencias de nombres
-   */
-  assignImagesToProducts(): void {
-    if (!this.importedProducts || this.importedProducts.length === 0) {
-      console.warn('No hay productos importados para asignar imágenes');
-      return;
-    }
-
-    let assignedCount = 0;
-    const assignmentLog: string[] = [];
-
-    this.extractedImages.forEach(image => {
-      // Solo procesar imágenes no asignadas
-      if (this.isImageAssigned(image)) return;
-
-      const bestMatch = this.findBestProductMatch(image);
-      if (bestMatch) {
-        (image as any).assignedProductId = bestMatch.id;
-        assignedCount++;
-        assignmentLog.push(`${image.filename} → ${bestMatch.codigo || bestMatch.code || 'Sin código'}`);
-      }
-    });
-
-    console.log(`Asignadas automáticamente ${assignedCount} imágenes:`, assignmentLog);
-    
-    if (assignedCount > 0) {
-      this.showImageAssignmentPreview();
-    } else {
-      alert('No se pudieron asignar imágenes automáticamente. Intente con asignación manual.');
-    }
-  }
-
-  /**
-   * Mapea imágenes directamente a productos basándose en la posición de celda
-   */
-  mapImagesByPosition(): void {
-    if (!this.importedProducts || this.importedProducts.length === 0) {
-      console.warn('No hay productos importados para mapear imágenes por posición');
-      return;
-    }
-
-    if (!this.extractedImages || this.extractedImages.length === 0) {
-      console.warn('No hay imágenes extraídas para mapear');
-      return;
-    }
-
-    let mappedCount = 0;
-    const mappingLog: string[] = [];
-
-    this.extractedImages.forEach(image => {
-      // Solo procesar imágenes que tienen información de posición
-      if (!image.cellAddress || image.cellAddress === 'unknown' || !image.row) {
-        console.log(`Imagen ${image.filename} no tiene información de posición válida`);
-        return;
-      }
-
-      // Buscar producto en la misma fila
-      const productInRow = this.findProductByRowPosition(image.row);
+    if (printWindow) {
+      // Crear una tabla HTML para imprimir
+      let tableHTML = '<table style="width:100%; border-collapse:collapse;">';
       
-      if (productInRow) {
-        // Quitar asignación previa si existe
-        this.extractedImages.forEach(img => {
-          if ((img as any).assignedProductId === productInRow.id) {
-            delete (img as any).assignedProductId;
+      // Agregar los encabezados
+      tableHTML += '<tr>';
+      this.excelHeaders.forEach(header => {
+        const mappedColumn = this.getMappedColumn(header);
+        if (mappedColumn) {
+          tableHTML += `<th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">${this.getColumnTitle(header)}</th>`;
+        }
+      });
+      tableHTML += '</tr>';
+      
+      // Agregar las filas
+      this.excelPreviewData.forEach(row => {
+        tableHTML += '<tr>';
+        row.forEach((cell, index) => {
+          if (this.getMappedColumn(this.excelHeaders[index])) {
+            tableHTML += `<td style="border:1px solid #ddd; padding:8px;">${this.formatCellValue(cell)}</td>`;
           }
         });
-
-        // Asignar imagen al producto
-        (image as any).assignedProductId = productInRow.id;
-        mappedCount++;
-        
-        const productCode = productInRow.codigo || productInRow.code || 'Sin código';
-        mappingLog.push(`${image.filename} (${image.cellAddress}) → ${productCode}`);
-      }
-    });
-
-    console.log(`Mapeadas automáticamente ${mappedCount} imágenes por posición:`, mappingLog);
-    
-    if (mappedCount > 0) {
-      this.showImageAssignmentPreview();
-      alert(`Se mapearon ${mappedCount} imágenes automáticamente basándose en su posición en el Excel.`);
+        tableHTML += '</tr>';
+      });
+      tableHTML += '</table>';
+      
+      // Escribir el contenido en la ventana de impresión
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Imprimir Datos</title>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h2>Datos Importados</h2>
+            ${tableHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     } else {
-      alert('No se pudieron mapear imágenes automáticamente por posición. Las imágenes pueden no tener información de coordenadas o no hay productos en las filas correspondientes.');
+      console.error('No se pudo abrir la ventana de impresión');
     }
   }
-
-  /**
-   * Encuentra un producto basándose en la posición de fila
-   */
-  private findProductByRowPosition(imageRow: number): any | null {
-    if (!this.importedProducts || !this.excelPreviewData) return null;
-
-    // Buscar en los datos de vista previa para encontrar un producto en la misma fila
-    // Consideramos un rango de ±2 filas para mayor flexibilidad
-    const rowRange = 2;
-    
-    for (let i = Math.max(0, imageRow - rowRange - 2); i < Math.min(this.excelPreviewData.length, imageRow + rowRange); i++) {
-      const rowData = this.excelPreviewData[i];
-      if (!rowData) continue;
-
-      // Buscar si alguna celda de esta fila contiene un código de producto
-      for (let j = 0; j < rowData.length; j++) {
-        const cellValue = this.formatCell(rowData[j]);
-        if (!cellValue) continue;
-
-        // Buscar producto que coincida con este valor de celda
-        const matchingProduct = this.importedProducts.find(product => {
-          const productCode = product.codigo || product.code || '';
-          const productLocation = product.ubicacion || '';
-          
-          return productCode && (
-            cellValue.toString().includes(productCode) ||
-            productCode.includes(cellValue.toString()) ||
-            (productLocation && cellValue.toString().includes(productLocation))
-          );
-        });
-
-        if (matchingProduct) {
-          console.log(`Producto encontrado en fila ${i + 1}: ${matchingProduct.codigo || matchingProduct.code} para imagen en fila ${imageRow}`);
-          return matchingProduct;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Encuentra el mejor producto coincidente para una imagen
-   */
-  private findBestProductMatch(image: ExtractedImage): any | null {
-    if (!image.filename || !this.importedProducts.length) return null;
-
-    // Normalizar el nombre del archivo (remover extensión, espacios, caracteres especiales)
-    const imageBaseName = this.normalizeFileName(image.filename);
-    
-    let bestMatch: any = null;
-    let bestScore = 0;
-
-    this.importedProducts.forEach(product => {
-      const score = this.calculateMatchScore(imageBaseName, product);
-      if (score > bestScore && score > 0.6) { // Umbral mínimo de coincidencia del 60%
-        bestScore = score;
-        bestMatch = product;
-      }
-    });
-
-    return bestMatch;
-  }
-
-  /**
-   * Normaliza el nombre de archivo para comparación
-   */
-  private normalizeFileName(filename: string): string {
-    return filename
-      .toLowerCase()
-      .replace(/\.[^/.]+$/, '') // Remover extensión
-      .replace(/[^a-z0-9]/g, '') // Solo letras y números
-      .trim();
-  }
-
-  /**
-   * Calcula el puntaje de coincidencia entre un nombre de imagen y un producto
-   */
-  private calculateMatchScore(imageName: string, product: any): number {
-    const productFields = [
-      product.codigo,
-      product.code,
-      product.ubicacion,
-      product.location,
-      product.diseno_1,
-      product.diseno_2,
-      product.design_1,
-      product.design_2
-    ].filter(field => field); // Filtrar campos vacíos
-
-    if (productFields.length === 0) return 0;
-
-    let maxScore = 0;
-
-    productFields.forEach(field => {
-      const normalizedField = this.normalizeFileName(String(field));
-      const score = this.calculateStringMatchScore(imageName, normalizedField);
-      maxScore = Math.max(maxScore, score);
-    });
-
-    return maxScore;
-  }
-
-  /**
-   * Calcula el puntaje de coincidencia entre dos strings
-   */
-  private calculateStringMatchScore(str1: string, str2: string): number {
-    if (!str1 || !str2) return 0;
-    if (str1 === str2) return 1;
-
-    // Calcular coincidencia exacta como substring
-    if (str1.includes(str2) || str2.includes(str1)) {
-      return Math.min(str1.length, str2.length) / Math.max(str1.length, str2.length);
-    }
-
-    // Calcular similitud usando algoritmo de distancia de Levenshtein simplificado
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-    
-    if (longer.length === 0) return 1;
-    
-    const editDistance = this.calculateLevenshteinDistance(shorter, longer);
-    return (longer.length - editDistance) / longer.length;
-  }
-
-  /**
-   * Calcula la distancia de Levenshtein entre dos strings
-   */
-  private calculateLevenshteinDistance(str1: string, str2: string): number {
-    const matrix: number[][] = [];
-
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
-
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
-      }
-    }
-
-    return matrix[str2.length][str1.length];
-  }
-
-  /**
-   * Muestra un resumen de las asignaciones de imágenes realizadas
-   */
-  showImageAssignmentPreview(): void {
-    const assignedImages = this.extractedImages.filter(img => this.isImageAssigned(img));
-    
-    if (assignedImages.length === 0) {
-      alert('No hay imágenes asignadas para mostrar.');
-      return;
-    }
-
-    const summary = assignedImages.map(img => {
-      const productCode = this.getAssignedProductCode(img);
-      return `• ${img.filename} → ${productCode}`;
-    }).join('\n');
-
-    const message = `Resumen de asignaciones (${assignedImages.length} imágenes):\n\n${summary}`;
-    
-    if (confirm(`${message}\n\n¿Desea continuar con estas asignaciones?`)) {
-      console.log('Asignaciones confirmadas por el usuario');
-      // Aquí se podrían guardar las asignaciones en el backend si fuera necesario
-    }
-  }
-
-  /**
-   * Abre el diálogo de asignación manual de imagen a producto
-   */
-  showAssignImageDialog(image: ExtractedImage): void {
-    this.selectedImageForAssignment = image;
-    this.filteredProducts = [...this.importedProducts];
-    this.productSearchTerm = '';
-    this.selectedProductId = (image as any).assignedProductId || null;
-    this.showAssignModal = true;
-  }
-
-  /**
-   * Cierra el diálogo de asignación de imagen
-   */
-  closeAssignImageDialog(): void {
-    this.showAssignModal = false;
-    this.selectedImageForAssignment = null;
-    this.productSearchTerm = '';
-    this.selectedProductId = null;
-    this.filteredProducts = [];
-  }
-
-  /**
-   * Selecciona un producto para la asignación
-   */
-  selectProductForAssignment(productId: string): void {
-    this.selectedProductId = productId;
-  }
-
-  /**
-   * Asigna la imagen seleccionada al producto seleccionado
-   */
-  assignImageToProduct(): void {
-    if (!this.selectedImageForAssignment || !this.selectedProductId) {
-      alert('Debe seleccionar una imagen y un producto para realizar la asignación.');
-      return;
-    }
-
-    // Quitar asignación previa si existe
-    this.extractedImages.forEach(img => {
-      if ((img as any).assignedProductId === this.selectedProductId) {
-        delete (img as any).assignedProductId;
-      }
-    });
-
-    // Asignar la imagen al producto
-    (this.selectedImageForAssignment as any).assignedProductId = this.selectedProductId;
-
-    const product = this.importedProducts.find(p => p.id === this.selectedProductId);
-    const productCode = product ? (product.codigo || product.code || 'Sin código') : 'Producto desconocido';
-    
-    alert(`Imagen "${this.selectedImageForAssignment.filename}" asignada a producto "${productCode}"`);
-    
-    this.closeAssignImageDialog();
-  }
-
-  /**
-   * Filtra los productos basándose en el término de búsqueda
-   */
-  filterProducts(): void {
-    if (!this.productSearchTerm.trim()) {
-      this.filteredProducts = [...this.importedProducts];
-      return;
-    }
-
-    const searchTerm = this.productSearchTerm.toLowerCase().trim();
-    this.filteredProducts = this.importedProducts.filter(product => {
-      const searchFields = [
-        product.codigo,
-        product.code,
-        product.ubicacion,
-        product.location,
-        product.diseno_1,
-        product.diseno_2,
-        product.design_1,
-        product.design_2,
-        product.material,
-        product.comentario_1,
-        product.comentario_2,
-        product.comment_1,
-        product.comment_2
-      ].filter(field => field);
-
-      return searchFields.some(field => 
-        String(field).toLowerCase().includes(searchTerm)
-      );
-    });
-  }
-
-  /**
-   * Obtiene el texto del producto para mostrar en la lista
-   */
-  getProductDisplayText(product: any): string {
-    const code = product.codigo || product.code || 'Sin código';
-    const location = product.ubicacion || product.location || '';
-    const dimensions = `${product.ancho_m || product.width || '?'}x${product.alto_m || product.height || '?'}m`;
-    
-    return `${code} - ${location} (${dimensions})`;
-  }
-
-  /**
-   * Elimina la asignación de una imagen
-   */
-  removeImageAssignment(image: ExtractedImage): void {
-    if (confirm(`¿Está seguro de que desea quitar la asignación de "${image.filename}"?`)) {
-      delete (image as any).assignedProductId;
-    }
-  }
-
-  /**
-   * Función de prueba con datos de ejemplo
-   */
-  testWithSampleData(): void {
-    console.log('Ejecutando prueba con datos de ejemplo...');
-    
-    // Simular productos importados
-    this.importedProducts = [
-      {
-        id: 'prod1',
-        codigo: 'WIN001',
-        ubicacion: 'SALON',
-        ancho_m: 1.5,
-        alto_m: 1.2,
-        material: 'Aluminio'
-      },
-      {
-        id: 'prod2', 
-        codigo: 'WIN002',
-        ubicacion: 'COCINA',
-        ancho_m: 0.8,
-        alto_m: 1.0,
-        material: 'PVC'
-      },
-      {
-        id: 'prod3',
-        codigo: 'WIN003',
-        ubicacion: 'DORMITORIO',
-        ancho_m: 1.2,
-        alto_m: 1.5,
-        material: 'Madera'
-      }
-    ];    // Simular imágenes extraídas
-    this.extractedImages = [
-      {
-        filename: 'WIN001_design.jpg',
-        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
-        mimeType: 'image/jpeg',
-        size: 1024,
-        extension: 'jpg'
-      },
-      {
-        filename: 'cocina_window.png',
-        data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        mimeType: 'image/png',
-        size: 2048,
-        extension: 'png'
-      },
-      {
-        filename: 'unknown_image.jpg',
-        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
-        mimeType: 'image/jpeg',
-        size: 1536,
-        extension: 'jpg'
-      }
-    ];
-
-    console.log('Datos de ejemplo cargados:');
-    console.log('- Productos:', this.importedProducts.length);
-    console.log('- Imágenes:', this.extractedImages.length);
-
-    // Cambiar a la pestaña de imágenes
-    this.activeTab = 'images';    // Ejecutar asignación automática después de un breve delay
-    setTimeout(() => {
-      this.assignImagesToProducts();
-    }, 1000);
-  }
-
-  // =================== MÉTODOS PARA EXPORTAR E IMAGEN MODAL ===================
 
   /**
    * Exporta las imágenes extraídas a un archivo ZIP
@@ -1438,32 +993,23 @@ export class ExcelImportModalComponent {
       return;
     }
     
-    try {
-      // Crear un archivo ZIP y agregar las imágenes
-      const zip = new JSZip();
+    // Crear un archivo ZIP y agregar las imágenes
+    const zip = new JSZip();
       this.extractedImages.forEach(image => {
-        zip.file(image.filename || 'imagen_extraida', image.data, { base64: true });
-      });
-      
-      // Generar el archivo ZIP y descargarlo
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const zipUrl = URL.createObjectURL(zipBlob);
-      
-      const link = document.createElement('a');
-      link.href = zipUrl;
-      link.download = 'imagenes_extraidas.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Limpiar URL objeto
-      URL.revokeObjectURL(zipUrl);
-    } catch (error) {
-      console.error('Error al exportar imágenes a ZIP:', error);
-      alert('Error al crear el archivo ZIP');
-    }
+      zip.file(image.filename || 'imagen_extraida', image.data, { base64: true });
+    });
+    
+    // Generar el archivo ZIP y descargarlo
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    
+    const link = document.createElement('a');
+    link.href = zipUrl;
+    link.download = 'imagenes_extraidas.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
-
   /**
    * Abre el modal para ver la imagen en tamaño completo
    */
@@ -1480,5 +1026,456 @@ export class ExcelImportModalComponent {
     this.selectedImage = null;
     // Restaurar el scroll en el cuerpo
     document.body.style.overflow = 'auto';
+  }  /**
+   * Obtiene una URL para mostrar la imagen
+   */
+  getImageUrl(image: ExtractedImage): string {
+    return 'data:' + image.mimeType + ';base64,' + image.data;
+  }
+
+  /**
+   * Maneja el evento cuando el modal se cierra
+   */
+  ngOnDestroy(): void {
+    // Limpiar recursos o suscripciones si es necesario
+  }
+
+  /**
+   * Método de prueba para simular la extracción de imágenes
+   */  testImageExtraction(): void {
+    this.extractedImages = [
+      {
+        filename: 'imagen1.png',
+        mimeType: 'image/png',
+        size: 1024,
+        extension: 'png',
+        data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...'
+      },
+      {
+        filename: 'imagen2.jpg',
+        mimeType: 'image/jpeg',
+        size: 2048,
+        extension: 'jpg',
+        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/2wBDAAoH'
+      }
+    ];
+  }
+  /**
+   * Asigna imágenes a productos basándose en coincidencias de código o nombre
+   */
+  private assignImagesToProducts(products: any[]): void {
+    console.log('Intentando asignar imágenes a productos...');
+    
+    if (!products || products.length === 0 || !this.extractedImages || this.extractedImages.length === 0) {
+      console.log('No hay productos o imágenes para asignar');
+      return;
+    }
+
+    // Crear una copia de las imágenes para marcar las que ya se asignaron
+    const availableImages = [...this.extractedImages];
+    const assignedImages: { productCode: string, imageFilename: string, confidence: number }[] = [];
+    
+    // Normalizar nombres de archivo para búsqueda mejorada
+    const normalizeText = (text: string): string => {
+      if (!text) return '';
+      return text.toLowerCase()
+        .trim()
+        .replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/ñ/g, 'n')
+        .replace(/\s+/g, ' ')
+        .replace(/[_\-\.]/g, ' '); // Reemplazar guiones, guiones bajos y puntos por espacios
+    };
+
+    // Etapa 1: Hacer una primera pasada con coincidencias de alta confianza
+    const highConfidenceMatches = new Map<string, { imageIndex: number, confidence: number }>();
+    
+    // Para cada producto, intentamos encontrar la mejor coincidencia de imagen
+    products.forEach(product => {
+      if (!product.codigo) {
+        console.log('Producto sin código, no se puede asignar imagen automáticamente');
+        return; // Continuar con el siguiente producto
+      }
+
+      const productCode = normalizeText(product.codigo.toString());
+      let bestMatchIndex: number = -1;
+      let bestMatchConfidence: number = 0;
+
+      // Evaluar cada imagen disponible para este producto
+      availableImages.forEach((image, index) => {
+        const filename = normalizeText(image.filename);
+        let matchConfidence = 0;
+        
+        // 1. Verificar coincidencia exacta por código
+        const codePatterns = [
+          new RegExp(`\\b${productCode}\\b`), // Código exacto como palabra
+          new RegExp(`^${productCode}[^a-z0-9]`), // Código al inicio
+          new RegExp(`[^a-z0-9]${productCode}$`), // Código al final
+          new RegExp(`[^a-z0-9]${productCode}[^a-z0-9]`) // Código en el medio
+        ];
+        
+        if (codePatterns.some(pattern => pattern.test(filename))) {
+          matchConfidence = 100; // Coincidencia perfecta por código
+        }
+        
+        // 2. Verificar por ubicación si existe
+        else if (product.ubicacion) {
+          const ubicacion = normalizeText(product.ubicacion.toString());
+          if (ubicacion.length > 2 && filename.includes(ubicacion)) { // Evitar ubicaciones muy cortas
+            matchConfidence = Math.max(matchConfidence, 80); // Buena coincidencia por ubicación
+          }
+        }
+        
+        // 3. Verificar por dimensiones
+        if (product.ancho_m && product.alto_m) {
+          const dimensiones = `${normalizeText(product.ancho_m.toString())} x ${normalizeText(product.alto_m.toString())}`;
+          const alternativeDimension = `${normalizeText(product.alto_m.toString())} x ${normalizeText(product.ancho_m.toString())}`;
+          const simpleDimension = `${normalizeText(product.ancho_m.toString())}x${normalizeText(product.alto_m.toString())}`;
+          const simpleAltDimension = `${normalizeText(product.alto_m.toString())}x${normalizeText(product.ancho_m.toString())}`;
+          
+          if (filename.includes(dimensiones) || filename.includes(alternativeDimension) ||
+              filename.includes(simpleDimension) || filename.includes(simpleAltDimension)) {
+            matchConfidence = Math.max(matchConfidence, 85); // Muy buena coincidencia por dimensiones exactas
+          }
+          
+          // Coincidencia parcial de dimensiones (sólo un número)
+          else if (filename.includes(product.ancho_m.toString()) || filename.includes(product.alto_m.toString())) {
+            matchConfidence = Math.max(matchConfidence, 60); // Coincidencia parcial
+          }
+        }
+        
+        // 4. Verificar por material, tipo de ventana, etc.
+        if (product.material && filename.includes(normalizeText(product.material.toString()))) {
+          matchConfidence = Math.max(matchConfidence, 70); // Buena coincidencia por material
+        }
+        
+        if (product.tipo_ventana && filename.includes(normalizeText(product.tipo_ventana.toString()))) {
+          matchConfidence = Math.max(matchConfidence, 75); // Buena coincidencia por tipo de ventana
+        }
+        
+        // Actualizar la mejor coincidencia para este producto
+        if (matchConfidence > bestMatchConfidence) {
+          bestMatchIndex = index;
+          bestMatchConfidence = matchConfidence;
+        }
+      });
+      
+      // Si encontramos una coincidencia de alta confianza, registrarla
+      if (bestMatchIndex >= 0 && bestMatchConfidence >= 80) {
+        highConfidenceMatches.set(product.codigo, {
+          imageIndex: bestMatchIndex,
+          confidence: bestMatchConfidence
+        });
+      }
+    });
+    
+    // Procesar las coincidencias de alta confianza primero
+    highConfidenceMatches.forEach((match, productCode) => {
+      const productIndex = products.findIndex(p => p.codigo === productCode);
+      
+      if (productIndex >= 0 && match.imageIndex >= 0) {
+        const matchedImage = availableImages[match.imageIndex];
+        const product = products[productIndex];
+        
+        // Crear data URL para la imagen
+        const imageUrl = `data:${matchedImage.mimeType};base64,${matchedImage.data}`;
+        product.diseno_1 = imageUrl;
+        
+        // Registrar asignación
+        assignedImages.push({ 
+          productCode: product.codigo, 
+          imageFilename: matchedImage.filename,
+          confidence: match.confidence
+        });
+        
+        // Remover la imagen asignada de la lista disponible
+        availableImages.splice(match.imageIndex, 1);
+        
+        console.log(`[Alta confianza] Asignada imagen "${matchedImage.filename}" al producto "${product.codigo}" (confianza: ${match.confidence}%)`);
+      }
+    });
+    
+    // Etapa 2: Segunda pasada para coincidencias de menor confianza
+    products.forEach(product => {
+      // Saltar productos que ya tienen imágenes asignadas
+      if (product.diseno_1 || !product.codigo) {
+        return;
+      }
+      
+      const productCode = normalizeText(product.codigo.toString());
+      
+      // Calcular puntuación para cada imagen disponible
+      const scores = availableImages.map((img, index) => {
+        const filename = normalizeText(img.filename);
+        let score = 0;
+        
+        // Verificar similitud con el código (coincidencia parcial)
+        if (filename.includes(productCode) || productCode.includes(filename)) {
+          score += 30;
+        }
+        
+        // Verificar campos adicionales (ubicación, dimensiones, etc.)
+        if (product.ubicacion && filename.includes(normalizeText(product.ubicacion.toString()))) {
+          score += 25;
+        }
+        
+        if (product.ancho_m && filename.includes(product.ancho_m.toString())) {
+          score += 20;
+        }
+        
+        if (product.alto_m && filename.includes(product.alto_m.toString())) {
+          score += 20;
+        }
+        
+        // Buscar palabras clave en campos adicionales
+        const additionalFields = ['material', 'tipo_ventana', 'tipo_vidrio', 'color_body'];
+        additionalFields.forEach(field => {
+          if (product[field] && filename.includes(normalizeText(product[field].toString()))) {
+            score += 15;
+          }
+        });
+        
+        return { index, score };
+      });
+      
+      // Ordenar por puntuación y tomar la mejor si supera un umbral mínimo
+      const sortedScores = scores.sort((a, b) => b.score - a.score);
+      const bestMatch = sortedScores[0];
+      
+      if (bestMatch && bestMatch.score >= 40) { // Umbral mínimo ajustable
+        const matchedImage = availableImages[bestMatch.index];
+        
+        // Crear data URL para la imagen
+        const imageUrl = `data:${matchedImage.mimeType};base64,${matchedImage.data}`;
+        product.diseno_1 = imageUrl;
+        
+        // Registrar asignación
+        assignedImages.push({ 
+          productCode: product.codigo, 
+          imageFilename: matchedImage.filename,
+          confidence: bestMatch.score
+        });
+        
+        // Remover la imagen asignada de la lista disponible
+        availableImages.splice(bestMatch.index, 1);
+        
+        console.log(`[Media confianza] Asignada imagen "${matchedImage.filename}" al producto "${product.codigo}" (confianza: ${bestMatch.score}%)`);
+      } else {
+        console.log(`No se encontró imagen con suficiente confianza para el producto "${product.codigo}"`);
+      }
+    });
+
+    // Resumen de asignación
+    console.log(`Asignación de imágenes completada: ${assignedImages.length} asignadas de ${this.extractedImages.length} disponibles`);
+    if (assignedImages.length > 0) {
+      // Agrupar por nivel de confianza
+      const highConfidence = assignedImages.filter(a => a.confidence >= 80).length;
+      const mediumConfidence = assignedImages.filter(a => a.confidence >= 40 && a.confidence < 80).length;
+      const lowConfidence = assignedImages.filter(a => a.confidence < 40).length;
+      
+      console.log(`Resumen de asignaciones:
+        - Alta confianza (80-100%): ${highConfidence}
+        - Media confianza (40-79%): ${mediumConfidence}
+        - Baja confianza (<40%): ${lowConfidence}`);
+    }
+    if (availableImages.length > 0) {
+      console.log(`${availableImages.length} imágenes quedaron sin asignar`);
+    }
+  }
+  /**
+   * Método para mostrar la vista previa de las asignaciones de imágenes a productos
+   */
+  showImageAssignmentPreview(products: any[]): void {
+    if (!products || products.length === 0) {
+      alert('No hay productos para mostrar asignaciones de imágenes');
+      return;
+    }
+
+    // Contar productos con imágenes asignadas
+    const productsWithImages = products.filter(p => p.diseno_1 && p.diseno_1.startsWith('data:image'));
+    
+    if (productsWithImages.length === 0) {
+      alert('No se asignaron imágenes a ningún producto');
+      return;
+    }
+
+    // Calcular porcentaje de asignación
+    const asignacionPorcentaje = Math.round((productsWithImages.length / products.length) * 100);
+
+    // Mostrar resumen de asignación con más detalles
+    const message = `
+      Resultados de la asignación de imágenes:
+
+      ✅ Se han asignado imágenes a ${productsWithImages.length} de ${products.length} productos (${asignacionPorcentaje}%).
+      
+      📋 Resumen:
+      - Imágenes disponibles: ${this.extractedImages.length}
+      - Productos con imágenes: ${productsWithImages.length}
+      - Productos sin imágenes: ${products.length - productsWithImages.length}
+      
+      Las imágenes han sido guardadas en el campo "Diseño 1" de cada producto.
+      
+      📱 Puede usar la pestaña "Imágenes" para:
+      - Ver todas las imágenes extraídas
+      - Filtrar por imágenes asignadas/sin asignar
+      - Asignar manualmente imágenes a productos específicos
+    `;
+    
+    alert(message);
+  }
+
+  /**
+   * Filtra las imágenes según el criterio seleccionado
+   */
+  getFilteredImages(): ExtractedImage[] {
+    if (this.imageFilter === 'all') {
+      return this.extractedImages;
+    } else if (this.imageFilter === 'assigned') {
+      return this.extractedImages.filter(image => this.isImageAssigned(image));
+    } else {
+      return this.extractedImages.filter(image => !this.isImageAssigned(image));
+    }
+  }
+
+  /**
+   * Comprueba si una imagen ha sido asignada a algún producto
+   * Se utiliza para mostrar un indicador visual en la interfaz
+   */
+  isImageAssigned(image: ExtractedImage): boolean {
+    // Si no hay productos importados, no hay asignaciones
+    if (!this.importedProducts || this.importedProducts.length === 0) {
+      return false;
+    }
+    
+    // Buscar si algún producto tiene esta imagen asignada al campo diseno_1
+    const imageUrl = `data:${image.mimeType};base64,${image.data}`;
+    return this.importedProducts.some(product => product.diseno_1 === imageUrl);
+  }
+
+  /**
+   * Obtiene la cantidad de imágenes asignadas a productos
+   */
+  getAssignedImagesCount(): number {
+    if (!this.importedProducts || this.importedProducts.length === 0) {
+      return 0;
+    }
+    return this.extractedImages.filter(image => this.isImageAssigned(image)).length;
+  }
+
+  /**
+   * Obtiene el código del producto al que está asignada una imagen
+   */
+  getAssignedProductCode(image: ExtractedImage): string {
+    if (!this.importedProducts || this.importedProducts.length === 0) {
+      return '';
+    }
+    
+    const imageUrl = `data:${image.mimeType};base64,${image.data}`;
+    const product = this.importedProducts.find(p => p.diseno_1 === imageUrl);
+    
+    return product ? product.codigo : '';
+  }
+
+  /**
+   * Muestra el diálogo para asignar una imagen a un producto manualmente
+   */
+  showAssignImageDialog(image: ExtractedImage): void {
+    this.selectedImageForAssignment = image;
+    this.showAssignModal = true;
+    this.productSearchTerm = '';
+    this.selectedProductId = null;
+    
+    // Inicializar la lista de productos filtrados con todos los productos importados
+    this.filteredProducts = [...this.importedProducts];
+    
+    // Ordenar los productos por código
+    this.filteredProducts.sort((a, b) => {
+      if (a.codigo < b.codigo) return -1;
+      if (a.codigo > b.codigo) return 1;
+      return 0;
+    });
+  }
+
+  /**
+   * Cierra el diálogo de asignación de imágenes
+   */
+  closeAssignImageDialog(): void {
+    this.showAssignModal = false;
+    this.selectedImageForAssignment = null;
+    this.productSearchTerm = '';
+    this.filteredProducts = [];
+    this.selectedProductId = null;
+  }
+
+  /**
+   * Filtra los productos según el término de búsqueda
+   */
+  filterProducts(): void {
+    if (!this.productSearchTerm || this.productSearchTerm.trim() === '') {
+      this.filteredProducts = [...this.importedProducts];
+      return;
+    }
+    
+    const searchTerm = this.productSearchTerm.toLowerCase().trim();
+    
+    this.filteredProducts = this.importedProducts.filter(product => {
+      // Buscar en el código
+      if (product.codigo && product.codigo.toString().toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Buscar en la ubicación
+      if (product.ubicacion && product.ubicacion.toString().toLowerCase().includes(searchTerm)) {
+        return true;
+      }
+      
+      // Buscar en las dimensiones
+      if (product.ancho_m && product.alto_m) {
+        const dimensiones = `${product.ancho_m}x${product.alto_m}`;
+        if (dimensiones.toLowerCase().includes(searchTerm)) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+  }
+
+  /**
+   * Selecciona un producto para asignación
+   */
+  selectProductForAssignment(product: any): void {
+    this.selectedProductId = product.codigo;
+  }
+
+  /**
+   * Asigna la imagen seleccionada al producto seleccionado
+   */
+  assignImageToProduct(): void {
+    if (!this.selectedImageForAssignment || !this.selectedProductId) {
+      return;
+    }
+    
+    // Buscar el producto en la lista de productos importados
+    const productIndex = this.importedProducts.findIndex(p => p.codigo === this.selectedProductId);
+    
+    if (productIndex === -1) {
+      console.error(`Producto con código ${this.selectedProductId} no encontrado`);
+      return;
+    }
+    
+    // Crear la URL de la imagen
+    const imageUrl = `data:${this.selectedImageForAssignment.mimeType};base64,${this.selectedImageForAssignment.data}`;
+    
+    // Asignar la imagen al producto
+    this.importedProducts[productIndex].diseno_1 = imageUrl;
+    
+    console.log(`Imagen "${this.selectedImageForAssignment.filename}" asignada manualmente al producto "${this.selectedProductId}"`);
+    
+    // Cerrar el diálogo
+    this.closeAssignImageDialog();
   }
 }

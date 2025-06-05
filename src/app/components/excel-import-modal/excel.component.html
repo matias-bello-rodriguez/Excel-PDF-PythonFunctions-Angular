@@ -221,22 +221,14 @@
             </button>
           </div>
         </div>
-          <div class="images-actions">
+        
+        <div class="images-actions">
           <button 
             class="btn btn-primary" 
             (click)="extractImages()"
             [disabled]="isExtractingImages || !pythonServerAvailable">
             <i class="fas fa-search"></i>
             <span>Extraer imágenes</span>
-          </button>
-          
-          <button 
-            class="btn btn-success" 
-            (click)="mapImagesByPosition()"
-            [disabled]="extractedImages.length === 0 || importedProducts.length === 0"
-            title="Mapear imágenes automáticamente basándose en su posición en las celdas del Excel">
-            <i class="fas fa-magic"></i>
-            <span>Mapear por posición</span>
           </button>
           
           <button 
@@ -322,28 +314,12 @@
                 <div class="image-status" *ngIf="isImageAssigned(image)" title="Esta imagen ha sido asignada a un producto">
                   <i class="fas fa-check-circle"></i>
                 </div>
-              </div>              <div class="image-info">
+              </div>
+              <div class="image-info">
                 <div class="image-filename" [title]="image.filename">{{ image.filename }}</div>
                 <div class="image-details">
                   <span class="detail-item">{{ image.size | number }} bytes</span>
                   <span class="detail-item">{{ image.mimeType }}</span>
-                </div>
-                <div class="position-info" *ngIf="image.cellAddress">
-                  <div class="position-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span class="position-label">Celda:</span>
-                    <span class="position-value">{{ image.cellAddress }}</span>
-                  </div>
-                  <div class="position-item" *ngIf="image.sheet">
-                    <i class="fas fa-file-alt"></i>
-                    <span class="position-label">Hoja:</span>
-                    <span class="position-value">{{ image.sheet }}</span>
-                  </div>
-                  <div class="position-item" *ngIf="image.row !== undefined">
-                    <i class="fas fa-arrows-alt-v"></i>
-                    <span class="position-label">Fila:</span>
-                    <span class="position-value">{{ image.row + 1 }}</span>
-                  </div>
                 </div>
                 <div class="assigned-info" *ngIf="isImageAssigned(image)">
                   <span class="product-code">{{ getAssignedProductCode(image) }}</span>
@@ -444,7 +420,7 @@
       <div class="assign-image-preview">
         <img *ngIf="selectedImageForAssignment" 
              [src]="'data:' + selectedImageForAssignment.mimeType + ';base64,' + selectedImageForAssignment.data" 
-             [alt]="selectedImageForAssignment.filename" 
+             [alt]="selectedImageForAssignment?.filename" 
              class="assign-preview-image">
       </div>
       <div class="assign-image-form">

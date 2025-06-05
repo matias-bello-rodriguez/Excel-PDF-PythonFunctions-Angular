@@ -1,124 +1,215 @@
-# main.py - Servidor FastAPI para extraer imágenes de Excel
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import tempfile
+#!/usr/bin/env python3
+"""
+Servicio Python para extraer imágenes de archivos Excel (.xlsx)
+"""
+
 import os
 import base64
 import zipfile
+import tempfile
 import shutil
-from pathlib import Path
-import json
-from typing import List, Dict, Any
 import traceback
+from typing import List, Dict, Any
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import openpyxl
+from openpyxl.drawing.image import Image
+from openpyxl.utils import get_column_letter
 
-app = FastAPI(title="Excel Image Extractor API", version="1.0.0")
+app = FastAPI(title="Excel Image Extractor", version="1.0.0")
 
 # Configurar CORS para permitir conexiones desde Angular
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://localhost:8080"],  # URLs de desarrollo Angular
+    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
 class ExcelImageExtractor:
-    """Clase para extraer imágenes de archivos Excel (.xlsx)"""
+    """Clase para extraer imágenes de archivos Excel usando tanto openpyxl como ZIP"""
     
-    @staticmethod
-    def extract_images_from_excel(excel_path: str, output_dir: str) -> List[Dict[str, Any]]:
+    def __init__(self):
+        self.temp_dirs = []
+    
+    def extract_images_from_excel(self, excel_path: str, output_dir: str) -> List[Dict[str, Any]]:
         """
-        Extrae imágenes de un archivo Excel (.xlsx)
-        Los archivos .xlsx son básicamente archivos ZIP que contienen XML y archivos multimedia
+        Extrae imágenes de un archivo Excel combinando openpyxl y método ZIP
         """
+        if not os.path.exists(excel_path):
+            raise FileNotFoundError(f"Archivo Excel no encontrado: {excel_path}")
+        
+        os.makedirs(output_dir, exist_ok=True)
+        images_info = []
+        
         try:
-            # Crear directorio de salida si no existe
-            os.makedirs(output_dir, exist_ok=True)
+            # Método 1: Usar openpyxl para obtener información de posición
+            position_info = self._extract_position_info_with_openpyxl(excel_path)
             
-            images_info = []
+            # Método 2: Extraer imágenes del ZIP
+            zip_images = self._extract_images_from_zip(excel_path, output_dir)
             
-            # Los archivos .xlsx son archivos ZIP
-            with zipfile.ZipFile(excel_path, 'r') as zip_file:
-                # Buscar archivos multimedia en el ZIP
-                media_files = [f for f in zip_file.namelist() if f.startswith('xl/media/')]
-                
-                if not media_files:
-                    print("No se encontraron imágenes en el archivo Excel")
-                    return []
-                
-                # Extraer cada imagen
-                for media_file in media_files:
-                    try:
-                        # Obtener el nombre del archivo
-                        filename = os.path.basename(media_file)
-                        
-                        # Extraer el archivo
-                        zip_file.extract(media_file, output_dir)
-                        
-                        # Mover al directorio raíz de salida
-                        src_path = os.path.join(output_dir, media_file)
-                        dst_path = os.path.join(output_dir, filename)
-                        
-                        # Crear directorio padre si no existe
-                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                        
-                        # Mover archivo
-                        shutil.move(src_path, dst_path)
-                        
-                        # Obtener información del archivo
-                        file_size = os.path.getsize(dst_path)
-                        file_ext = os.path.splitext(filename)[1].lower()
-                        
-                        images_info.append({
-                            "filename": filename,
-                            "path": dst_path,
-                            "size": file_size,
-                            "extension": file_ext,
-                            "original_path": media_file
-                        })
-                        
-                        print(f"Imagen extraída: {filename}")
-                        
-                    except Exception as e:
-                        print(f"Error extrayendo {media_file}: {str(e)}")
-                        continue
-                
-                # Limpiar directorios temporales creados por la extracción
-                xl_dir = os.path.join(output_dir, 'xl')
-                if os.path.exists(xl_dir):
-                    shutil.rmtree(xl_dir)
-                    
-            return images_info
+            # Combinar información de posición con imágenes extraídas
+            images_info = self._merge_position_and_images(position_info, zip_images)
             
         except Exception as e:
-            print(f"Error procesando archivo Excel: {str(e)}")
-            raise e
+            print(f"Error durante la extracción: {str(e)}")
+            print(traceback.format_exc())
+            
+            # Fallback: solo extraer del ZIP sin información de posición
+            try:
+                images_info = self._extract_images_from_zip(excel_path, output_dir)
+            except Exception as fallback_error:
+                print(f"Error en fallback: {str(fallback_error)}")
+                raise
+        
+        return images_info
+    
+    def _extract_position_info_with_openpyxl(self, excel_path: str) -> List[Dict[str, Any]]:
+        """Extrae información de posición de imágenes usando openpyxl"""
+        position_info = []
+        
+        try:
+            workbook = openpyxl.load_workbook(excel_path, data_only=False)
+            
+            for sheet_name in workbook.sheetnames:
+                worksheet = workbook[sheet_name]
+                
+                # Buscar imágenes en la hoja
+                if hasattr(worksheet, '_images'):
+                    for idx, img in enumerate(worksheet._images):
+                        try:
+                            # Obtener información de anclaje
+                            anchor = img.anchor
+                            cell_ref = None
+                            row = None
+                            column = None
+                            column_letter = None
+                            
+                            if hasattr(anchor, '_from') and anchor._from:
+                                cell_ref = f"{get_column_letter(anchor._from.col + 1)}{anchor._from.row + 1}"
+                                row = anchor._from.row
+                                column = anchor._from.col
+                                column_letter = get_column_letter(anchor._from.col + 1)
+                            
+                            position_info.append({
+                                'sheet': sheet_name,
+                                'cell_address': cell_ref or 'unknown',
+                                'row': row,
+                                'column': column,
+                                'column_letter': column_letter,
+                                'anchor_type': type(anchor).__name__,
+                                'image_index': idx
+                            })
+                            
+                        except Exception as e:
+                            print(f"Error procesando imagen {idx} en hoja {sheet_name}: {str(e)}")
+                            continue
+            
+            workbook.close()
+            
+        except Exception as e:
+            print(f"Error con openpyxl: {str(e)}")
+        
+        return position_info
+    
+    def _extract_images_from_zip(self, excel_path: str, output_dir: str) -> List[Dict[str, Any]]:
+        """Extrae imágenes del archivo Excel tratándolo como ZIP"""
+        images_info = []
+        
+        try:
+            with zipfile.ZipFile(excel_path, 'r') as zip_file:
+                # Buscar archivos de imagen en el directorio xl/media/
+                for file_info in zip_file.filelist:
+                    if file_info.filename.startswith('xl/media/') and not file_info.is_dir():
+                        # Extraer el archivo
+                        extracted_data = zip_file.read(file_info.filename)
+                        
+                        # Generar nombre de archivo único
+                        original_name = os.path.basename(file_info.filename)
+                        name, ext = os.path.splitext(original_name)
+                        
+                        # Crear archivo en el directorio de salida
+                        output_path = os.path.join(output_dir, original_name)
+                        counter = 1
+                        while os.path.exists(output_path):
+                            output_path = os.path.join(output_dir, f"{name}_{counter}{ext}")
+                            counter += 1
+                        
+                        with open(output_path, 'wb') as output_file:
+                            output_file.write(extracted_data)
+                        
+                        # Agregar información de la imagen
+                        images_info.append({
+                            'filename': os.path.basename(output_path),
+                            'path': output_path,
+                            'size': len(extracted_data),
+                            'extension': ext.lower()
+                        })
+        
+        except Exception as e:
+            print(f"Error extrayendo del ZIP: {str(e)}")
+            raise
+        
+        return images_info
+    
+    def _merge_position_and_images(self, position_info: List[Dict], zip_images: List[Dict]) -> List[Dict]:
+        """Combina información de posición con imágenes extraídas"""
+        merged_images = []
+        
+        # Copiar todas las imágenes del ZIP
+        for img in zip_images:
+            merged_images.append(img.copy())
+        
+        # Intentar asignar información de posición
+        for i, position in enumerate(position_info):
+            if i < len(merged_images):
+                merged_images[i].update({
+                    'sheet': position.get('sheet'),
+                    'cell_address': position.get('cell_address'),
+                    'row': position.get('row'),
+                    'column': position.get('column'),
+                    'column_letter': position.get('column_letter'),
+                    'anchor_type': position.get('anchor_type')
+                })
+        
+        return merged_images
 
 @app.get("/")
 async def root():
-    """Endpoint de prueba"""
-    return {"message": "Excel Image Extractor API está funcionando"}
+    """Endpoint raíz para verificar que el servidor esté funcionando"""
+    return {
+        "message": "Servidor de extracción de imágenes Excel funcionando",
+        "version": "1.0.0",
+        "status": "ok"
+    }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "service": "excel-image-extractor"}
+    """Endpoint de verificación de salud"""
+    return {
+        "status": "healthy",
+        "service": "excel-image-extractor",
+        "openpyxl_available": True
+    }
 
-@app.post("/extract-excel-images")
+@app.post("/extract-images")
 async def extract_images(file: UploadFile = File(...)):
     """
-    Extrae imágenes de un archivo Excel y las devuelve como base64
+    Extrae imágenes de un archivo Excel subido
     """
     if not file.filename.endswith(('.xlsx', '.xlsm')):
         raise HTTPException(
             status_code=400, 
-            detail="Solo se permiten archivos Excel (.xlsx, .xlsm)"
+            detail="Solo se admiten archivos Excel (.xlsx, .xlsm)"
         )
     
     temp_dir = None
+    
     try:
         # Crear directorio temporal
-        temp_dir = tempfile.mkdtemp()
+        temp_dir = tempfile.mkdtemp(prefix="excel_images_")
         excel_path = os.path.join(temp_dir, file.filename)
         
         # Guardar archivo temporal
@@ -167,7 +258,13 @@ async def extract_images(file: UploadFile = File(...)):
                         "data": image_data,
                         "mimeType": mime_type,
                         "size": img_info["size"],
-                        "extension": img_info["extension"]
+                        "extension": img_info["extension"],
+                        "sheet": img_info.get("sheet", "unknown"),
+                        "cellAddress": img_info.get("cell_address", "unknown"),
+                        "row": img_info.get("row"),
+                        "column": img_info.get("column"),
+                        "columnLetter": img_info.get("column_letter"),
+                        "anchorType": img_info.get("anchor_type", "unknown")
                     })
                     
             except Exception as e:
