@@ -1398,28 +1398,45 @@ handleImageError(event: Event): void {
   imgElement.classList.add('image-error');
   
   // Mostrar un tooltip para indicar el error
-  imgElement.title = 'No se pudo cargar la imagen';
-}  // Legacy PDF methods removed - now handled by PdfExportModalComponent  // Legacy Excel helper methods removed - now handled by ExcelImportModalComponent
+    imgElement.title = 'No se pudo cargar la imagen';
+}
+
   // Métodos manejadores de eventos para los componentes modales
   /**
    * Maneja el éxito de la importación de Excel
    */
-  onExcelImportSuccess(productos: any[]): void {
-    console.log('Importación exitosa:', productos);
+  async onExcelImportSuccess(productos: any[]): Promise<void> {
+    console.log('Importación exitosa desde Excel:', productos);
     
-    // Agregar los productos importados a la lista actual
-    this.productos.push(...productos);
-    this.productosFormateados.push(...productos);
-    
-    // Actualizar estadísticas
-    this.totalItems = this.productos.length;
-    
-    // Refrescar la tabla
-    this.applyFilters();
-    this.updateUniqueValues();
-    
-    // Mostrar mensaje de éxito
-    alert(`Se importaron exitosamente ${productos.length} productos desde Excel.`);
+    try {
+      // Recargar todos los productos de la base de datos para asegurar sincronización
+      if (this.cubicacionId) {
+        this.productos = await this.productoService.getProductosByCubicacionId(this.cubicacionId);
+      } else {
+        this.productos = await this.productoService.getAll();
+      }
+      
+      this.originalProductos = [...this.productos];
+      
+      // Formatear productos para mostrar en la tabla
+      this.productosFormateados = this.formatearProductos(this.productos);
+      
+      // Actualizar estadísticas
+      this.totalItems = this.productos.length;
+      this.paginationConfig.totalItems = this.totalItems;
+      
+      // Actualizar filtros y valores únicos
+      this.updateUniqueValues();
+      
+      // Mostrar mensaje de éxito
+      alert(`✅ Se insertaron exitosamente ${productos.length} productos en la base de datos.`);
+      
+      console.log(`Total de productos después de importación: ${this.productos.length}`);
+      
+    } catch (error) {
+      console.error('Error al recargar productos después de importación:', error);
+      alert('Los productos se importaron pero hubo un error al refrescar la lista. Recarga la página manualmente.');
+    }
   }
 
   /**

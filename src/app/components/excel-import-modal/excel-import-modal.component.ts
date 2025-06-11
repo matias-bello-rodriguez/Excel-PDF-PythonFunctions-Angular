@@ -1,9 +1,25 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExcelImportService, ExtractedImage, ImageExtractionResponse } from '../../services/excel-import.service';
+import { ProductoService } from '../../services/producto.service';
 import { FormsModule } from '@angular/forms';
-import { ExcelCellInfo } from '@app/interfaces/entities';
+import { ExcelCellInfo, Producto } from '@app/interfaces/entities';
 import JSZip from 'jszip';
+
+// Interfaces
+export interface ExcelImage {
+  row?: number;
+  column?: number;
+  filename: string;
+  data: string;
+  mimeType: string;
+  size?: number;
+  extension?: string;
+  cellAddress?: string;
+  sheet?: string;
+  columnLetter?: string;
+  anchorType?: string;
+}
 
 @Component({
   selector: 'app-excel-import-modal',
@@ -12,7 +28,7 @@ import JSZip from 'jszip';
   templateUrl: './excel-import-modal.component.html',
   styleUrls: ['./excel-import-modal.component.scss']
 })
-export class ExcelImportModalComponent {
+export class ExcelImportModalComponent implements OnInit {
   @Input() showModal = false;
   @Input() cubicacionId: string | null = null;
   
@@ -34,6 +50,7 @@ export class ExcelImportModalComponent {
   imageExtractionError: string | null = null;
   selectedImage: ExtractedImage | null = null; // Agregado para el modal de vista previa
   importedProducts: any[] = []; // Almacena los productos importados para referencia
+  debugMappingMessage: string = ''; // Debug message for image mapping testing
 
   excelPreviewData: any[][] = [];
   isLoadingPreview = false;
@@ -75,7 +92,6 @@ export class ExcelImportModalComponent {
   dragTarget: string | null = null;
   // Filtro de imágenes
   imageFilter: 'all' | 'assigned' | 'unassigned' = 'all';
-
   // Propiedades para mapeo de imágenes por fila
   imagesByRow: { [rowIndex: number]: ExtractedImage } = {};
   designColumnIndex: number = -1;
@@ -86,8 +102,27 @@ export class ExcelImportModalComponent {
   productSearchTerm = '';
   filteredProducts: any[] = [];
   selectedProductId: string | null = null;
+  // Constantes
+  private readonly START_ROW = 5; // Fila donde comienzan los datos
+  // Estados para la inserción en base de datos
+  isImportingToDatabase = false;
+  importToDatabaseError: string | null = null;
+  importToDatabaseSuccess: string | null = null;
+  importProgress = 0;
+  totalItemsToImport = 0;
 
-  constructor(private excelService: ExcelImportService) {}
+  // Exponer Math para uso en template
+  Math = Math;
+
+  constructor(
+    private excelService: ExcelImportService,
+    private productoService: ProductoService
+  ) {}
+
+  ngOnInit(): void {
+    // Inicialización del componente
+    this.checkPythonServer();
+  }
 
   /**
    * Maneja la selección de archivo
@@ -304,6 +339,12 @@ export class ExcelImportModalComponent {
         this.importedProducts = [...validProducts];
       }
 
+      // Asignar URLs de imágenes a productos antes de insertar en base de datos
+      this.assignImageUrls(validProducts);
+
+      // Insertar productos en la base de datos
+      await this.insertProductsToDatabase(validProducts);
+
       // Emitir el evento de éxito
       this.importSuccess.emit(validProducts);
       
@@ -458,14 +499,20 @@ export class ExcelImportModalComponent {
     if (typeof cell === 'boolean') return 'boolean';
     return 'text';
   }
-
   /**
    * Formatea el contenido de la celda
    */
   formatCell(cell: any): string {
     if (cell === null || cell === undefined) return '';
     if (typeof cell === 'number') return cell.toLocaleString();
-    return String(cell);
+    
+    // Manejar errores de Excel
+    const cellString = String(cell);
+    if (cellString.startsWith('#') && (cellString.includes('VALUE') || cellString.includes('ERROR') || cellString.includes('N/A') || cellString.includes('DIV'))) {
+      return ''; // Mostrar celda vacía para errores de Excel
+    }
+    
+    return cellString;
   }
   /**
    * Obtiene estadísticas del archivo Excel
@@ -994,7 +1041,6 @@ export class ExcelImportModalComponent {
     const product = this.importedProducts.find(p => p.id === productId);
     return product ? (product.codigo || product.code || 'Sin código') : null;
   }
-
   /**
    * Asigna automáticamente las imágenes a los productos basándose en coincidencias de nombres
    */
@@ -1025,60 +1071,6 @@ export class ExcelImportModalComponent {
       this.showImageAssignmentPreview();
     } else {
       alert('No se pudieron asignar imágenes automáticamente. Intente con asignación manual.');
-    }
-  }
-
-  /**
-   * Mapea imágenes directamente a productos basándose en la posición de celda
-   */
-  mapImagesByPosition(): void {
-    if (!this.importedProducts || this.importedProducts.length === 0) {
-      console.warn('No hay productos importados para mapear imágenes por posición');
-      return;
-    }
-
-    if (!this.extractedImages || this.extractedImages.length === 0) {
-      console.warn('No hay imágenes extraídas para mapear');
-      return;
-    }
-
-    let mappedCount = 0;
-    const mappingLog: string[] = [];
-
-    this.extractedImages.forEach(image => {
-      // Solo procesar imágenes que tienen información de posición
-      if (!image.cellAddress || image.cellAddress === 'unknown' || !image.row) {
-        console.log(`Imagen ${image.filename} no tiene información de posición válida`);
-        return;
-      }
-
-      // Buscar producto en la misma fila
-      const productInRow = this.findProductByRowPosition(image.row);
-      
-      if (productInRow) {
-        // Quitar asignación previa si existe
-        this.extractedImages.forEach(img => {
-          if ((img as any).assignedProductId === productInRow.id) {
-            delete (img as any).assignedProductId;
-          }
-        });
-
-        // Asignar imagen al producto
-        (image as any).assignedProductId = productInRow.id;
-        mappedCount++;
-        
-        const productCode = productInRow.codigo || productInRow.code || 'Sin código';
-        mappingLog.push(`${image.filename} (${image.cellAddress}) → ${productCode}`);
-      }
-    });
-
-    console.log(`Mapeadas automáticamente ${mappedCount} imágenes por posición:`, mappingLog);
-    
-    if (mappedCount > 0) {
-      this.showImageAssignmentPreview();
-      alert(`Se mapearon ${mappedCount} imágenes automáticamente basándose en su posición en el Excel.`);
-    } else {
-      alert('No se pudieron mapear imágenes automáticamente por posición. Las imágenes pueden no tener información de coordenadas o no hay productos en las filas correspondientes.');
     }
   }
 
@@ -1407,7 +1399,7 @@ export class ExcelImportModalComponent {
     this.extractedImages = [
       {
         filename: 'WIN001_design.jpg',
-        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
+        data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
         mimeType: 'image/jpeg',
         size: 1024,
         extension: 'jpg'
@@ -1443,8 +1435,7 @@ export class ExcelImportModalComponent {
 
   /**
    * Exporta las imágenes extraídas a un archivo ZIP
-   */
-  async exportImagesToZIP(): Promise<void> {
+   */  async exportImagesToZIP(): Promise<void> {
     if (this.extractedImages.length === 0) {
       alert('No hay imágenes para exportar');
       return;
@@ -1493,37 +1484,92 @@ export class ExcelImportModalComponent {
     // Restaurar el scroll en el cuerpo
     document.body.style.overflow = 'auto';
   }
-
   /**
-   * Mapea las imágenes extraídas a las filas correspondientes basándose en su posición
+   * Obtiene la imagen correspondiente a una fila específica
+   */
+  public getImageForRow(rowIndex: number): ExtractedImage | undefined {
+    // Solo devolver la imagen si tenemos una columna de diseño válida
+    if (this.designColumnIndex === -1) {
+      return undefined;
+    }
+    
+    return this.imagesByRow[rowIndex];
+  }  /**
+   * Mapea las imágenes extraídas a las filas correspondientes basándose en mapeo secuencial
+   * NUEVO: Las imágenes se mapean secuencialmente a filas consecutivas, no por posición original
    */
   private mapImagesByRowPosition(): void {
-    this.imagesByRow = {};
-    
-    if (!this.extractedImages || this.extractedImages.length === 0) {
+    // Primero, encontrar la columna de diseño
+    this.findDesignColumnIndex();
+    if (this.designColumnIndex === -1) {
+      console.warn('No se encontró columna de diseño. No se mapearán imágenes.');
       return;
     }
 
-    this.extractedImages.forEach(image => {
-      if (image.row !== undefined && image.row >= 0) {
-        // Ajustar la fila para que coincida con el índice de los datos de vista previa
-        // Las imágenes están en base 0, pero necesitamos ajustar según el START_ROW
-        const adjustedRowIndex = image.row - this.excelService.START_ROW;
-        
-        if (adjustedRowIndex >= 0 && adjustedRowIndex < this.excelPreviewDataWithColors.length) {
-          this.imagesByRow[adjustedRowIndex] = image;
-        }
+    // Limpiar el mapeo anterior
+    this.imagesByRow = {};
+
+    console.log('Iniciando mapeo secuencial de imágenes...', {
+      totalImagenes: this.extractedImages.length,
+      columnaDiseno: this.designColumnIndex,
+      headerDiseno: this.excelHeaders[this.designColumnIndex],
+      filasTotales: this.excelPreviewData.length
+    });
+
+    // NUEVO ALGORITMO: Mapeo secuencial
+    // Filtrar solo las imágenes que están en la columna de diseño
+    const designImages = this.extractedImages.filter(image => {
+      const imageColumn = image.column || 0;
+      return imageColumn === this.designColumnIndex;
+    });
+
+    console.log(`Encontradas ${designImages.length} imágenes en columna de diseño de ${this.extractedImages.length} totales`);
+
+    // Mapear las imágenes secuencialmente a filas consecutivas
+    designImages.forEach((image, sequentialIndex) => {
+      // Usar el índice secuencial directamente (0, 1, 2, etc.)
+      const targetRowIndex = sequentialIndex;
+      
+      if (targetRowIndex >= 0 && targetRowIndex < this.excelPreviewData.length) {
+        this.imagesByRow[targetRowIndex] = image;
+        console.log(`✅ Imagen "${image.filename}" mapeada secuencialmente:`, {
+          ordenExtraccion: sequentialIndex + 1,
+          filaDestino: targetRowIndex,
+          posicionOriginalExcel: image.row,
+          cellAddress: image.cellAddress
+        });
+      } else {
+        console.warn(`❌ Imagen "${image.filename}" no pudo mapearse:`, {
+          ordenExtraccion: sequentialIndex + 1,
+          filaDestino: targetRowIndex,
+          maxFilasDisponibles: this.excelPreviewData.length
+        });
       }
     });
-    
-    console.log('Imágenes mapeadas por fila:', this.imagesByRow);
-  }
 
-  /**
-   * Obtiene la imagen para una fila específica
-   */
-  getImageForRow(rowIndex: number): ExtractedImage | null {
-    return this.imagesByRow[rowIndex] || null;
+    // Reportar imágenes ignoradas (fuera de columna de diseño)
+    const ignoredImages = this.extractedImages.filter(image => {
+      const imageColumn = image.column || 0;
+      return imageColumn !== this.designColumnIndex;
+    });
+
+    if (ignoredImages.length > 0) {
+      console.log(`⚠️ ${ignoredImages.length} imágenes ignoradas (no están en columna de diseño):`, 
+        ignoredImages.map(img => ({
+          filename: img.filename,
+          columna: img.column,
+          columnaEsperada: this.designColumnIndex
+        }))
+      );
+    }
+
+    console.log('🎯 Mapeo secuencial completado:', {
+      imagenesMapeadas: Object.keys(this.imagesByRow).length,
+      imagenesEnColumnaDiseno: designImages.length,
+      imagenesIgnoradas: ignoredImages.length,
+      filasTotales: this.excelPreviewData.length,
+      algoritmo: 'SECUENCIAL (imagen 1 → fila 1, imagen 2 → fila 2, etc.)'
+    });
   }
 
   /**
@@ -1542,35 +1588,330 @@ export class ExcelImportModalComponent {
     
     console.log('Índice de columna DESIGN encontrado:', this.designColumnIndex, 'Header:', this.excelHeaders[this.designColumnIndex]);
   }
+  /**
+   * Método para depurar el contenido de las celdas en la columna de diseño
+   */
+  public debugDesignColumnContent(): void {
+    if (this.designColumnIndex === -1) {
+      console.log('❌ No se encontró columna de diseño para depurar');
+      return;
+    }
+
+    console.log('🔍 DEPURANDO CONTENIDO DE COLUMNA DE DISEÑO');
+    console.log(`Columna de diseño: ${this.designColumnIndex} (${this.excelHeaders[this.designColumnIndex]})`);
+    
+    // Revisar las primeras 10 filas de la columna de diseño
+    for (let i = 0; i < Math.min(10, this.excelPreviewData.length); i++) {
+      const cellValue = this.excelPreviewData[i][this.designColumnIndex];
+      const cellType = typeof cellValue;
+      const formattedValue = this.formatCell(cellValue);
+      
+      console.log(`Fila ${i + 1}:`, {
+        rawValue: cellValue,
+        type: cellType,
+        formattedValue: formattedValue,
+        isEmpty: cellValue === null || cellValue === undefined || cellValue === '',
+        isValueError: formattedValue === '#value' || String(cellValue).includes('#')
+      });
+    }
+    
+    // Revisar si hay imágenes mapeadas
+    console.log('\n🖼️ IMÁGENES MAPEADAS:');
+    Object.entries(this.imagesByRow).forEach(([rowIndex, image]) => {
+      console.log(`Fila ${rowIndex}: ${image.filename}`);
+    });  }
 
   /**
-   * Método de prueba para verificar el mapeo de imágenes por fila
+   * Debug method: Simple logging of current image mapping state
+   */
+  logImageMappingState(): void {
+    console.log('📊 Estado actual del mapeo de imágenes:');
+    console.log('extractedImages:', this.extractedImages);
+    console.log('imagesByRow:', this.imagesByRow);
+    console.log('excelPreviewData.length:', this.excelPreviewData.length);
+    console.log('designColumnIndex:', this.designColumnIndex);
+    
+    this.debugMappingMessage = `Información mostrada en consola. Imágenes: ${this.extractedImages.length}, Filas mapeadas: ${Object.keys(this.imagesByRow).length}`;
+    
+    // Clear the message after 3 seconds
+    setTimeout(() => {
+      this.debugMappingMessage = '';
+    }, 3000);
+  }
+
+  /**
+   * Tests and verifies the current image row mapping state
+   * This method checks the integrity of the image-to-row mapping system
    */
   testImageRowMapping(): void {
-    console.log('=== PRUEBA DE MAPEO POR FILA ===');
-    console.log('Archivo seleccionado:', this.selectedFile?.name);
-    console.log('Headers:', this.excelHeaders);
-    console.log('Índice columna DESIGN:', this.designColumnIndex);
-    console.log('Total filas de datos:', this.excelPreviewDataWithColors.length);
-    console.log('Imágenes extraídas:', this.extractedImages.length);
-    console.log('Mapeo por fila:', this.imagesByRow);
+    console.log('🔍 Iniciando verificación del mapeo de imágenes a filas...');
     
-    // Mostrar detalles de cada imagen
-    this.extractedImages.forEach((img, index) => {
-      console.log(`Imagen ${index + 1}:`, {
-        filename: img.filename,
-        sheet: img.sheet,
-        cellAddress: img.cellAddress,
-        row: img.row,
-        column: img.column,
-        columnLetter: img.columnLetter
+    // Basic state verification
+    const extractedCount = this.extractedImages.length;
+    const mappedCount = Object.keys(this.imagesByRow).length;
+    const designColumnExists = this.designColumnIndex !== -1;
+    
+    console.log('Estado básico:', {
+      imagenesExtraidas: extractedCount,
+      imagenesMapeadas: mappedCount,
+      columnaDiseno: this.designColumnIndex,
+      headerColumnaDiseno: designColumnExists ? this.excelHeaders[this.designColumnIndex] : 'No encontrada',
+      filasDeExcel: this.excelPreviewData.length
+    });
+    
+    // Test 1: Design column validation
+    let issues = [];
+    if (!designColumnExists) {
+      issues.push('❌ No se encontró columna de diseño');
+    } else {
+      console.log(`✅ Columna de diseño encontrada: ${this.excelHeaders[this.designColumnIndex]} (índice: ${this.designColumnIndex})`);
+    }
+    
+    // Test 2: Image position validation
+    if (extractedCount > 0) {
+      let validMappings = 0;
+      let invalidMappings = 0;
+      
+      this.extractedImages.forEach((image, index) => {
+        const imageRow = image.row;
+        const imageColumn = image.column;
+        const adjustedRow = imageRow !== undefined ? imageRow - this.START_ROW : undefined;
+        
+        if (imageRow !== undefined && imageColumn === this.designColumnIndex) {
+          if (adjustedRow !== undefined && adjustedRow >= 0 && adjustedRow < this.excelPreviewData.length) {
+            validMappings++;
+            const isMapped = this.imagesByRow[adjustedRow] === image;
+            console.log(`✅ Imagen "${image.filename}": fila ${imageRow} → índice ${adjustedRow} ${isMapped ? '(mapeada)' : '(NO mapeada)'}`);
+          } else {
+            invalidMappings++;
+            console.log(`❌ Imagen "${image.filename}": fila ${imageRow} fuera de rango (ajustada: ${adjustedRow})`);
+          }
+        } else if (imageColumn !== this.designColumnIndex) {
+          console.log(`⚠️ Imagen "${image.filename}": columna ${imageColumn} (no es diseño)`);
+        } else {
+          invalidMappings++;
+          console.log(`❌ Imagen "${image.filename}": sin información de fila`);
+        }
       });
+      
+      console.log(`Mapeos válidos: ${validMappings}, Mapeos inválidos: ${invalidMappings}`);
+      
+      if (invalidMappings > 0) {
+        issues.push(`❌ ${invalidMappings} imágenes con mapeo inválido`);
+      }
+    }
+    
+    // Test 3: Row mapping consistency
+    let orphanedRows = 0;
+    Object.entries(this.imagesByRow).forEach(([rowIndex, image]) => {
+      const rowNum = parseInt(rowIndex);
+      const imageExists = this.extractedImages.includes(image);
+      
+      if (!imageExists) {
+        orphanedRows++;
+        console.log(`❌ Fila ${rowNum} mapea a imagen inexistente`);
+      } else {
+        console.log(`✅ Fila ${rowNum} → "${image.filename}"`);
+      }
     });
     
-    // Mostrar qué filas tienen imágenes asignadas
-    Object.keys(this.imagesByRow).forEach(rowIndex => {
-      const img = this.imagesByRow[parseInt(rowIndex)];
-      console.log(`Fila ${rowIndex} -> Imagen: ${img.filename} (${img.cellAddress})`);
+    if (orphanedRows > 0) {
+      issues.push(`❌ ${orphanedRows} filas mapean a imágenes inexistentes`);
+    }
+    
+    // Test 4: Display integration test
+    let displayErrors = 0;
+    for (let i = 0; i < this.excelPreviewData.length; i++) {
+      const imageForRow = this.getImageForRow(i);
+      const mappedImage = this.imagesByRow[i];
+      
+      if (imageForRow !== mappedImage) {
+        displayErrors++;
+        console.log(`❌ Inconsistencia en fila ${i}: getImageForRow=${imageForRow?.filename || 'null'}, imagesByRow=${mappedImage?.filename || 'null'}`);
+      }
+    }
+    
+    if (displayErrors > 0) {
+      issues.push(`❌ ${displayErrors} inconsistencias en la integración de visualización`);
+    }
+    
+    // Final report
+    const success = issues.length === 0;
+    const statusIcon = success ? '✅' : '❌';
+    const statusText = success ? 'EXITOSO' : 'CON PROBLEMAS';
+    
+    console.log(`\n${statusIcon} RESULTADO DE LA VERIFICACIÓN: ${statusText}`);
+    console.log(`Resumen: ${extractedCount} imágenes extraídas, ${mappedCount} mapeadas, ${issues.length} problemas encontrados`);
+    
+    if (issues.length > 0) {
+      console.log('\nProblemas encontrados:');
+      issues.forEach(issue => console.log(issue));
+    }
+    
+    // Update debug message
+    this.debugMappingMessage = `Verificación completada: ${statusText}. ${extractedCount} imágenes, ${mappedCount} mapeadas, ${issues.length} problemas.`;
+    
+    // Clear message after 5 seconds
+    setTimeout(() => {
+      this.debugMappingMessage = '';
+    }, 5000);
+  }
+
+  /**
+   * Forces a complete remapping of images and runs diagnostics
+   */
+  forceRemapImages(): void {
+    console.log('🔄 Forzando remapeo completo de imágenes...');
+    
+    // Clear existing mappings
+    this.imagesByRow = {};
+    
+    // Force re-detection of design column
+    this.findDesignColumnIndex();
+    
+    // Re-map all images
+    this.mapImagesByRowPosition();
+    
+    // Run verification test
+    this.testImageRowMapping();
+    
+    this.debugMappingMessage = 'Remapeo forzado completado. Verificación ejecutada.';
+    
+    setTimeout(() => {
+      this.debugMappingMessage = '';
+    }, 4000);
+  }
+
+  /**
+   * Public method to map images based on their position in Excel cells
+   * This method is called from the UI to manually trigger image mapping
+   */
+  mapImagesByPosition(): void {
+    console.log('🗺️ Mapeando imágenes por posición...');
+    
+    if (this.extractedImages.length === 0) {
+      this.debugMappingMessage = 'No hay imágenes extraídas para mapear.';
+      return;
+    }
+    
+    // Clear existing mappings
+    this.imagesByRow = {};
+    
+    // Perform the mapping
+    this.mapImagesByRowPosition();
+    
+    const mappedCount = Object.keys(this.imagesByRow).length;
+    console.log(`✅ Mapeo completado: ${mappedCount} imágenes mapeadas de ${this.extractedImages.length} disponibles`);
+    
+    this.debugMappingMessage = `Mapeo por posición completado: ${mappedCount}/${this.extractedImages.length} imágenes mapeadas.`;
+      setTimeout(() => {
+      this.debugMappingMessage = '';
+    }, 3000);
+  }
+
+  /**
+   * Asigna URLs de imágenes a productos basándose en el mapeo de filas
+   */
+  assignImageUrls(products: any[]): void {
+    console.log('🔗 Asignando URLs de imágenes a productos...');
+    
+    products.forEach((product, index) => {
+      const rowIndex = index + this.START_ROW; // Ajustar por fila de inicio
+      const mappedImage = this.imagesByRow[rowIndex];
+      
+      if (mappedImage) {
+        // Asignar URL de imagen como base64 data URL
+        product.imagen_url = `data:${mappedImage.mimeType};base64,${mappedImage.data}`;
+        product.imagen_filename = mappedImage.filename;
+        console.log(`✅ Imagen asignada al producto ${product.codigo}: ${mappedImage.filename}`);
+      }
     });
+  }
+
+  /**
+   * Inserta productos en la base de datos usando ProductoService
+   */
+  async insertProductsToDatabase(products: any[]): Promise<void> {
+    if (!this.cubicacionId) {
+      console.warn('No se puede insertar en base de datos: cubicacionId no disponible');
+      return;
+    }
+
+    console.log('💾 Iniciando inserción en base de datos...');
+    
+    this.isImportingToDatabase = true;
+    this.importToDatabaseError = null;
+    this.importToDatabaseSuccess = null;
+    this.totalItemsToImport = products.length;
+    this.importProgress = 0;
+
+    try {
+      for (let i = 0; i < products.length; i++) {
+        const product = products[i];
+        
+        // Convertir producto de Excel a formato Producto de la base de datos
+        const productoFormatted: Partial<Producto> = {
+          id: crypto.randomUUID(),
+          cubicacion_id: this.cubicacionId,
+          codigo: product.codigo || `PROD-${Date.now()}-${i}`,
+          ubicacion: product.ubicacion,
+          ancho_m: this.parseNumber(product.ancho_m),
+          alto_m: this.parseNumber(product.alto_m),
+          superficie: this.parseNumber(product.superficie),
+          superficie_total: this.parseNumber(product.superficie_total),
+          cantidad_por_unidad: this.parseNumber(product.cantidad_por_unidad),
+          alto_fabricacion_m: this.parseNumber(product.alto_fabricacion_m),
+          ancho_fabricacion_m: this.parseNumber(product.ancho_fabricacion_m),
+          diseno_1: product.diseno_1,
+          diseno_2: product.diseno_2,
+          comentario_1: product.comentario_1,
+          comentario_2: product.comentario_2,
+          material: product.material,
+          tipo_vidrio: product.tipo_vidrio || 'Standard',
+          tipo_ventana: product.tipo_ventana,
+          perfil_mm: product.perfil_mm,
+          color_body: product.color_body,
+          color_film: product.color_film,
+          espesor_vidrio_mm: product.espesor_vidrio_mm,
+          opaco_o_transparente: product.opaco_o_transparente,
+          apertura: product.apertura,
+          cierre: product.cierre,
+          proteccion_vidrio: product.proteccion_vidrio,
+          precio_unitario_sqm_usd: this.parseNumber(product.precio_unitario_sqm_usd),
+          precio_pieza_base_usd: this.parseNumber(product.precio_pieza_base_usd),
+          precio_total_pieza_usd: this.parseNumber(product.precio_total_pieza_usd)
+        };
+
+        // Insertar producto en base de datos
+        await this.productoService.create(productoFormatted as Producto);
+        
+        // Actualizar progreso
+        this.importProgress = Math.round(((i + 1) / products.length) * 100);
+        
+        console.log(`✅ Producto ${i + 1}/${products.length} insertado: ${productoFormatted.codigo}`);
+      }
+
+      this.importToDatabaseSuccess = `${products.length} productos insertados exitosamente en la base de datos`;
+      console.log('✅ Inserción en base de datos completada exitosamente');
+      
+    } catch (error: any) {
+      console.error('❌ Error al insertar productos en base de datos:', error);
+      this.importToDatabaseError = `Error al insertar productos: ${error.message || error}`;
+      throw error; // Re-lanzar el error para que sea manejado por el caller
+    } finally {
+      this.isImportingToDatabase = false;
+    }
+  }
+
+  /**
+   * Convierte una cadena o número a número, maneja valores vacíos o inválidos
+   */
+  private parseNumber(value: any): number | undefined {
+    if (value === null || value === undefined || value === '') {
+      return undefined;
+    }
+    
+    const parsed = typeof value === 'number' ? value : parseFloat(String(value).replace(/[^0-9.-]/g, ''));
+    return isNaN(parsed) ? undefined : parsed;
   }
 }

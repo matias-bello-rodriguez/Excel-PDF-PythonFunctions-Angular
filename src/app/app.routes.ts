@@ -84,18 +84,7 @@ export const routes: Routes = [
     ],
   },
   // Ruta para acceso denegado
-  {
-    path: 'acceso-denegado',
-    component: MainLayoutComponent,
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./pages/access-denied/access-denied.component')
-          .then(m => m.AccessDeniedComponent)
-      }
-    ],
-    data: { scrollPositionRestoration: 'top' },
-  },
+  
   // Ruta para manejar rutas no encontradas
   {
     path: '**',

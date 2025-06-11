@@ -63,8 +63,7 @@ class ExcelImageExtractor:
             except Exception as fallback_error:
                 print(f"Error en fallback: {str(fallback_error)}")
                 raise
-        
-        return images_info
+          return images_info
     
     def _find_design_column(self, worksheet) -> int:
         """
@@ -197,8 +196,7 @@ class ExcelImageExtractor:
             raise
         
         return images_info
-    
-    def _merge_position_and_images(self, position_info: List[Dict], zip_images: List[Dict]) -> List[Dict]:
+      def _merge_position_and_images(self, position_info: List[Dict], zip_images: List[Dict]) -> List[Dict]:
         """Combina información de posición con imágenes extraídas"""
         merged_images = []
         
@@ -307,8 +305,7 @@ async def extract_images(file: UploadFile = File(...)):
                     }
                     
                     mime_type = mime_types.get(img_info["extension"], 'image/png')
-                    
-                    image_files.append({
+                      image_files.append({
                         "filename": img_info["filename"],
                         "data": image_data,
                         "mimeType": mime_type,
